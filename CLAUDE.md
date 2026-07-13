@@ -23,7 +23,12 @@ dotnet run --project src/IRacingOverlay.App -- --demo   # no iRacing needed
   the tree in a state that doesn't build or has failing tests.
 - **Tests.** Any logic in `Core` gets xUnit coverage. Bug fixes get a regression test.
   UI/SDK glue is exempt — that's why the logic lives in `Core` (see below).
-- **README.** Update it when run steps, widgets, or prerequisites change.
+- **Docs.** README changes when run steps, widgets, or prerequisites change.
+  [docs/FEATURES.md](docs/FEATURES.md) changes whenever a widget's fields,
+  calculations, thresholds, or limitations change — it's the canonical "what does
+  this app currently do" reference, so it must stay accurate, not aspirational.
+  [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) changes when the dev workflow itself
+  changes (new commands, new conventions, new gotchas).
 - **Commit** in feature-sized chunks, conventional-commit style
   (`feat(core):`, `fix(app):`, `docs:`), each commit building green.
 

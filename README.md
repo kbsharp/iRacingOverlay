@@ -11,6 +11,10 @@ A lightweight, always-on-top telemetry overlay for iRacing. Two widgets so far:
   and the numbers you act on: fuel to finish, the margin you'll finish with (green spare
   / red short), fuel to add at the next stop, and a save-per-lap target.
 
+**Full docs:** [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, commands, debugging,
+and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) for exactly what's
+implemented (every field, calculation, and known limitation).
+
 ## Prerequisites
 
 - Windows 10/11
@@ -46,22 +50,15 @@ Clean-architecture-lite; dependencies point inward (App → Infrastructure → C
 
 | Project | Role |
 |---|---|
-| `src/IRacingOverlay.Core` | Domain: fuel calculator, telemetry contracts, formatting. No UI or SDK dependencies. |
+| `src/IRacingOverlay.Core` | Domain: fuel/relative calculators, telemetry contracts, formatting. No UI or SDK dependencies. |
 | `src/IRacingOverlay.Infrastructure` | `ITelemetrySource` adapters: IRSDKSharper (live) and a simulated source (demo). |
-| `src/IRacingOverlay.App` | WPF presentation: overlay window, view model, composition root. |
+| `src/IRacingOverlay.App` | WPF presentation: overlay windows, view models, composition root. |
 | `tests/IRacingOverlay.Core.Tests` | xUnit tests for the domain layer. |
 
-Design notes:
-
-- All widget maths live in `Core` and are unit-tested: the fuel calculator (refuels,
-  tows, lap-counter jumps, rolling window) and the relative engine (`CarIdxEstTime`
-  deltas with start/finish wrap correction, lapped/lapping classification, roster
-  joins). The app is a thin shell.
-- Telemetry events arrive on background threads at ~15 Hz (the sim's 60 Hz frames are
-  throttled in the adapter to keep the footprint small) and are marshalled to the UI
-  thread in `App.xaml.cs`.
-- Wiring is a manual composition root in `App.xaml.cs`; swap in a DI container once
-  there is more than one widget to compose.
+All widget maths live in `Core` and are unit-tested; the app is a thin shell over it.
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the full architecture rundown,
+the pattern for adding a new widget, and debugging notes; see
+[docs/FEATURES.md](docs/FEATURES.md) for how each existing calculation actually works.
 
 ## Roadmap
 
