@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{826FA827-6B1D-4A43-9735-38C149C51E89}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IRacingOverlay.Core", "src\IRacingOverlay.Core\IRacingOverlay.Core.csproj", "{A3B3D54A-4FF0-4DC2-B002-BF18BC3031E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IRacingOverlay.Infrastructure", "src\IRacingOverlay.Infrastructure\IRacingOverlay.Infrastructure.csproj", "{05591A3D-CF8F-4298-A40F-7BBB4BDA4FE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IRacingOverlay.App", "src\IRacingOverlay.App\IRacingOverlay.App.csproj", "{88E23249-B9F9-4370-802F-1A3BCC33B868}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9DE65620-9E59-46DB-893C-3DAB2AEBB7D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IRacingOverlay.Core.Tests", "tests\IRacingOverlay.Core.Tests\IRacingOverlay.Core.Tests.csproj", "{D7AB58D1-6A7E-4194-BE48-C4D2EA1DC23E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A3B3D54A-4FF0-4DC2-B002-BF18BC3031E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3B3D54A-4FF0-4DC2-B002-BF18BC3031E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3B3D54A-4FF0-4DC2-B002-BF18BC3031E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3B3D54A-4FF0-4DC2-B002-BF18BC3031E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05591A3D-CF8F-4298-A40F-7BBB4BDA4FE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05591A3D-CF8F-4298-A40F-7BBB4BDA4FE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05591A3D-CF8F-4298-A40F-7BBB4BDA4FE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05591A3D-CF8F-4298-A40F-7BBB4BDA4FE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88E23249-B9F9-4370-802F-1A3BCC33B868}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88E23249-B9F9-4370-802F-1A3BCC33B868}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88E23249-B9F9-4370-802F-1A3BCC33B868}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88E23249-B9F9-4370-802F-1A3BCC33B868}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7AB58D1-6A7E-4194-BE48-C4D2EA1DC23E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7AB58D1-6A7E-4194-BE48-C4D2EA1DC23E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7AB58D1-6A7E-4194-BE48-C4D2EA1DC23E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7AB58D1-6A7E-4194-BE48-C4D2EA1DC23E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A3B3D54A-4FF0-4DC2-B002-BF18BC3031E5} = {826FA827-6B1D-4A43-9735-38C149C51E89}
+		{05591A3D-CF8F-4298-A40F-7BBB4BDA4FE6} = {826FA827-6B1D-4A43-9735-38C149C51E89}
+		{88E23249-B9F9-4370-802F-1A3BCC33B868} = {826FA827-6B1D-4A43-9735-38C149C51E89}
+		{D7AB58D1-6A7E-4194-BE48-C4D2EA1DC23E} = {9DE65620-9E59-46DB-893C-3DAB2AEBB7D6}
+	EndGlobalSection
+EndGlobal
