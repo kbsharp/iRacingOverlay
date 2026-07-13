@@ -139,7 +139,18 @@
                 <Button Content="Toggle setup modified"
                         Command="{Binding ToggleSetupModifiedCommand}"
                         Style="{StaticResource DevButton}"
-                        HorizontalAlignment="Stretch" />
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,12" />
+
+                <TextBlock Text="RADAR" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                <Button Content="Cycle radar (Clear/Left/Right/Both/2L/2R)"
+                        Command="{Binding CycleRadarCommand}"
+                        Style="{StaticResource DevButton}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,4" />
+                <TextBlock Text="{Binding RadarText}"
+                           Foreground="{StaticResource TextSecondary}"
+                           FontSize="11" />
 
             </StackPanel>
             </Grid>

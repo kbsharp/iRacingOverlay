@@ -38,6 +38,7 @@ public partial class App : System.Windows.Application
         var relativeViewModel = new RelativeViewModel(connectedLabel);
         var fuelViewModel = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), connectedLabel);
         var setupViewModel = new SetupViewModel(connectedLabel);
+        var radarViewModel = new RadarViewModel(connectedLabel);
 
         _telemetrySource = demoMode
             ? new SimulatedTelemetrySource()
@@ -48,6 +49,7 @@ public partial class App : System.Windows.Application
             relativeViewModel.ApplyTelemetry(snapshot);
             fuelViewModel.ApplyTelemetry(snapshot);
             setupViewModel.ApplyTelemetry(snapshot);
+            radarViewModel.ApplyTelemetry(snapshot);
         });
         _telemetrySource.SessionMetadataReceived += (_, metadata) => Dispatcher.BeginInvoke(() =>
         {
@@ -59,25 +61,30 @@ public partial class App : System.Windows.Application
             relativeViewModel.SetConnectionState(connected);
             fuelViewModel.SetConnectionState(connected);
             setupViewModel.SetConnectionState(connected);
+            radarViewModel.SetConnectionState(connected);
         });
         _telemetrySource.ErrorOccurred += (_, exception) => Dispatcher.BeginInvoke(() =>
         {
             relativeViewModel.ReportError(exception);
             fuelViewModel.ReportError(exception);
             setupViewModel.ReportError(exception);
+            radarViewModel.ReportError(exception);
         });
 
         var relativeWindow = new RelativeWindow { DataContext = relativeViewModel };
         var fuelWindow = new FuelWindow { DataContext = fuelViewModel };
         var setupWindow = new SetupWindow { DataContext = setupViewModel };
+        var radarWindow = new RadarWindow { DataContext = radarViewModel };
         relativeWindow.Closing += HideInsteadOfClose;
         fuelWindow.Closing += HideInsteadOfClose;
         setupWindow.Closing += HideInsteadOfClose;
+        radarWindow.Closing += HideInsteadOfClose;
 
         MainWindow = relativeWindow;
         relativeWindow.Show();
         fuelWindow.Show();
         setupWindow.Show();
+        radarWindow.Show();
 
         DevControlWindow? devControlWindow = null;
         if (_telemetrySource is IDemoControls demoControls)
@@ -88,7 +95,8 @@ public partial class App : System.Windows.Application
             devControlWindow.Show();
         }
 
-        _trayIcon = new TrayIconService(relativeWindow, fuelWindow, setupWindow, devControlWindow, RequestExit);
+        _trayIcon = new TrayIconService(
+            relativeWindow, fuelWindow, setupWindow, radarWindow, devControlWindow, RequestExit);
 
         _telemetrySource.Start();
     }

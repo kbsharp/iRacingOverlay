@@ -19,6 +19,7 @@ public sealed class TrayIconService : IDisposable
         System.Windows.Window relativeWindow,
         System.Windows.Window fuelWindow,
         System.Windows.Window setupWindow,
+        System.Windows.Window radarWindow,
         System.Windows.Window? devControlWindow,
         Action requestExit)
     {
@@ -26,6 +27,7 @@ public sealed class TrayIconService : IDisposable
         menu.Items.Add("Show Relative", null, (_, _) => Reveal(relativeWindow));
         menu.Items.Add("Show Fuel", null, (_, _) => Reveal(fuelWindow));
         menu.Items.Add("Show Setup", null, (_, _) => Reveal(setupWindow));
+        menu.Items.Add("Show Radar", null, (_, _) => Reveal(radarWindow));
 
         if (devControlWindow is not null)
         {
