@@ -231,6 +231,10 @@ public class RelativeCalculatorTests
                 ClassColorRaw: "16750899");
         }
 
-        return new SessionMetadata(drivers, new Dictionary<int, string> { [0] = "Race" });
+        return new SessionMetadata(
+            drivers,
+            new Dictionary<int, string> { [0] = "Race" },
+            PlayerSetupName: "race_setup.sto",
+            PlayerSetupIsModified: false);
     }
 }

@@ -98,13 +98,7 @@ public sealed class RelativeViewModel : OverlayViewModelBase
 
     private void UpdateHeader(TelemetrySnapshot snapshot)
     {
-        var sessionType = "SESSION";
-        if (_metadata is not null
-            && _metadata.SessionTypesByNum.TryGetValue(snapshot.SessionNum, out var type)
-            && type.Length > 0)
-        {
-            sessionType = type.ToUpperInvariant();
-        }
+        var sessionType = SessionFormat.ResolveSessionType(_metadata?.SessionTypesByNum, snapshot.SessionNum);
 
         var timeRemaining = SessionFormat.TimeRemaining(snapshot.SessionTimeRemainSeconds);
         SessionText = timeRemaining is not null

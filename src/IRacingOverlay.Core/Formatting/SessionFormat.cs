@@ -46,4 +46,18 @@ public static class SessionFormat
 
     public static string Temperature(float celsius) =>
         MathF.Round(celsius).ToString(CultureInfo.InvariantCulture) + "°";
+
+    /// <summary>Looks up the display name for a session number, upper-cased,
+    /// falling back to "SESSION" when unknown.</summary>
+    public static string ResolveSessionType(IReadOnlyDictionary<int, string>? sessionTypesByNum, int sessionNum)
+    {
+        if (sessionTypesByNum is not null
+            && sessionTypesByNum.TryGetValue(sessionNum, out var type)
+            && type.Length > 0)
+        {
+            return type.ToUpperInvariant();
+        }
+
+        return "SESSION";
+    }
 }
