@@ -5,19 +5,27 @@
     <Application.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <!-- Premium navy palette: a real lit-blue surface, not near-black -->
+        <!-- Neutral graphite surface - deliberately NOT navy, so the panel material
+             stops competing with the accent/badge colours that carry meaning. -->
         <LinearGradientBrush x:Key="PanelBackground" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#EC212C46" Offset="0" />
-            <GradientStop Color="#EC121A2E" Offset="1" />
+            <GradientStop Color="#F2242629" Offset="0" />
+            <GradientStop Color="#F2131417" Offset="1" />
         </LinearGradientBrush>
-        <!-- Thin bright line along the top edge for a glassy, lit look -->
+        <!-- Very subtle warm undertone in the header zone only - a hint of material
+             richness without tipping the whole panel back towards a colour cast. -->
+        <RadialGradientBrush x:Key="PanelSheen" Center="0.3,0" RadiusX="0.9" RadiusY="0.6">
+            <GradientStop Color="#14FFDDAA" Offset="0" />
+            <GradientStop Color="#00FFDDAA" Offset="1" />
+        </RadialGradientBrush>
+        <!-- Thin bright line along the top edge for a glassy, lit look - neutral
+             white now, not colour-tinted. -->
         <LinearGradientBrush x:Key="PanelTopHighlight" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#3DBFD8FF" Offset="0" />
-            <GradientStop Color="#00BFD8FF" Offset="1" />
+            <GradientStop Color="#4DFFFFFF" Offset="0" />
+            <GradientStop Color="#00FFFFFF" Offset="1" />
         </LinearGradientBrush>
-        <SolidColorBrush x:Key="PanelBorder" Color="#5D6FA8E8" />
+        <SolidColorBrush x:Key="PanelBorder" Color="#3DFFFFFF" />
         <SolidColorBrush x:Key="HeaderBand" Color="#26FFFFFF" />
-        <SolidColorBrush x:Key="Separator" Color="#22FFFFFF" />
+        <SolidColorBrush x:Key="Separator" Color="#20FFFFFF" />
         <SolidColorBrush x:Key="RowHover" Color="#14FFFFFF" />
 
         <SolidColorBrush x:Key="Accent" Color="#39A7FF" />

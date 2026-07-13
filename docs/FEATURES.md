@@ -329,11 +329,21 @@ visual style. Deliberately not blue-dominated: `Accent` is reserved for
 branding (window header labels) and the A-license badge specifically; every
 other colour carries a distinct meaning (class, license tier, iRating tier,
 lap status, "this is you").
-- `PanelBackground` — a navy-blue vertical gradient (not near-black; a prior
-  pass was too dark/desaturated and was corrected).
-- `PanelTopHighlight` — a 1px bright line along the top inner edge for a
-  glassy look.
-- `PanelBorder`, `Separator`, `RowHover`, `HeaderBand` — structural chrome.
+- `PanelBackground` — a neutral graphite/charcoal vertical gradient
+  (`#242629` → `#131417`). Earlier passes used a lit navy-blue surface; that
+  read as a "navy theme" fighting the accent/badge colours, so the panel
+  material itself was moved to a low-saturation neutral instead — the same
+  move used by Linear/Arc/Vercel's dark themes, letting colour be reserved
+  for things that carry meaning.
+- `PanelSheen` — a very subtle warm radial highlight in the upper-left of
+  each panel (`#14FFDDAA` fading to transparent), for material richness
+  without reintroducing a colour cast across the whole surface. Layered as a
+  same-sized `Border` sibling behind the content inside the outer panel
+  `Border` (see any window's XAML for the pattern).
+- `PanelTopHighlight` — a 1px bright *neutral white* line along the top inner
+  edge for a glassy look (previously cyan-tinted).
+- `PanelBorder` — neutral translucent white, not colour-tinted.
+- `Separator`, `RowHover`, `HeaderBand` — structural chrome.
 - `Accent` (azure blue), `Positive` (green), `Negative` (red), `Warning`
   (amber) — status colours.
 - `PlayerHighlight` / `PlayerBorder` — the relative widget's "this is you"
