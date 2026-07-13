@@ -38,6 +38,9 @@ public sealed record TelemetrySnapshot
 
     public required int IncidentCount { get; init; }
 
+    /// <summary>Near-field proximity from iRacing's own spotter signal - see <see cref="Telemetry.CarLeftRight"/>.</summary>
+    public required CarLeftRight CarLeftRight { get; init; }
+
     /// <summary>Cars currently in the world (the player included).</summary>
     public required IReadOnlyList<CarTelemetry> Cars { get; init; }
 }

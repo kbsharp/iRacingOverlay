@@ -210,6 +210,7 @@ public class RelativeCalculatorTests
         Wetness = TrackWetness.Dry,
         BrakeBiasPct = 0f,
         IncidentCount = 0,
+        CarLeftRight = CarLeftRight.Clear,
         Cars = cars,
     };
 
