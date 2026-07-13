@@ -42,4 +42,8 @@ public interface IDemoControls
 
     /// <summary>Flips whether the loaded setup is shown as modified.</summary>
     void ToggleSetupModified();
+
+    /// <summary>Advances Clear -> CarLeft -> CarRight -> CarLeftRight -> TwoCarsLeft
+    /// -> TwoCarsRight -> Clear, for exercising the radar widget. Returns the new value.</summary>
+    CarLeftRight CycleCarLeftRight();
 }

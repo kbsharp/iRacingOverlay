@@ -91,6 +91,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     private int _sessionIndex = 2;
     private int _sessionNum = 2;
     private bool _setupModified;
+    private CarLeftRight _carLeftRight = CarLeftRight.Clear;
 
     public event EventHandler<TelemetrySnapshot>? TelemetryReceived;
     public event EventHandler<SessionMetadata>? SessionMetadataReceived;
@@ -227,6 +228,19 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         }
     }
 
+    public CarLeftRight CycleCarLeftRight()
+    {
+        lock (_gate)
+        {
+            // Skip Off - that only ever happens in live mode before the sim
+            // starts reporting; not a state worth cycling through in demo.
+            _carLeftRight = _carLeftRight == CarLeftRight.TwoCarsRight
+                ? CarLeftRight.Clear
+                : (CarLeftRight)((int)_carLeftRight + 1);
+            return _carLeftRight;
+        }
+    }
+
     private void Tick(object? state)
     {
         TelemetrySnapshot snapshot;
@@ -321,6 +335,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             Wetness = WetnessCycle[_wetnessIndex],
             BrakeBiasPct = 54.2f,
             IncidentCount = _incidentCount,
+            CarLeftRight = _carLeftRight,
             Cars = cars,
         };
     }

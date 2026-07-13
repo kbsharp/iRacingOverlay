@@ -142,6 +142,7 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
             Wetness = (TrackWetness)GetIntOrDefault(data, "TrackWetness"),
             BrakeBiasPct = GetFloatOrDefault(data, "dcBrakeBias"),
             IncidentCount = GetIntOrDefault(data, "PlayerCarMyIncidentCount"),
+            CarLeftRight = (CarLeftRight)GetIntOrDefault(data, "CarLeftRight"),
             Cars = cars,
         });
     }
