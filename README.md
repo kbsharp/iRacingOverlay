@@ -1,6 +1,6 @@
 # iRacing Overlay
 
-A lightweight, always-on-top telemetry overlay for iRacing. Two widgets so far:
+A lightweight, always-on-top telemetry overlay for iRacing. Three widgets so far:
 
 - **Relative** (the flagship): the three cars ahead of and behind you on track with
   live time deltas, race position, and car number. License and iRating are colour-coded
@@ -12,6 +12,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Two widgets so far:
 - **Fuel**: a strategy calculator — fuel level and laps in tank, average/last-lap burn,
   and the numbers you act on: fuel to finish, the margin you'll finish with (green spare
   / red short), fuel to add at the next stop, and a save-per-lap target.
+- **Setup**: shows the currently loaded setup file and flashes for the first minute of
+  Qualifying or Race — a reminder to catch the classic "raced on the qualifying setup"
+  mistake before it costs you a fuel-short race.
 
 **Full docs:** [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, commands, debugging,
 and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) for exactly what's
@@ -46,7 +49,7 @@ dotnet test
 
 Usage notes:
 
-- **Control the app from the system tray icon**, not the terminal: show/hide either
+- **Control the app from the system tray icon**, not the terminal: show/hide any
   widget, open the dev control panel (demo mode), or Exit. New tray icons are hidden by
   Windows behind the **`^`** overflow arrow the first time — click it to find the icon, and
   drag it out onto the taskbar to pin it permanently.
@@ -54,8 +57,9 @@ Usage notes:
   to bring it back. The tray's **Exit** (or a widget's right-click **Exit**) is what actually
   quits the app.
 - **Demo mode** also opens a **dev control panel**: add/remove cars (3-20), drain/add fuel,
-  set fuel critical, cycle track wetness, add an incident, toggle the player into the pits —
-  all live, no rebuild. See [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.
+  set fuel critical, cycle track wetness, add an incident, toggle the player into the pits,
+  cycle Practice/Qualify/Race (retriggers the setup-reminder flash) — all live, no rebuild.
+  See [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.
 - Drag each widget anywhere with the left mouse button.
 - iRacing must run in **windowed or borderless** mode — overlays are not visible over exclusive fullscreen.
 - If no data appears while driving, check that `irsdkEnableMem=1` is set in iRacing's `app.ini` (it is by default).

@@ -161,6 +161,57 @@ EstimateRaceLapsRemaining` for timed races.
   reads comfortably positive; the red "short" state is real code but isn't
   exercised by the demo without editing `SimulatedTelemetrySource`.
 
+### Setup — `SetupWindow` / `SetupViewModel` / `SetupReminderTracker`
+
+A reminder widget, not a data widget: it exists to catch the "raced on the
+low-fuel qualifying setup" mistake — forgetting to load the race setup before
+Qualifying or Race starts.
+
+**Layout:** 260px wide, same borderless/transparent/topmost/draggable
+behaviour as the others. Fixed position on first launch (`Left=80, Top=470`
+— below the fuel widget).
+
+**Displayed fields:**
+- The currently loaded setup file name (iRacing's `DriverSetupName`, `.sto`
+  extension stripped by `SetupFormat.DisplayName`), shown large.
+- A session-type badge (e.g. "RACE", "QUALIFY", "PRACTICE") — amber
+  when the session is a Qualify or Race, neutral grey otherwise, so even
+  without the flash (below) a glance at the badge tells you whether the
+  setup matters right now.
+- A "MODIFIED" tag when `DriverSetupIsModified` is set — the loaded setup
+  has been changed since it was last loaded/saved.
+
+**The flash:** the whole panel pulses a soft amber wash (`#00FFB03D` ↔
+`#70FFB03D`, 0.7s each way, looping) for the first 60 seconds of any session
+whose type contains "Race" or "Qualif" (case-insensitive — covers "Race",
+"Heat Race", "Qualify", "Open Qualify", "Lone Qualify"). It does **not**
+flash for Practice or Warmup. `SetupReminderTracker.Update` is fed every
+telemetry frame and detects the session transition by watching
+`TelemetrySnapshot.SessionNum` change; the flash window is measured relative
+to `SessionTimeSeconds` at that transition, so it's correct whether
+`SessionTime` is session-relative or cumulative. Launching the overlay
+*during* an already-running Qualify/Race session still flashes immediately
+(there's no "already seen it" state carried across app restarts).
+
+Implementation note: the flash animates a `ColorAnimation` targeting the
+implicit style-owner element via a property path
+(`(Border.Background).(SolidColorBrush.Color)`) rather than
+`Storyboard.TargetName` — WPF doesn't allow a `Style`'s triggers to target a
+sibling-named brush by name, only the element the style is attached to (or
+elements inside a `ControlTemplate`). Verified by sampling the same pixel
+from two screenshots ~0.7s apart and confirming the RGB value actually
+changed, since a single static screenshot can't prove an animation is
+running.
+
+**Known limitations:**
+- The 60-second window is a fixed constant, not configurable.
+- No acknowledge/dismiss action — the flash simply times out. (Deliberate:
+  the request was for a passive visual reminder, not an interactive one.)
+- Demo mode starts already in "Race" (matching the existing fuel-strategy
+  demo scenario) so the flash is visible from app startup; use the dev
+  panel's "Cycle session" button to see Practice → Qualify → Race
+  transitions and re-trigger it on demand.
+
 ## Telemetry & session data (`Core.Telemetry`, `Core.Session`)
 
 **`TelemetrySnapshot`** — one frame, normalised to the overlay's units
@@ -180,11 +231,13 @@ ExtremelyWet).
 
 **`SessionMetadata`** — slow-changing roster data: `DriversByCarIdx`
 (`RosterDriver`: car number, display name, iRating, license string,
-class-estimated lap time, class short name, raw class colour from the sim)
-and `SessionTypesByNum`. Refreshed whenever the sim re-broadcasts session
-info. `RelativeRow` carries the same driver fields plus the parsed
-`LicenseTier`, `IRatingTier`, and normalised `ClassColorHex` used for the
-relative widget's colour coding (see the Relative widget section above).
+class-estimated lap time, class short name, raw class colour from the sim),
+`SessionTypesByNum`, and the player's own `PlayerSetupName`/
+`PlayerSetupIsModified` (drives the Setup widget). Refreshed whenever the sim
+re-broadcasts session info. `RelativeRow` carries the same driver fields plus
+the parsed `LicenseTier`, `IRatingTier`, and normalised `ClassColorHex` used
+for the relative widget's colour coding (see the Relative widget section
+above).
 
 **`ITelemetrySource`** contract — `TelemetryReceived`, `SessionMetadataReceived`,
 `ConnectionChanged`, `ErrorOccurred` events, plus `Start()`/`Stop()`. Events
@@ -214,6 +267,8 @@ fire on background threads; all marshalling to the UI thread happens in
   the roster, and reads each driver's `CarClassShortName` and `CarClassColor`
   (iRacing's own per-class colour, normalised by `RatingFormat.
   NormalizeHexColor`) for the relative widget's class colouring.
+- Also reads the player's own `DriverInfo.DriverSetupName` and
+  `DriverSetupIsModified` for the Setup widget.
 
 **`SimulatedTelemetrySource`** (`--demo`): drives the app without iRacing
 running, on a `System.Threading.Timer` ticking at the same ~15Hz as live
@@ -230,7 +285,12 @@ mode.
 - Player laps run ~15s so estimates populate within seconds of starting.
 - Simulated fuel burn varies per lap (`sin` modulation) so average and
   last-lap figures differ, the way real telemetry does.
-- Session is a ~4 minute timed race (see Fuel widget limitations above).
+- Session is a ~4 minute timed race (see Fuel widget limitations above),
+  session type starting at "Race" (`DemoSessions[2]`) to match that scenario.
+  The dev panel's "Cycle session" control steps through Practice → Open
+  Qualify → Race, each paired with a matching setup file name
+  (`practice_setup.sto` / `qualify_setup.sto` / `race_setup.sto`), and bumps
+  the session number each time so the Setup widget's flash re-triggers.
 - The field is a mutable `List<SimDriver>`, not a fixed array — see
   "Dev experience" below for how it's grown/shrunk live. Also implements
   `IDemoControls`, which the app checks for at startup to decide whether to
@@ -250,8 +310,9 @@ stop the app was closing the terminal that launched it.
   tray icon type).
 - Icon is drawn at runtime (a navy circle with an azure dot, matching the
   app palette) rather than shipped as an asset file.
-- Context menu: **Show Relative**, **Show Fuel**, **Dev Controls** (demo mode
-  only), **Exit**. Double-click the icon = Show Relative.
+- Context menu: **Show Relative**, **Show Fuel**, **Show Setup**, **Dev
+  Controls** (demo mode only), **Exit**. Double-click the icon = Show
+  Relative.
 - The app runs under `ShutdownMode="OnExplicitShutdown"`: closing a widget
   window hides it (`App.HideInsteadOfClose`) rather than destroying it, so
   the tray's Show items always work. The tray's **Exit** (or any window's
@@ -274,6 +335,8 @@ control in live mode and doesn't appear there.
 | **Cycle wetness** | Steps through Dry → Very Lightly Wet → Moderately Wet → Very Wet → (wraps to Dry), to check the relative widget's wetness badge. |
 | **+ Incident** | Increments the player's incident count shown in the relative session strip. |
 | **Toggle player pit** | Flags the player's own row as pitting (surface `InPitStall`), to check the PIT badge and opacity dimming on the player's row specifically. |
+| **Cycle session** | Steps Practice → Open Qualify → Race → (wraps), each with its matching setup file, bumping the session number so the Setup widget's flash re-triggers. Resets the "modified" flag, matching a freshly loaded setup. |
+| **Toggle setup modified** | Flags the loaded setup as modified, to check the Setup widget's "MODIFIED" tag. |
 
 Implementation: `SimulatedTelemetrySource` implements `IDemoControls`
 (`src/IRacingOverlay.Infrastructure/Telemetry/`); all mutations happen under
@@ -309,7 +372,13 @@ control surface from then on.
 **`SessionFormat`**: `TimeRemaining` (`m:ss`/`h:mm:ss`, null for
 unlimited/negative), `IRating` (`n.nk` above 1000), `Delta` (explicit-sign
 1dp, e.g. `+1.2`/`-0.8`), `Wetness` (short badge text per `TrackWetness`
-level), `Temperature` (rounded whole degrees with `°`).
+level), `Temperature` (rounded whole degrees with `°`), `ResolveSessionType`
+(looks up and upper-cases the display name for a session number, falling
+back to `"SESSION"` — shared by the Relative and Setup widgets).
+
+**`SetupFormat`**: `DisplayName` strips the `.sto` extension from a setup
+file name (case-insensitive), or returns the placeholder for a null/blank
+name.
 
 **`RatingFormat`**: the relative widget's colour-coding logic, kept pure and
 testable in `Core` even though the actual brushes live in `App.xaml`.
@@ -378,7 +447,7 @@ drag-to-move + right-click-exit interaction pattern.
 
 ## Test coverage
 
-106 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+125 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -388,9 +457,11 @@ drag-to-move + right-click-exit interaction pattern.
 | `Fuel/FuelStrategyCalculatorTests.cs` | Fuel-to-finish, margin, add-fuel, save target, race-laps estimation (lap-limited and timed) |
 | `Fuel/LapTimeTrackerTests.cs` | Rolling lap-time average, jump/reset handling |
 | `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging, license/iRating tier and class colour propagation |
+| `Setup/SetupReminderTrackerTests.cs` | Race/Qualify type detection, flash window timing and boundary, session-change restart, first-frame-mid-session behaviour |
 | `Formatting/SessionFormatTests.cs` | Time/IRating/delta/wetness/temperature formatting |
 | `Formatting/TelemetryFormatTests.cs` | Gear, kph conversion, liters/laps placeholders |
 | `Formatting/RatingFormatTests.cs` | License tier parsing, iRating tier boundaries, CarClassColor normalisation (decimal-packed and hex forms) |
+| `Formatting/SetupFormatTests.cs` | Setup file name display formatting |
 
 ## Not yet implemented
 

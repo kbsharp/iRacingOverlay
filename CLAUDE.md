@@ -1,8 +1,9 @@
 # iRacing Overlay — working guide
 
 Lightweight, always-on-top WPF telemetry overlay for iRacing. MVP scope: build
-small, but leave clean seams to scale. Widgets so far: relative (flagship), fuel.
-A system tray icon controls the app; demo mode also shows a dev control panel.
+small, but leave clean seams to scale. Widgets so far: relative (flagship), fuel,
+setup (flashes for the first minute of Qualify/Race as a reminder). A system tray
+icon controls the app; demo mode also shows a dev control panel.
 
 ## Build & run
 
@@ -60,6 +61,12 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
 - SDK vars missing on older sim builds must **degrade gracefully** (see the
   `GetIntOrDefault`/`GetFloatOrDefault` helpers), never throw.
 - Format numbers with `InvariantCulture`; shared display logic goes in `Core/Formatting`.
+- **Flashing/pulsing UI** (e.g. the setup reminder): a `Storyboard` inside a `Style`'s
+  `DataTrigger.EnterActions` can't use `Storyboard.TargetName` to reach a sibling-named
+  brush - `Style` triggers only have access to the element the style is attached to. Give
+  that element its own local (non-shared, non-`StaticResource`) brush and target it via a
+  property path instead, e.g. `Storyboard.TargetProperty="(Border.Background).
+  (SolidColorBrush.Color)"`.
 - A widget window closing must **hide, not exit the app** — subscribe
   `Closing += HideInsteadOfClose` in `App.xaml.cs` and add the window to
   `TrayIconService` (see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)). Only
