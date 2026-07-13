@@ -63,6 +63,17 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         ("M. Alvarez", "91"), ("S. Lindqvist", "3"), ("D. Kowalski", "18"),
     ];
 
+    /// <summary>Session types the dev panel's "Cycle Session" control steps through,
+    /// each with the setup file you'd realistically have loaded for it - so cycling
+    /// forward simulates exactly the transition the setup-reminder widget guards
+    /// against (forgetting to swap off the practice/qualifying setup).</summary>
+    private static readonly (string Type, string SetupFile)[] DemoSessions =
+    [
+        ("Practice", "practice_setup.sto"),
+        ("Open Qualify", "qualify_setup.sto"),
+        ("Race", "race_setup.sto"),
+    ];
+
     private readonly object _gate = new();
     private readonly List<SimDriver> _field = [.. InitialField];
 
@@ -74,6 +85,12 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     private bool _playerInPits;
     private bool _connectionAnnounced;
     private int _extrasAdded;
+
+    // Starts already in "Race" to match this demo's original fixed behaviour
+    // (a short timed race, so the fuel widget has a healthy margin by default).
+    private int _sessionIndex = 2;
+    private int _sessionNum = 2;
+    private bool _setupModified;
 
     public event EventHandler<TelemetrySnapshot>? TelemetryReceived;
     public event EventHandler<SessionMetadata>? SessionMetadataReceived;
@@ -191,6 +208,25 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         }
     }
 
+    public string CycleSessionType()
+    {
+        lock (_gate)
+        {
+            _sessionIndex = (_sessionIndex + 1) % DemoSessions.Length;
+            _sessionNum++;
+            _setupModified = false; // a freshly "loaded" setup starts unmodified
+            return DemoSessions[_sessionIndex].Type;
+        }
+    }
+
+    public void ToggleSetupModified()
+    {
+        lock (_gate)
+        {
+            _setupModified = !_setupModified;
+        }
+    }
+
     private void Tick(object? state)
     {
         TelemetrySnapshot snapshot;
@@ -270,7 +306,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         return new TelemetrySnapshot
         {
             SessionTimeSeconds = _sessionTime,
-            SessionNum = 0,
+            SessionNum = _sessionNum,
             // A ~4 minute timed race so fuel-to-finish shows a healthy margin by default.
             SessionTimeRemainSeconds = Math.Max(0, 4 * 60 - _sessionTime),
             SessionLapsRemain = -1,
@@ -308,7 +344,24 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
                 });
         }
 
-        return new SessionMetadata(drivers, new Dictionary<int, string> { [0] = "Race" });
+        int sessionNum;
+        string sessionType;
+        string setupFile;
+        bool setupModified;
+
+        lock (_gate)
+        {
+            sessionNum = _sessionNum;
+            sessionType = DemoSessions[_sessionIndex].Type;
+            setupFile = DemoSessions[_sessionIndex].SetupFile;
+            setupModified = _setupModified;
+        }
+
+        return new SessionMetadata(
+            drivers,
+            new Dictionary<int, string> { [sessionNum] = sessionType },
+            setupFile,
+            setupModified);
     }
 
     private sealed record SimDriver(

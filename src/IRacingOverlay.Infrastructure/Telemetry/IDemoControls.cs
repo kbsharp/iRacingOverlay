@@ -34,4 +34,12 @@ public interface IDemoControls
 
     /// <summary>Flips whether the player's own car is shown as pitting.</summary>
     void TogglePlayerPit();
+
+    /// <summary>Advances Practice -> Qualify -> Race -> Practice, each with its own
+    /// matching setup file, as a new "session" (bumping the session number so the
+    /// setup-reminder flash restarts). Returns the new session type name.</summary>
+    string CycleSessionType();
+
+    /// <summary>Flips whether the loaded setup is shown as modified.</summary>
+    void ToggleSetupModified();
 }

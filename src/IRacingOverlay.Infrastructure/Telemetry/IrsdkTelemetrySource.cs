@@ -88,7 +88,11 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
             sessionTypes[session.SessionNum] = session.SessionType ?? string.Empty;
         }
 
-        SessionMetadataReceived?.Invoke(this, new SessionMetadata(drivers, sessionTypes));
+        var setupName = info.DriverInfo?.DriverSetupName ?? string.Empty;
+        var setupIsModified = (info.DriverInfo?.DriverSetupIsModified ?? 0) != 0;
+
+        SessionMetadataReceived?.Invoke(
+            this, new SessionMetadata(drivers, sessionTypes, setupName, setupIsModified));
     }
 
     private void HandleTelemetryData()
