@@ -18,6 +18,8 @@ public sealed class DevControlViewModel : ObservableObject
 
     private string _carCountText;
     private string _wetnessText = SessionFormat.Wetness(TrackWetness.VeryLightlyWet);
+    private string _sessionTypeText = "RACE";
+    private bool _isSetupModified;
 
     public DevControlViewModel(IDemoControls controls)
     {
@@ -32,6 +34,16 @@ public sealed class DevControlViewModel : ObservableObject
         CycleWetnessCommand = new RelayCommand(() => WetnessText = SessionFormat.Wetness(_controls.CycleWetness()));
         AddIncidentCommand = new RelayCommand(_controls.AddIncident);
         TogglePlayerPitCommand = new RelayCommand(_controls.TogglePlayerPit);
+        CycleSessionCommand = new RelayCommand(() =>
+        {
+            SessionTypeText = _controls.CycleSessionType().ToUpperInvariant();
+            IsSetupModified = false; // CycleSessionType resets this in the source too
+        });
+        ToggleSetupModifiedCommand = new RelayCommand(() =>
+        {
+            _controls.ToggleSetupModified();
+            IsSetupModified = !IsSetupModified;
+        });
     }
 
     public ICommand AddCarCommand { get; }
@@ -50,6 +62,10 @@ public sealed class DevControlViewModel : ObservableObject
 
     public ICommand TogglePlayerPitCommand { get; }
 
+    public ICommand CycleSessionCommand { get; }
+
+    public ICommand ToggleSetupModifiedCommand { get; }
+
     public string CarCountText
     {
         get => _carCountText;
@@ -60,6 +76,18 @@ public sealed class DevControlViewModel : ObservableObject
     {
         get => _wetnessText;
         private set => SetProperty(ref _wetnessText, value);
+    }
+
+    public string SessionTypeText
+    {
+        get => _sessionTypeText;
+        private set => SetProperty(ref _sessionTypeText, value);
+    }
+
+    public bool IsSetupModified
+    {
+        get => _isSetupModified;
+        private set => SetProperty(ref _isSetupModified, value);
     }
 
     private string FormatCarCount() => $"{_controls.CarCount} cars ({_controls.MinCarCount}-{_controls.MaxCarCount})";

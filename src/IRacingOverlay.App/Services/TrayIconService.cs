@@ -18,12 +18,14 @@ public sealed class TrayIconService : IDisposable
     public TrayIconService(
         System.Windows.Window relativeWindow,
         System.Windows.Window fuelWindow,
+        System.Windows.Window setupWindow,
         System.Windows.Window? devControlWindow,
         Action requestExit)
     {
         var menu = new ContextMenuStrip();
         menu.Items.Add("Show Relative", null, (_, _) => Reveal(relativeWindow));
         menu.Items.Add("Show Fuel", null, (_, _) => Reveal(fuelWindow));
+        menu.Items.Add("Show Setup", null, (_, _) => Reveal(setupWindow));
 
         if (devControlWindow is not null)
         {
