@@ -425,6 +425,9 @@ test-results/
 # Mac bundle stuff
 *.dmg
 *.app
+# The '*.app' rule above matches our IRacingOverlay.App project folder on
+# Windows' case-insensitive filesystem - re-include it.
+!IRacingOverlay.App/
 
 # content below from: https://github.com/github/gitignore/blob/master/Global/macOS.gitignore
 # General
