@@ -1,18 +1,11 @@
-﻿using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace IRacingOverlay.App;
 
 /// <summary>
-/// Interaction logic for MainWindow.xaml
+/// The overlay window: borderless, transparent, always on top. Drag it
+/// anywhere with the left mouse button; right-click for the exit menu.
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -20,4 +13,23 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
     }
+
+    private void OnDragWindow(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        try
+        {
+            DragMove();
+        }
+        catch (InvalidOperationException)
+        {
+            // The button was released between the event and the DragMove call.
+        }
+    }
+
+    private void OnExit(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
 }
