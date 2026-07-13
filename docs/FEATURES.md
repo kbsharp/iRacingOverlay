@@ -183,14 +183,84 @@ fire on background threads; all marshalling to the UI thread happens in
 **`SimulatedTelemetrySource`** (`--demo`): drives the app without iRacing
 running, on a `System.Threading.Timer` ticking at the same ~15Hz as live
 mode.
-- A fixed 9-car field (`Field`) with names, car numbers, iRatings, licenses,
-  and slightly different lap times, defined so one car ends up a lap ahead
-  (D. Whitmore), one a lap down (K. Larsen), and one parked in the pits
-  (C. Ibarra) — enough variety to see every relative widget state at once.
+- Starts with a 9-car field (`InitialField`) with names, car numbers,
+  iRatings, licenses, and slightly different lap times, defined so one car
+  ends up a lap ahead (D. Whitmore), one a lap down (K. Larsen), and one
+  parked in the pits (C. Ibarra) — enough variety to see every relative
+  widget state at once.
 - Player laps run ~15s so estimates populate within seconds of starting.
 - Simulated fuel burn varies per lap (`sin` modulation) so average and
   last-lap figures differ, the way real telemetry does.
 - Session is a ~4 minute timed race (see Fuel widget limitations above).
+- The field is a mutable `List<SimDriver>`, not a fixed array — see
+  "Dev experience" below for how it's grown/shrunk live. Also implements
+  `IDemoControls`, which the app checks for at startup to decide whether to
+  show the dev control panel.
+
+## Dev experience
+
+### System tray icon — `TrayIconService`
+
+Runs in both live and demo mode. Solves two problems: the widget windows are
+borderless/topmost with no taskbar entry (so a stray Alt+F4 or a fullscreen
+game can hide one with no obvious way back), and previously the *only* way to
+stop the app was closing the terminal that launched it.
+
+- Built on `System.Windows.Forms.NotifyIcon` (the `App` project has
+  `UseWindowsForms` enabled alongside `UseWPF` for this — WPF has no native
+  tray icon type).
+- Icon is drawn at runtime (a navy circle with an azure dot, matching the
+  app palette) rather than shipped as an asset file.
+- Context menu: **Show Relative**, **Show Fuel**, **Dev Controls** (demo mode
+  only), **Exit**. Double-click the icon = Show Relative.
+- The app runs under `ShutdownMode="OnExplicitShutdown"`: closing a widget
+  window hides it (`App.HideInsteadOfClose`) rather than destroying it, so
+  the tray's Show items always work. The tray's **Exit** (or any window's
+  right-click **Exit**) is the only path that actually ends the process
+  (`App.RequestExit`).
+- Windows hides newly created tray icons behind the taskbar's `^` overflow
+  arrow by default — expected OS behaviour, not a bug.
+
+### Dev control panel — `DevControlWindow` / `DevControlViewModel` / `IDemoControls`
+
+Shown automatically alongside the other widgets, **only when running with
+`--demo`** — it drives `SimulatedTelemetrySource` live, so it has nothing to
+control in live mode and doesn't appear there.
+
+| Control | Effect |
+|---|---|
+| **+ Add car** / **− Remove** | Grows/shrinks the simulated field, 3-20 cars (`MinCarCount`/`MaxCarCount`). Extra cars are drawn from an 11-name reserve roster; removing always drops the most recently added car. |
+| **− 5 L** / **+ 5 L** | Adjusts player fuel, clamped to a 65 L tank capacity. Adding fuel mid-lap exercises the same refuel-detection path (`FuelCalculator`'s 0.2 L threshold) that a real pit stop would. |
+| **Set critical (2 L)** | Drops fuel straight to 2 L, to check the fuel widget's red "LAPS SHORT" state without waiting for a real burn-down. |
+| **Cycle wetness** | Steps through Dry → Very Lightly Wet → Moderately Wet → Very Wet → (wraps to Dry), to check the relative widget's wetness badge. |
+| **+ Incident** | Increments the player's incident count shown in the relative session strip. |
+| **Toggle player pit** | Flags the player's own row as pitting (surface `InPitStall`), to check the PIT badge and opacity dimming on the player's row specifically. |
+
+Implementation: `SimulatedTelemetrySource` implements `IDemoControls`
+(`src/IRacingOverlay.Infrastructure/Telemetry/`); all mutations happen under
+the same lock the background timer thread uses to read state, since
+dev-panel clicks (UI thread) and telemetry generation (timer thread) touch
+the same fields concurrently.
+
+**A real bug shipped and was caught here:** `AddCar()` originally indexed its
+name/number lookup by `currentFieldSize - initialFieldSize`, which goes
+negative (→ `IndexOutOfRangeException`, crashing the whole app) once
+`RemoveCar()` had shrunk the field below its initial 9. Fixed by indexing off
+a monotonically-increasing counter instead of the current field size. Caught
+via Windows Event Log forensics after a launched instance crashed silently,
+then confirmed fixed with a throwaway console harness hammering
+`AddCar`/`RemoveCar` in random order for 5000 iterations plus the specific
+drain-to-floor-then-regrow shape. See
+[DEVELOPMENT.md](DEVELOPMENT.md#dev-control-panel-demo-mode) for why this
+file has no permanent automated tests and how to stress-test a change to it
+anyway.
+
+### Launch scripts — `scripts/run-demo.ps1`, `scripts/run-live.ps1`
+
+Build the app and start it with `Start-Process` (a genuinely independent
+process, not a child of the launching shell), so the terminal can be closed
+immediately afterwards without stopping the app — the tray icon is the
+control surface from then on.
 
 ## Formatting helpers (`Core.Formatting`)
 
@@ -218,8 +288,10 @@ visual style:
   colouring.
 - `Caption` and `Value` styles for the small-uppercase-label /
   large-number pattern used throughout both widgets.
+- `DevButton` — flat, rounded button style used by the dev control panel
+  (accent-tinted on hover, dimmed when disabled).
 
-Both windows share: `DropShadowEffect` for panel lift, `CornerRadius="16"`,
+All windows share: `DropShadowEffect` for panel lift, `CornerRadius="16"`,
 `BooleanToVisibilityConverter` (`BoolToVis`) for conditional badges, and the
 drag-to-move + right-click-exit interaction pattern.
 
@@ -242,5 +314,6 @@ drag-to-move + right-click-exit interaction pattern.
 
 Tracked in the [README roadmap](../README.md#roadmap): radar/spotter widget,
 standings widget, delta bar, multiclass colouring on the relative,
-drag-to-resize + persisted window layout, click-through mode, and a settings
-surface (units, refresh rate, widget scale).
+drag-to-resize + persisted window layout, click-through mode, pinning/auto-
+showing the tray icon, running at Windows startup, and a settings surface
+(units, refresh rate, widget scale).

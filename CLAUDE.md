@@ -2,6 +2,7 @@
 
 Lightweight, always-on-top WPF telemetry overlay for iRacing. MVP scope: build
 small, but leave clean seams to scale. Widgets so far: relative (flagship), fuel.
+A system tray icon controls the app; demo mode also shows a dev control panel.
 
 ## Build & run
 
@@ -41,7 +42,10 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
 - **`Infrastructure`** — `ITelemetrySource` adapters: IRSDKSharper (live) and the
   simulated `--demo` source. Reuse buffers for the `CarIdx*` arrays; no per-frame allocs.
 - **`App`** — WPF windows + view models + the composition root in `App.xaml.cs`
-  (manual DI; swap in a container only when wiring outgrows it).
+  (manual DI; swap in a container only when wiring outgrows it). Also has
+  `UseWindowsForms` on (for the tray icon) alongside `UseWPF` — new files here
+  must fully-qualify `System.Windows.Application` and `System.Drawing.Color`,
+  both ambiguous between the two SDKs' global usings.
 
 ## Patterns to keep
 
@@ -54,6 +58,16 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
 - SDK vars missing on older sim builds must **degrade gracefully** (see the
   `GetIntOrDefault`/`GetFloatOrDefault` helpers), never throw.
 - Format numbers with `InvariantCulture`; shared display logic goes in `Core/Formatting`.
+- A widget window closing must **hide, not exit the app** — subscribe
+  `Closing += HideInsteadOfClose` in `App.xaml.cs` and add the window to
+  `TrayIconService` (see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)). Only
+  `App.RequestExit()` should ever call `Shutdown()`.
+- New demo-only controls go on `IDemoControls`, implemented by
+  `SimulatedTelemetrySource` under its `_gate` lock (mutated from the UI thread,
+  read from the background timer thread every tick). This file has no automated
+  tests — a real `IndexOutOfRangeException` shipped here once. Stress-test any
+  change with a throwaway console harness before trusting it; see
+  [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#dev-control-panel-demo-mode).
 
 ## Behaviour
 

@@ -33,9 +33,12 @@ Directory.Build.props          # shared MSBuild settings (see below)
 src/
   IRacingOverlay.Core/          # domain logic - pure, tested, no UI/SDK deps
   IRacingOverlay.Infrastructure/# ITelemetrySource adapters (live + demo)
-  IRacingOverlay.App/           # WPF windows, view models, composition root
+  IRacingOverlay.App/           # WPF windows, view models, composition root, tray icon
 tests/
   IRacingOverlay.Core.Tests/    # xUnit tests for Core
+scripts/
+  run-demo.ps1                  # build + launch, detached from the terminal (--demo)
+  run-live.ps1                  # build + launch, detached from the terminal
 ```
 
 `Directory.Build.props` applies `Nullable`, `ImplicitUsings`, and
@@ -46,7 +49,7 @@ solution-wide, by design.
 |---|---|---|
 | `IRacingOverlay.Core` | `net8.0` | — |
 | `IRacingOverlay.Infrastructure` | `net8.0-windows` | `Core`, IRSDKSharper |
-| `IRacingOverlay.App` | `net8.0-windows` (WPF) | `Core`, `Infrastructure`, CommunityToolkit.Mvvm |
+| `IRacingOverlay.App` | `net8.0-windows` (WPF + `UseWindowsForms`) | `Core`, `Infrastructure`, CommunityToolkit.Mvvm |
 | `IRacingOverlay.Core.Tests` | `net8.0` | `Core`, xUnit |
 
 Dependencies point inward only: `App → Infrastructure → Core`. `Core` never
@@ -60,16 +63,29 @@ dotnet restore                 # first time / after pulling
 dotnet build                   # whole solution; warnings are errors
 dotnet test                    # Core.Tests only project with tests
 
-# Run the app
-dotnet run --project src/IRacingOverlay.App -- --demo   # simulated field, no iRacing
-dotnet run --project src/IRacingOverlay.App              # live, waits for iRacing
+# Run the app - detached from the terminal (see "Window lifecycle" below)
+.\scripts\run-demo.ps1
+.\scripts\run-live.ps1
 
-# Or run the built exe directly (useful for scripted smoke tests)
+# Or run it tied to the terminal, e.g. to see startup exceptions live
+dotnet run --project src/IRacingOverlay.App -- --demo
+dotnet run --project src/IRacingOverlay.App
+
+# Or the built exe directly (useful for scripted smoke tests)
 src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.exe --demo
 ```
 
 There's no watch/hot-reload script set up — `dotnet build` after each change is
 fast enough (a couple of seconds) that it hasn't been worth adding.
+
+**Before rebuilding, make sure no instance of the app is still running** — `dotnet
+build` will fail with `MSB3026: ... The file is locked by "IRacingOverlay (pid)"`
+if one holds the output DLLs open. This is easy to hit now that the app survives
+window-close (see below) and detached launches don't visibly tie up a terminal:
+
+```powershell
+Get-Process IRacingOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
+```
 
 ## Debugging
 
@@ -100,6 +116,64 @@ fast enough (a couple of seconds) that it hasn't been worth adding.
   `app.ini` (on by default) and that the sim is running in windowed or
   borderless mode — overlays don't draw over exclusive fullscreen.
 
+## Window lifecycle & tray icon
+
+The app runs under `ShutdownMode="OnExplicitShutdown"` (`App.xaml`), not the WPF
+default. This means:
+
+- Closing a widget window (Alt+F4, or anything that would normally destroy it)
+  is intercepted by `App.HideInsteadOfClose` and just **hides** it instead. The
+  window object is never destroyed, so it can be shown again.
+- The **only** path that actually ends the process is `App.RequestExit()`, which
+  sets a flag and calls `Shutdown()`. It's wired to the tray icon's Exit item and
+  every window's right-click **Exit** menu item — never call
+  `System.Windows.Application.Current.Shutdown()` directly from a new window, or
+  it'll bypass the flag and `HideInsteadOfClose` will (harmlessly, but
+  confusingly) try to cancel a shutdown that's already in progress.
+- `TrayIconService` (`src/IRacingOverlay.App/Services/`) owns the
+  `System.Windows.Forms.NotifyIcon` and its context menu (Show Relative, Show
+  Fuel, Dev Controls if present, Exit). This exists because the widget windows
+  are borderless/topmost with no taskbar entry — they can get lost behind a
+  fullscreen game with no way back except the tray.
+- **Type ambiguity gotcha:** the `App` project has both `UseWPF` and
+  `UseWindowsForms` on, which both contribute a global `using` for a type named
+  `Application` (`System.Windows.Application` vs `System.Windows.Forms.
+  Application`) and a `Color` type (`System.Windows.Media.Color` vs
+  `System.Drawing.Color`). Any new file referencing either must qualify it fully
+  (`System.Windows.Application.Current`, `System.Drawing.Color.Transparent`) —
+  the compiler error (`CS0104`) is clear when this is missed, but it's easy to
+  not expect on a WPF project.
+- Windows hides a **newly created tray icon** behind the taskbar's `^` overflow
+  chevron the first time it appears — this is OS behavior, not a bug in this
+  app. There's no supported way to auto-pin it from code.
+
+## Dev control panel (demo mode)
+
+`SimulatedTelemetrySource` implements `IDemoControls`
+(`src/IRacingOverlay.Infrastructure/Telemetry/`) — live knobs for exercising the
+app without iRacing: add/remove cars, adjust fuel, cycle wetness, add an
+incident, toggle the player into the pits. `App.xaml.cs` checks whether the
+active telemetry source implements `IDemoControls` and, if so (i.e. `--demo`
+was passed), builds a `DevControlViewModel` and shows `DevControlWindow`. In
+live mode neither exists — there's nothing to control.
+
+**When adding a new control:** add the method to `IDemoControls`, implement it
+in `SimulatedTelemetrySource` under its existing `_gate` lock (the field list,
+fuel, wetness, etc. are all mutated from the UI thread via dev-panel button
+clicks while the background timer thread reads them every tick — both sides
+must lock), wire a `RelayCommand` in `DevControlViewModel`, and add a button to
+`DevControlWindow.xaml` using the shared `DevButton` style.
+
+**This code has no automated tests** (see Testing conventions below) and a real
+bug shipped here once: `AddCar()` indexed a lookup array using the *current*
+field size, which broke as soon as `RemoveCar()` had shrunk the field below its
+initial count first. It was only caught by manually soak-testing the running
+app. Before trusting a change to this file, write a throwaway console harness
+that constructs `SimulatedTelemetrySource` directly and hammers the control
+methods in random order for a few thousand iterations, plus the specific
+"shrink to the floor, then grow past the original size" case — that's exactly
+the shape of bug this file is prone to, and it's cheap to check.
+
 ## Adding a new widget
 
 The pattern every widget so far follows (relative, fuel):
@@ -127,7 +201,10 @@ The pattern every widget so far follows (relative, fuel):
 6. **Wire it up** in `App.xaml.cs` (the composition root): construct the view
    model, subscribe it to the telemetry source's events (marshalled onto
    `Dispatcher`), construct the window with the view model as `DataContext`,
-   call `.Show()`.
+   subscribe `window.Closing += HideInsteadOfClose;` (see "Window lifecycle"
+   above — skipping this means Alt+F4 on the new window kills the whole app),
+   call `.Show()`, and add it to the `TrayIconService` constructor call so it
+   gets a "Show <Widget>" menu item.
 7. **Update the docs:** add the widget to [FEATURES.md](FEATURES.md) and, if the
    headline feature list changed, the [README](../README.md).
 
@@ -154,6 +231,10 @@ intermediate one is broken.
 |---|---|
 | `dotnet : term not recognized` | SDK not on PATH — see Prerequisites above |
 | Build fails on a warning | `TreatWarningsAsErrors` is on by design — fix the warning, don't suppress it |
+| Build fails with `MSB3026 ... locked by "IRacingOverlay (pid)"` | A previous run is still alive (it no longer exits when its window closes) — `Get-Process IRacingOverlay \| Stop-Process -Force` |
+| `CS0104` ambiguous reference to `Application`/`Color` | `UseWPF` + `UseWindowsForms` both contribute that type name — fully qualify it, see "Window lifecycle" above |
 | Demo window never appears | Check the process didn't exit immediately (`echo $?`/exit code) — a startup exception would show as a fast exit |
+| Closing a widget window doesn't quit the app | Expected — it hides, not closes. Use the tray icon to bring it back, or its Exit to actually quit |
+| No tray icon visible | Windows hides new tray icons behind the taskbar's `^` overflow arrow the first time — click it |
 | Live mode stuck on "Waiting for iRacing" | `irsdkEnableMem=1` not set, sim not running, or sim is in exclusive fullscreen |
 | A telemetry value is always 0/default in live mode | The SDK variable may not exist on your car/track/build — check it's read via `GetXOrDefault` in `IrsdkTelemetrySource`, not a bare `data.GetX(...)` which would throw |
