@@ -5,6 +5,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- For the system tray icon (System.Windows.Forms.NotifyIcon) - WPF has no native equivalent. -->
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>IRacingOverlay</AssemblyName>
   </PropertyGroup>
 

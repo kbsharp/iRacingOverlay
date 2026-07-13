@@ -31,5 +31,5 @@ public partial class FuelWindow : Window
         }
     }
 
-    private void OnExit(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
+    private void OnExit(object sender, RoutedEventArgs e) => ((App)System.Windows.Application.Current).RequestExit();
 }
