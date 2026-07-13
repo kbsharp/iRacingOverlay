@@ -25,6 +25,12 @@
         <SolidColorBrush x:Key="Positive" Color="#33D689" />
         <SolidColorBrush x:Key="Negative" Color="#FF5C6C" />
         <SolidColorBrush x:Key="Warning" Color="#FFB03D" />
+        <!-- Player row background wash - warm, not blue, so it reads distinctly
+             from the accent colour used for badges/branding elsewhere. Stronger
+             than a typical tint so it stays the clear "this is you" row even
+             next to the now-colourful license/iRating badges and class bars. -->
+        <SolidColorBrush x:Key="PlayerHighlight" Color="#5CFFB03D" />
+        <SolidColorBrush x:Key="PlayerBorder" Color="#B0FFB03D" />
 
         <SolidColorBrush x:Key="TextPrimary" Color="#F6F9FF" />
         <SolidColorBrush x:Key="TextSecondary" Color="#C3D2EA" />
@@ -32,6 +38,23 @@
 
         <SolidColorBrush x:Key="LapAheadText" Color="#FF7A85" />
         <SolidColorBrush x:Key="LapBehindText" Color="#6FB4FF" />
+
+        <!-- iRacing's own license-class colours, so the badge reads instantly to
+             anyone who races there. Reuses Negative/Positive/Accent where the
+             tiers already line up (Rookie=red, B=green, A=blue). -->
+        <SolidColorBrush x:Key="LicenseRookie" Color="#FF5C6C" />
+        <SolidColorBrush x:Key="LicenseD" Color="#FF9640" />
+        <SolidColorBrush x:Key="LicenseC" Color="#FFD84D" />
+        <SolidColorBrush x:Key="LicenseB" Color="#33D689" />
+        <SolidColorBrush x:Key="LicenseA" Color="#39A7FF" />
+        <SolidColorBrush x:Key="LicensePro" Color="#E8B84D" />
+
+        <!-- iRating bands - a distinct cool/vivid family so the badge is never
+             confused with the license badge sitting next to it. -->
+        <SolidColorBrush x:Key="IRatingLow" Color="#7C8CAB" />
+        <SolidColorBrush x:Key="IRatingMid" Color="#3FC7C0" />
+        <SolidColorBrush x:Key="IRatingHigh" Color="#9B7BFA" />
+        <SolidColorBrush x:Key="IRatingElite" Color="#E8579E" />
 
         <!-- Small uppercase field caption -->
         <Style x:Key="Caption" TargetType="TextBlock">
@@ -45,6 +68,87 @@
             <Setter Property="FontSize" Value="19" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+        </Style>
+
+        <!-- License badge chip: tinted background + vivid text, coloured by
+             RelativeRowViewModel.LicenseTier -->
+        <Style x:Key="LicenseBadgeBackground" TargetType="Border">
+            <Setter Property="Background" Value="#14FFFFFF" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="Rookie">
+                    <Setter Property="Background" Value="#33FF5C6C" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="D">
+                    <Setter Property="Background" Value="#33FF9640" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="C">
+                    <Setter Property="Background" Value="#33FFD84D" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="B">
+                    <Setter Property="Background" Value="#3333D689" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="A">
+                    <Setter Property="Background" Value="#3339A7FF" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="Pro">
+                    <Setter Property="Background" Value="#33E8B84D" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="LicenseBadgeText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="Rookie">
+                    <Setter Property="Foreground" Value="{StaticResource LicenseRookie}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="D">
+                    <Setter Property="Foreground" Value="{StaticResource LicenseD}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="C">
+                    <Setter Property="Foreground" Value="{StaticResource LicenseC}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="B">
+                    <Setter Property="Foreground" Value="{StaticResource LicenseB}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="A">
+                    <Setter Property="Foreground" Value="{StaticResource LicenseA}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LicenseTier}" Value="Pro">
+                    <Setter Property="Foreground" Value="{StaticResource LicensePro}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- iRating badge chip: same pattern, driven by IRatingTier -->
+        <Style x:Key="IRatingBadgeBackground" TargetType="Border">
+            <Setter Property="Background" Value="#14FFFFFF" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IRatingTier}" Value="Mid">
+                    <Setter Property="Background" Value="#333FC7C0" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IRatingTier}" Value="High">
+                    <Setter Property="Background" Value="#339B7BFA" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IRatingTier}" Value="Elite">
+                    <Setter Property="Background" Value="#33E8579E" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="IRatingBadgeText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource IRatingLow}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IRatingTier}" Value="Mid">
+                    <Setter Property="Foreground" Value="{StaticResource IRatingMid}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IRatingTier}" Value="High">
+                    <Setter Property="Foreground" Value="{StaticResource IRatingHigh}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IRatingTier}" Value="Elite">
+                    <Setter Property="Foreground" Value="{StaticResource IRatingElite}" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <!-- Flat button used by the dev control panel -->

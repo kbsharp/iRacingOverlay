@@ -2,6 +2,11 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Relative;
+using Brush = System.Windows.Media.Brush;
+using Brushes = System.Windows.Media.Brushes;
+using Color = System.Windows.Media.Color;
+using ColorConverter = System.Windows.Media.ColorConverter;
+using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 
 namespace IRacingOverlay.App.ViewModels;
 
@@ -12,6 +17,8 @@ namespace IRacingOverlay.App.ViewModels;
 /// </summary>
 public sealed class RelativeRowViewModel : ObservableObject
 {
+    private static readonly Brush FallbackClassBrush = Brushes.Gray;
+
     private bool _isVisible;
     private bool _isPlayer;
     private bool _inPits;
@@ -19,7 +26,11 @@ public sealed class RelativeRowViewModel : ObservableObject
     private string _carNumberText = string.Empty;
     private string _name = string.Empty;
     private string _license = string.Empty;
+    private LicenseTier _licenseTier;
     private string _iRatingText = string.Empty;
+    private IRatingTier _iRatingTier;
+    private string _classShortName = string.Empty;
+    private Brush _classColorBrush = FallbackClassBrush;
     private string _deltaText = string.Empty;
     private LapDifference _lapDifference;
 
@@ -65,10 +76,36 @@ public sealed class RelativeRowViewModel : ObservableObject
         private set => SetProperty(ref _license, value);
     }
 
+    public LicenseTier LicenseTier
+    {
+        get => _licenseTier;
+        private set => SetProperty(ref _licenseTier, value);
+    }
+
     public string IRatingText
     {
         get => _iRatingText;
         private set => SetProperty(ref _iRatingText, value);
+    }
+
+    public IRatingTier IRatingTier
+    {
+        get => _iRatingTier;
+        private set => SetProperty(ref _iRatingTier, value);
+    }
+
+    public string ClassShortName
+    {
+        get => _classShortName;
+        private set => SetProperty(ref _classShortName, value);
+    }
+
+    /// <summary>The car's class colour as reported by the sim, or a neutral grey
+    /// fallback for single-class sessions and malformed/missing data.</summary>
+    public Brush ClassColorBrush
+    {
+        get => _classColorBrush;
+        private set => SetProperty(ref _classColorBrush, value);
     }
 
     public string DeltaText
@@ -94,7 +131,11 @@ public sealed class RelativeRowViewModel : ObservableObject
         CarNumberText = row.CarNumber.Length > 0 ? "#" + row.CarNumber : string.Empty;
         Name = row.DisplayName;
         License = row.License;
+        LicenseTier = row.LicenseTier;
         IRatingText = row.IRating > 0 ? SessionFormat.IRating(row.IRating) : string.Empty;
+        IRatingTier = row.IRatingTier;
+        ClassShortName = row.ClassShortName;
+        ClassColorBrush = ParseClassColor(row.ClassColorHex);
         DeltaText = row.IsPlayer ? string.Empty : SessionFormat.Delta(row.DeltaSeconds);
         LapDifference = row.LapDifference;
     }
@@ -108,8 +149,32 @@ public sealed class RelativeRowViewModel : ObservableObject
         CarNumberText = string.Empty;
         Name = string.Empty;
         License = string.Empty;
+        LicenseTier = LicenseTier.Unknown;
         IRatingText = string.Empty;
+        IRatingTier = IRatingTier.Low;
+        ClassShortName = string.Empty;
+        ClassColorBrush = FallbackClassBrush;
         DeltaText = string.Empty;
         LapDifference = LapDifference.SameLap;
+    }
+
+    private static Brush ParseClassColor(string? hex)
+    {
+        if (hex is null)
+        {
+            return FallbackClassBrush;
+        }
+
+        try
+        {
+            var color = (Color)ColorConverter.ConvertFromString(hex);
+            var brush = new SolidColorBrush(color);
+            brush.Freeze();
+            return brush;
+        }
+        catch (FormatException)
+        {
+            return FallbackClassBrush;
+        }
     }
 }

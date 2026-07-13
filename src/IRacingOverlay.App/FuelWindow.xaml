@@ -22,9 +22,9 @@
     </Window.ContextMenu>
 
     <Grid Margin="16">
-    <Border Width="340"
-            Padding="20,15,20,17"
-            CornerRadius="16"
+    <Border Width="330"
+            Padding="18,12,18,13"
+            CornerRadius="14"
             Background="{StaticResource PanelBackground}"
             BorderBrush="{StaticResource PanelBorder}"
             BorderThickness="1">
@@ -34,7 +34,7 @@
         <StackPanel>
 
             <!-- header -->
-            <DockPanel Margin="0,0,0,12">
+            <DockPanel Margin="0,0,0,8">
                 <Ellipse Width="8" Height="8" VerticalAlignment="Center" DockPanel.Dock="Left">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
@@ -60,27 +60,27 @@
             </DockPanel>
 
             <!-- current fuel level, big, with laps of running left -->
-            <DockPanel Margin="0,0,0,14">
+            <DockPanel Margin="0,0,0,10">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Bottom">
                     <TextBlock Text="{Binding FuelLevelText}"
-                               FontSize="42"
+                               FontSize="34"
                                FontWeight="Bold"
                                Foreground="{StaticResource TextPrimary}" />
                     <TextBlock Text="L"
-                               Margin="7,0,0,8"
+                               Margin="6,0,0,6"
                                VerticalAlignment="Bottom"
-                               FontSize="16"
+                               FontSize="14"
                                Foreground="{StaticResource TextMuted}" />
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom">
                     <TextBlock Text="IN TANK" HorizontalAlignment="Right" Style="{StaticResource Caption}" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,1,0,0">
                         <TextBlock Text="{Binding FuelLapsText}"
-                                   FontSize="22"
+                                   FontSize="19"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource TextSecondary}" />
                         <TextBlock Text="laps"
-                                   Margin="5,0,0,3"
+                                   Margin="5,0,0,2"
                                    VerticalAlignment="Bottom"
                                    Style="{StaticResource Caption}" />
                     </StackPanel>
@@ -88,7 +88,7 @@
             </DockPanel>
 
             <!-- per-lap burn and race length -->
-            <Grid Margin="0,0,0,13">
+            <Grid Margin="0,0,0,9">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
@@ -109,19 +109,19 @@
                 </StackPanel>
             </Grid>
 
-            <Border Height="1" Background="{StaticResource Separator}" Margin="0,0,0,12" />
+            <Border Height="1" Background="{StaticResource Separator}" Margin="0,0,0,9" />
 
             <!-- fuel to finish + the headline margin badge -->
-            <DockPanel Margin="0,0,0,11">
+            <DockPanel Margin="0,0,0,8">
                 <StackPanel DockPanel.Dock="Left">
                     <TextBlock Text="TO FINISH" Style="{StaticResource Caption}" Margin="0,0,0,2" />
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding ToFinishText}"
-                                   FontSize="24"
+                                   FontSize="20"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource TextPrimary}" />
                         <TextBlock Text="L needed"
-                                   Margin="6,0,0,3"
+                                   Margin="6,0,0,2"
                                    VerticalAlignment="Bottom"
                                    Style="{StaticResource Caption}" />
                     </StackPanel>
@@ -130,7 +130,7 @@
                 <Border HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         CornerRadius="8"
-                        Padding="11,5"
+                        Padding="10,4"
                         Visibility="{Binding HasStrategy, Converter={StaticResource BoolToVis}}">
                     <Border.Style>
                         <Style TargetType="Border">
@@ -145,7 +145,7 @@
                     <StackPanel>
                         <TextBlock Text="{Binding MarginText}"
                                    HorizontalAlignment="Center"
-                                   FontSize="20"
+                                   FontSize="17"
                                    FontWeight="Bold">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
@@ -175,21 +175,21 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <TextBlock Text="ADD" VerticalAlignment="Bottom" Margin="0,0,7,3" Style="{StaticResource Caption}" />
+                    <TextBlock Text="ADD" VerticalAlignment="Bottom" Margin="0,0,6,2" Style="{StaticResource Caption}" />
                     <TextBlock Text="{Binding AddFuelText}"
-                               FontSize="17"
+                               FontSize="15"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource Accent}" />
-                    <TextBlock Text="L" Margin="4,0,0,3" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
+                    <TextBlock Text="L" Margin="3,0,0,2" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="SAVE TO" VerticalAlignment="Bottom" Margin="0,0,7,3" Style="{StaticResource Caption}" />
+                    <TextBlock Text="SAVE TO" VerticalAlignment="Bottom" Margin="0,0,6,2" Style="{StaticResource Caption}" />
                     <TextBlock Text="{Binding SaveTargetText}"
-                               FontSize="17"
+                               FontSize="15"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource TextSecondary}" />
-                    <TextBlock Text="/lap" Margin="4,0,0,3" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
+                    <TextBlock Text="/lap" Margin="3,0,0,2" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
                 </StackPanel>
             </Grid>
 

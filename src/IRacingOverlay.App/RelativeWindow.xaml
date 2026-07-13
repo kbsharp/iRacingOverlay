@@ -94,14 +94,16 @@
             <ItemsControl ItemsSource="{Binding Rows}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Height="32" CornerRadius="8" Margin="0,1">
+                        <Border Height="34" CornerRadius="8" Margin="0,1" BorderThickness="1">
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderBrush" Value="Transparent" />
                                     <Setter Property="Visibility" Value="Visible" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsPlayer}" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource AccentDim}" />
+                                            <Setter Property="Background" Value="{StaticResource PlayerHighlight}" />
+                                            <Setter Property="BorderBrush" Value="{StaticResource PlayerBorder}" />
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding IsVisible}" Value="False">
                                             <Setter Property="Visibility" Value="Hidden" />
@@ -113,21 +115,20 @@
                             <Grid VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="4" />
-                                    <ColumnDefinition Width="38" />
-                                    <ColumnDefinition Width="58" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="46" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="66" />
+                                    <ColumnDefinition Width="58" />
                                     <ColumnDefinition Width="58" />
                                     <ColumnDefinition Width="92" />
                                 </Grid.ColumnDefinitions>
 
-                                <!-- left accent bar on the player row -->
+                                <!-- class colour bar - straight from the sim's own CarClassColor -->
                                 <Border Grid.Column="0"
                                         Width="4"
                                         Margin="-20,4,0,4"
                                         CornerRadius="2,0,0,2"
-                                        Background="{StaticResource Accent}"
-                                        Visibility="{Binding IsPlayer, Converter={StaticResource BoolToVis}}" />
+                                        Background="{Binding ClassColorBrush}" />
 
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding PositionText}"
@@ -148,6 +149,7 @@
                                            VerticalAlignment="Center"
                                            FontSize="16"
                                            FontWeight="SemiBold"
+                                           Margin="0,0,6,0"
                                            TextTrimming="CharacterEllipsis">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
@@ -167,17 +169,29 @@
                                     </TextBlock.Style>
                                 </TextBlock>
 
-                                <TextBlock Grid.Column="4"
-                                           Text="{Binding License}"
-                                           VerticalAlignment="Center"
-                                           FontSize="12"
-                                           Foreground="{StaticResource TextMuted}" />
+                                <!-- license badge: coloured per iRacing's own license classes -->
+                                <Border Grid.Column="4"
+                                        CornerRadius="5"
+                                        Padding="5,2"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource LicenseBadgeBackground}">
+                                    <TextBlock Text="{Binding License}"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Style="{StaticResource LicenseBadgeText}" />
+                                </Border>
 
-                                <TextBlock Grid.Column="5"
-                                           Text="{Binding IRatingText}"
-                                           VerticalAlignment="Center"
-                                           FontSize="12"
-                                           Foreground="{StaticResource TextMuted}" />
+                                <!-- iRating badge: coloured by rating band -->
+                                <Border Grid.Column="5"
+                                        CornerRadius="5"
+                                        Padding="5,2"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource IRatingBadgeBackground}">
+                                    <TextBlock Text="{Binding IRatingText}"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Style="{StaticResource IRatingBadgeText}" />
+                                </Border>
 
                                 <StackPanel Grid.Column="6"
                                             Orientation="Horizontal"
