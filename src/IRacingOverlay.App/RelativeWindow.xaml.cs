@@ -4,12 +4,12 @@ using System.Windows.Input;
 namespace IRacingOverlay.App;
 
 /// <summary>
-/// The overlay window: borderless, transparent, always on top. Drag it
+/// The relative widget: borderless, transparent, always on top. Drag it
 /// anywhere with the left mouse button; right-click for the exit menu.
 /// </summary>
-public partial class MainWindow : Window
+public partial class RelativeWindow : Window
 {
-    public MainWindow()
+    public RelativeWindow()
     {
         InitializeComponent();
     }
