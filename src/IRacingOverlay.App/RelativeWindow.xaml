@@ -19,8 +19,8 @@
         </ContextMenu>
     </Window.ContextMenu>
 
+    <Grid Margin="16">
     <Border Width="640"
-            Margin="16"
             Padding="20,14,20,16"
             CornerRadius="16"
             Background="{StaticResource PanelBackground}"
@@ -208,4 +208,11 @@
 
         </StackPanel>
     </Border>
+    <Border Height="1"
+            Margin="1,1,1,0"
+            CornerRadius="16,16,0,0"
+            VerticalAlignment="Top"
+            Background="{StaticResource PanelTopHighlight}"
+            IsHitTestVisible="False" />
+    </Grid>
 </Window>
