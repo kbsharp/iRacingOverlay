@@ -1,0 +1,66 @@
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using IRacingOverlay.Core.Formatting;
+using IRacingOverlay.Core.Telemetry;
+using IRacingOverlay.Infrastructure.Telemetry;
+
+namespace IRacingOverlay.App.ViewModels;
+
+/// <summary>
+/// Drives <see cref="IDemoControls"/> so the field size, fuel level, track
+/// conditions, and player pit state can be changed live in demo mode,
+/// without touching code or rebuilding.
+/// </summary>
+public sealed class DevControlViewModel : ObservableObject
+{
+    private readonly IDemoControls _controls;
+
+    private string _carCountText;
+    private string _wetnessText = SessionFormat.Wetness(TrackWetness.VeryLightlyWet);
+
+    public DevControlViewModel(IDemoControls controls)
+    {
+        _controls = controls;
+        _carCountText = FormatCarCount();
+
+        AddCarCommand = new RelayCommand(() => { if (_controls.AddCar()) CarCountText = FormatCarCount(); });
+        RemoveCarCommand = new RelayCommand(() => { if (_controls.RemoveCar()) CarCountText = FormatCarCount(); });
+        DrainFuelCommand = new RelayCommand(() => _controls.AdjustFuel(-5f));
+        AddFuelCommand = new RelayCommand(() => _controls.AdjustFuel(5f));
+        SetCriticalFuelCommand = new RelayCommand(_controls.SetFuelCritical);
+        CycleWetnessCommand = new RelayCommand(() => WetnessText = SessionFormat.Wetness(_controls.CycleWetness()));
+        AddIncidentCommand = new RelayCommand(_controls.AddIncident);
+        TogglePlayerPitCommand = new RelayCommand(_controls.TogglePlayerPit);
+    }
+
+    public ICommand AddCarCommand { get; }
+
+    public ICommand RemoveCarCommand { get; }
+
+    public ICommand DrainFuelCommand { get; }
+
+    public ICommand AddFuelCommand { get; }
+
+    public ICommand SetCriticalFuelCommand { get; }
+
+    public ICommand CycleWetnessCommand { get; }
+
+    public ICommand AddIncidentCommand { get; }
+
+    public ICommand TogglePlayerPitCommand { get; }
+
+    public string CarCountText
+    {
+        get => _carCountText;
+        private set => SetProperty(ref _carCountText, value);
+    }
+
+    public string WetnessText
+    {
+        get => _wetnessText;
+        private set => SetProperty(ref _wetnessText, value);
+    }
+
+    private string FormatCarCount() => $"{_controls.CarCount} cars ({_controls.MinCarCount}-{_controls.MaxCarCount})";
+}
