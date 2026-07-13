@@ -2,8 +2,9 @@
 
 Lightweight, always-on-top WPF telemetry overlay for iRacing. MVP scope: build
 small, but leave clean seams to scale. Widgets so far: relative (flagship), fuel,
-setup (flashes for the first minute of Qualify/Race as a reminder). A system tray
-icon controls the app; demo mode also shows a dev control panel.
+setup (flashes for the first minute of Qualify/Race as a reminder), radar
+(blind-spot proximity, built on iRacing's own CarLeftRight spotter signal). A
+system tray icon controls the app; demo mode also shows a dev control panel.
 
 ## Build & run
 

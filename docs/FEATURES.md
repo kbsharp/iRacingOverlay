@@ -212,12 +212,59 @@ running.
   panel's "Cycle session" button to see Practice → Qualify → Race
   transitions and re-trigger it on demand.
 
+### Radar — `RadarWindow` / `RadarViewModel` / `RadarFormat`
+
+A blind-spot proximity indicator, RaceLab/LMU-style: a small car icon in the
+middle with a left and right zone either side of it that light up (and
+pulse) when there's a car alongside.
+
+**Layout:** 220px wide, same borderless/transparent/topmost/draggable
+behaviour as the others. Fixed position on first launch (`Left=80, Top=650`
+— below the setup widget).
+
+**How it works:** built entirely on iRacing's own `CarLeftRight` telemetry
+variable — the exact signal iRacing's built-in spotter uses, not an invented
+lateral-position model. `IrsdkTelemetrySource` reads it via
+`GetIntOrDefault(data, "CarLeftRight")` and casts to the `CarLeftRight` enum
+(`Off`, `Clear`, `CarLeft`, `CarRight`, `CarLeftRight`, `TwoCarsLeft`,
+`TwoCarsRight` — mirrors iRacing's own values exactly, confirmed by
+reflecting the installed IRSDKSharper package). `RadarFormat`'s pure
+classification functions (`HasCarLeft`, `HasCarRight`, `HasTwoCarsLeft`,
+`HasTwoCarsRight`, `IsActive`) turn that single enum into the four
+independent booleans the widget binds to.
+
+**Visual behaviour:**
+- Each side zone pulses a red wash (`#00→#B0FF5C6C`, 0.45s each way,
+  looping) continuously while a car is detected there - unlike the setup
+  widget's flash, this is **not time-limited**: the hazard indicator only
+  stops when the sim reports the car has left the zone.
+- A "2" badge appears on a zone for `TwoCarsLeft`/`TwoCarsRight`.
+- Both zones can be active simultaneously (`CarLeftRight` value) if there's
+  a car on each side.
+- Before the sim is actively reporting (`CarLeftRight.Off` — e.g. not yet on
+  track), the widget shows a small "waiting for spotter data" caption
+  instead of two dim, ambiguous-looking zones.
+
+**Known limitations:**
+- `CarLeftRight` is a single aggregate signal, not per-car — the radar can
+  tell you *that* someone is alongside and on which side, but not *which*
+  car (number/class), or their exact distance. iRacing doesn't expose true
+  lateral-offset telemetry per car to compute that honestly; a future
+  enhancement could cross-reference the closest car by longitudinal gap
+  (the same delta calculation `RelativeCalculator` already does) as a
+  best-effort label, but that would be an inference, not a direct read, so
+  it's deferred rather than shipped as if it were exact.
+- No audio cue — visual only.
+- Demo mode's `CarLeftRight` is a fixed `Clear` by default; use the dev
+  panel's "Cycle radar" button to step through all six states.
+
 ## Telemetry & session data (`Core.Telemetry`, `Core.Session`)
 
 **`TelemetrySnapshot`** — one frame, normalised to the overlay's units
 (metres/second, litres, Celsius). Required fields: session time/num/time
 remaining/laps remaining, player lap/fuel/speed/gear/on-track flag, player
-car index, air/track temp, wetness, brake bias %, incident count, and the
+car index, air/track temp, wetness, brake bias %, incident count,
+`CarLeftRight` (near-field proximity, see the Radar widget above), and the
 full per-car `Cars` list.
 
 **`CarTelemetry`** — per-car state: car index, lap, lap distance %, `EstTime`,
@@ -254,14 +301,15 @@ fire on background threads; all marshalling to the UI thread happens in
 - SDK variables read: `SessionTime`, `SessionNum`, `SessionTimeRemain`,
   `SessionLapsRemainEx`, `Lap`, `FuelLevel`, `Speed`, `Gear`, `IsOnTrack`,
   `PlayerCarIdx`, `AirTemp`, `TrackTempCrew`, `TrackWetness`, `dcBrakeBias`,
-  `PlayerCarMyIncidentCount`, and the arrays `CarIdxLap`,
+  `PlayerCarMyIncidentCount`, `CarLeftRight`, and the arrays `CarIdxLap`,
   `CarIdxLapDistPct`, `CarIdxEstTime`, `CarIdxOnPitRoad`,
   `CarIdxTrackSurface`, `CarIdxPosition`.
 - Variables that don't exist on every sim build/car (`AirTemp`,
   `TrackTempCrew`, `TrackWetness`, `dcBrakeBias`,
-  `PlayerCarMyIncidentCount`) go through `GetIntOrDefault`/
+  `PlayerCarMyIncidentCount`, `CarLeftRight`) go through `GetIntOrDefault`/
   `GetFloatOrDefault` helpers that check `TelemetryDataProperties` first and
-  fall back to a default rather than throwing.
+  fall back to a default (`CarLeftRight.Off` for the radar) rather than
+  throwing.
 - Session info parsing (`HandleSessionInfo`) filters out spectators
   (`IsSpectator != 0`) and the pace car (`CarIsPaceCar != 0`) when building
   the roster, and reads each driver's `CarClassShortName` and `CarClassColor`
@@ -295,6 +343,11 @@ mode.
   "Dev experience" below for how it's grown/shrunk live. Also implements
   `IDemoControls`, which the app checks for at startup to decide whether to
   show the dev control panel.
+- `CarLeftRight` defaults to `Clear` and is otherwise untouched by the
+  simulation loop — it only changes via the dev panel's "Cycle radar"
+  control, since deriving a realistic value from the simulated field's
+  actual proximity would need lateral-position data the demo doesn't model
+  either (see the Radar widget's known limitations above).
 
 ## Dev experience
 
@@ -310,9 +363,9 @@ stop the app was closing the terminal that launched it.
   tray icon type).
 - Icon is drawn at runtime (a navy circle with an azure dot, matching the
   app palette) rather than shipped as an asset file.
-- Context menu: **Show Relative**, **Show Fuel**, **Show Setup**, **Dev
-  Controls** (demo mode only), **Exit**. Double-click the icon = Show
-  Relative.
+- Context menu: **Show Relative**, **Show Fuel**, **Show Setup**, **Show
+  Radar**, **Dev Controls** (demo mode only), **Exit**. Double-click the
+  icon = Show Relative.
 - The app runs under `ShutdownMode="OnExplicitShutdown"`: closing a widget
   window hides it (`App.HideInsteadOfClose`) rather than destroying it, so
   the tray's Show items always work. The tray's **Exit** (or any window's
@@ -337,6 +390,7 @@ control in live mode and doesn't appear there.
 | **Toggle player pit** | Flags the player's own row as pitting (surface `InPitStall`), to check the PIT badge and opacity dimming on the player's row specifically. |
 | **Cycle session** | Steps Practice → Open Qualify → Race → (wraps), each with its matching setup file, bumping the session number so the Setup widget's flash re-triggers. Resets the "modified" flag, matching a freshly loaded setup. |
 | **Toggle setup modified** | Flags the loaded setup as modified, to check the Setup widget's "MODIFIED" tag. |
+| **Cycle radar** | Steps Clear → CarLeft → CarRight → CarLeftRight → TwoCarsLeft → TwoCarsRight → (wraps), to check every radar widget state including the pulse and the "2" badge. |
 
 Implementation: `SimulatedTelemetrySource` implements `IDemoControls`
 (`src/IRacingOverlay.Infrastructure/Telemetry/`); all mutations happen under
@@ -379,6 +433,10 @@ back to `"SESSION"` — shared by the Relative and Setup widgets).
 **`SetupFormat`**: `DisplayName` strips the `.sto` extension from a setup
 file name (case-insensitive), or returns the placeholder for a null/blank
 name.
+
+**`RadarFormat`**: classifies iRacing's `CarLeftRight` signal into the
+booleans the radar widget binds to - `HasCarLeft`, `HasCarRight`,
+`HasTwoCarsLeft`, `HasTwoCarsRight`, `IsActive`.
 
 **`RatingFormat`**: the relative widget's colour-coding logic, kept pure and
 testable in `Core` even though the actual brushes live in `App.xaml`.
@@ -447,7 +505,7 @@ drag-to-move + right-click-exit interaction pattern.
 
 ## Test coverage
 
-125 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+148 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -462,10 +520,11 @@ drag-to-move + right-click-exit interaction pattern.
 | `Formatting/TelemetryFormatTests.cs` | Gear, kph conversion, liters/laps placeholders |
 | `Formatting/RatingFormatTests.cs` | License tier parsing, iRating tier boundaries, CarClassColor normalisation (decimal-packed and hex forms) |
 | `Formatting/SetupFormatTests.cs` | Setup file name display formatting |
+| `Formatting/RadarFormatTests.cs` | CarLeftRight classification into the four proximity booleans |
 
 ## Not yet implemented
 
-Tracked in the [README roadmap](../README.md#roadmap): radar/spotter widget,
+Tracked in the [README roadmap](../README.md#roadmap):
 standings widget, delta bar, car manufacturer badges (needs custom art
 assets), drag-to-resize + persisted window layout, click-through mode,
 pinning/auto-showing the tray icon, running at Windows startup, and a
