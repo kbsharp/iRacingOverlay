@@ -28,20 +28,30 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         TrackWetness.VeryWet,
     ];
 
-    /// <summary>Initial field: name, number, iRating, license, lap time, starting progress
-    /// (in laps) and pit state. Offsets put one car a lap up, one a lap down, and one
-    /// parked in the pits, so every relative-widget state is visible immediately.</summary>
+    /// <summary>Fake multiclass field so the relative widget's class colouring is
+    /// visible in demo mode too, without needing a live multiclass session.</summary>
+    private static readonly (string Name, string ColorHex)[] DemoClasses =
+    [
+        ("GT3", "E8579E"),
+        ("GTE", "3AC6D9"),
+        ("DP", "FFC94D"),
+    ];
+
+    /// <summary>Initial field: name, number, iRating, license, class index (into
+    /// <see cref="DemoClasses"/>), lap time, starting progress (in laps), and pit
+    /// state. Offsets put one car a lap up, one a lap down, and one parked in the
+    /// pits, so every relative-widget state is visible immediately.</summary>
     private static readonly SimDriver[] InitialField =
     [
-        new(0, "K. Bevan", "23", 2350, "B 3.44", 15.0, 5.30, InPits: false),
-        new(1, "T. Ridley", "7", 2410, "B 3.02", 14.9, 5.42, InPits: false),
-        new(2, "S. Okafor", "88", 2280, "C 2.77", 15.1, 5.18, InPits: false),
-        new(3, "L. Fontaine", "4", 2590, "B 3.91", 14.8, 5.55, InPits: false),
-        new(4, "R. Tanaka", "51", 2150, "C 2.31", 15.2, 5.05, InPits: false),
-        new(5, "D. Whitmore", "12", 3105, "A 4.21", 14.6, 6.40, InPits: false), // lap ahead
-        new(6, "K. Larsen", "31", 1720, "D 2.08", 15.6, 4.22, InPits: false),   // lap down
-        new(7, "P. Moreau", "9", 2035, "C 2.50", 15.3, 5.68, InPits: false),
-        new(8, "C. Ibarra", "77", 2760, "B 3.66", 14.7, 5.93, InPits: true),    // parked in pits
+        new(0, "K. Bevan", "23", 2350, "B 3.44", 0, 15.0, 5.30, InPits: false),
+        new(1, "T. Ridley", "7", 2410, "B 3.02", 0, 14.9, 5.42, InPits: false),
+        new(2, "S. Okafor", "88", 2280, "C 2.77", 0, 15.1, 5.18, InPits: false),
+        new(3, "L. Fontaine", "4", 2590, "B 3.91", 0, 14.8, 5.55, InPits: false),
+        new(4, "R. Tanaka", "51", 2150, "C 2.31", 0, 15.2, 5.05, InPits: false),
+        new(5, "D. Whitmore", "12", 3105, "A 4.21", 1, 14.6, 6.40, InPits: false), // lap ahead
+        new(6, "K. Larsen", "31", 1720, "D 2.08", 1, 15.6, 4.22, InPits: false),   // lap down
+        new(7, "P. Moreau", "9", 2035, "C 2.50", 2, 15.3, 5.68, InPits: false),
+        new(8, "C. Ibarra", "77", 2760, "B 3.66", 2, 14.7, 5.93, InPits: true),    // parked in pits
     ];
 
     /// <summary>Extra drivers the dev panel can add on top of <see cref="InitialField"/>.
@@ -111,6 +121,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             // size - RemoveCar can shrink the field below InitialField.Length, which
             // would otherwise make this index go negative after a remove-then-add.
             var (name, number) = ExtraRoster[_extrasAdded % ExtraRoster.Length];
+            var classIndex = _extrasAdded % DemoClasses.Length;
             _extrasAdded++;
             var lapSeconds = PlayerLapSeconds * (1.0 + 0.02 * ((carIdx % 5) - 2));
             var startProgress = 4.0 + (carIdx % 10) * 0.55;
@@ -119,7 +130,8 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             var licenseValue = 2.0 + carIdx * 0.37 % 3.0;
             var license = $"{licenseLetter} {licenseValue:0.00}";
 
-            _field.Add(new SimDriver(carIdx, name, number, iRating, license, lapSeconds, startProgress, InPits: false));
+            _field.Add(new SimDriver(
+                carIdx, name, number, iRating, license, classIndex, lapSeconds, startProgress, InPits: false));
             return true;
         }
     }
@@ -287,7 +299,13 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         {
             drivers = _field.ToDictionary(
                 d => d.CarIdx,
-                d => new RosterDriver(d.CarIdx, d.Name, d.Number, d.IRating, d.License, (float)d.LapSeconds));
+                d =>
+                {
+                    var (className, classColorHex) = DemoClasses[d.ClassIndex];
+                    return new RosterDriver(
+                        d.CarIdx, d.Name, d.Number, d.IRating, d.License, (float)d.LapSeconds,
+                        className, classColorHex);
+                });
         }
 
         return new SessionMetadata(drivers, new Dictionary<int, string> { [0] = "Race" });
@@ -299,6 +317,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         string Number,
         int IRating,
         string License,
+        int ClassIndex,
         double LapSeconds,
         double StartProgressLaps,
         bool InPits);
