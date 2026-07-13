@@ -7,8 +7,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Two widgets so far:
   red, lapped cars blue, pitting cars flagged. A session strip on top shows session
   type + time remaining, brake bias, track/air temps, a wetness badge, and your
   incident count.
-- **Fuel**: fuel level, average and last-lap burn, estimated laps remaining, plus
-  live gear and speed.
+- **Fuel**: a strategy calculator — fuel level and laps in tank, average/last-lap burn,
+  and the numbers you act on: fuel to finish, the margin you'll finish with (green spare
+  / red short), fuel to add at the next stop, and a save-per-lap target.
 
 ## Prerequisites
 
@@ -66,8 +67,8 @@ Design notes:
 
 - Radar/spotter widget (proximity warning for cars alongside, RaceLab-style)
 - Standings widget (full field, gaps, multiclass split)
-- Fuel-to-finish using race laps remaining from session info
 - Delta bar (lap delta to session/all-time best)
 - Multiclass class colours on the relative
-- Click-through mode and remembered window positions
+- Drag-to-resize widgets and remembered window positions/scale
+- Click-through mode
 - Settings: units (L/gal, km/h / mph), refresh rate, widget scale
