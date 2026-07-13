@@ -23,7 +23,7 @@ public partial class App : Application
         var connectedLabel = demoMode ? "Demo" : "Live";
 
         var relativeViewModel = new RelativeViewModel(connectedLabel);
-        var fuelViewModel = new FuelViewModel(new FuelCalculator(), connectedLabel);
+        var fuelViewModel = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), connectedLabel);
 
         _telemetrySource = demoMode
             ? new SimulatedTelemetrySource()

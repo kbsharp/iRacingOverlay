@@ -5,24 +5,39 @@
     <Application.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <SolidColorBrush x:Key="TextPrimary" Color="#F2F5FA" />
-        <SolidColorBrush x:Key="TextMuted" Color="#8A93A6" />
-        <SolidColorBrush x:Key="Accent" Color="#38BDF8" />
-        <SolidColorBrush x:Key="Warning" Color="#FBBF24" />
-        <SolidColorBrush x:Key="LapAheadText" Color="#F87171" />
-        <SolidColorBrush x:Key="LapBehindText" Color="#6FA8FF" />
-        <SolidColorBrush x:Key="PanelBackground" Color="#F0161923" />
-        <SolidColorBrush x:Key="PanelBorder" Color="#2EFFFFFF" />
-        <SolidColorBrush x:Key="Separator" Color="#22FFFFFF" />
+        <!-- Premium near-black navy palette -->
+        <LinearGradientBrush x:Key="PanelBackground" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F2141C2A" Offset="0" />
+            <GradientStop Color="#F2090D15" Offset="1" />
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="PanelBorder" Color="#2A5B7CA8" />
+        <SolidColorBrush x:Key="HeaderBand" Color="#1FFFFFFF" />
+        <SolidColorBrush x:Key="Separator" Color="#18FFFFFF" />
+        <SolidColorBrush x:Key="RowHover" Color="#0FFFFFFF" />
 
-        <Style x:Key="Label" TargetType="TextBlock">
+        <SolidColorBrush x:Key="Accent" Color="#4DA3FF" />
+        <SolidColorBrush x:Key="AccentDim" Color="#2E4DA3FF" />
+        <SolidColorBrush x:Key="Positive" Color="#4ADE9A" />
+        <SolidColorBrush x:Key="Negative" Color="#FF6B6B" />
+        <SolidColorBrush x:Key="Warning" Color="#FFC24D" />
+
+        <SolidColorBrush x:Key="TextPrimary" Color="#EEF2F8" />
+        <SolidColorBrush x:Key="TextSecondary" Color="#B8C4D6" />
+        <SolidColorBrush x:Key="TextMuted" Color="#6E7C93" />
+
+        <SolidColorBrush x:Key="LapAheadText" Color="#FF8080" />
+        <SolidColorBrush x:Key="LapBehindText" Color="#8AA8D6" />
+
+        <!-- Small uppercase field caption -->
+        <Style x:Key="Caption" TargetType="TextBlock">
             <Setter Property="FontSize" Value="10" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
         </Style>
 
+        <!-- Primary numeric value -->
         <Style x:Key="Value" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontSize" Value="19" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
         </Style>

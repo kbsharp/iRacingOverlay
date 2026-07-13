@@ -136,7 +136,8 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource
         {
             SessionTimeSeconds = _sessionTime,
             SessionNum = 0,
-            SessionTimeRemainSeconds = Math.Max(0, 20 * 60 - _sessionTime),
+            // A ~4 minute timed race so fuel-to-finish shows a healthy margin.
+            SessionTimeRemainSeconds = Math.Max(0, 4 * 60 - _sessionTime),
             SessionLapsRemain = -1,
             Lap = player.Lap,
             FuelLevelLiters = _fuel,

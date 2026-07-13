@@ -19,22 +19,27 @@
         </ContextMenu>
     </Window.ContextMenu>
 
-    <Border Width="316"
-            Padding="14,10,14,12"
-            CornerRadius="12"
+    <Border Width="640"
+            Margin="16"
+            Padding="20,14,20,16"
+            CornerRadius="16"
             Background="{StaticResource PanelBackground}"
             BorderBrush="{StaticResource PanelBorder}"
             BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.55" Color="#000000" />
+        </Border.Effect>
         <StackPanel>
 
-            <DockPanel Margin="0,0,0,6">
-                <Ellipse Width="8" Height="8" VerticalAlignment="Center" DockPanel.Dock="Left">
+            <!-- header -->
+            <DockPanel Margin="0,0,0,10">
+                <Ellipse Width="9" Height="9" VerticalAlignment="Center" DockPanel.Dock="Left">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource Warning}" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                    <Setter Property="Fill" Value="#4ADE80" />
+                                    <Setter Property="Fill" Value="{StaticResource Positive}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -43,36 +48,44 @@
                 <TextBlock Text="{Binding ConnectionStatus}"
                            DockPanel.Dock="Right"
                            VerticalAlignment="Center"
-                           Style="{StaticResource Label}" />
+                           Style="{StaticResource Caption}" />
                 <TextBlock Text="RELATIVE"
-                           Margin="8,0,0,0"
+                           Margin="10,0,0,0"
                            VerticalAlignment="Center"
-                           FontSize="11"
+                           FontSize="13"
                            FontWeight="Bold"
                            Foreground="{StaticResource Accent}" />
             </DockPanel>
 
             <!-- session strip: session/time · brake bias · temps · wetness · incidents -->
-            <DockPanel Margin="0,0,0,8">
+            <DockPanel Margin="0,0,0,10">
                 <TextBlock Text="{Binding SessionText}"
                            DockPanel.Dock="Left"
                            VerticalAlignment="Center"
-                           Style="{StaticResource Label}"
+                           FontSize="12"
+                           FontWeight="SemiBold"
                            Foreground="{StaticResource TextPrimary}" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock Text="{Binding BrakeBiasText}"
-                               Margin="8,0,0,0"
-                               Style="{StaticResource Label}"
+                               Margin="12,0,0,0"
+                               Style="{StaticResource Caption}"
                                Visibility="{Binding HasBrakeBias, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding TrackTempText}" Margin="8,0,0,0" Style="{StaticResource Label}" />
-                    <TextBlock Text="{Binding AirTempText}" Margin="8,0,0,0" Style="{StaticResource Label}" />
-                    <TextBlock Text="{Binding WetnessText}"
-                               Margin="8,0,0,0"
-                               FontSize="10"
-                               FontWeight="Bold"
-                               Foreground="{StaticResource Warning}"
-                               Visibility="{Binding IsWet, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding IncidentsText}" Margin="8,0,0,0" Style="{StaticResource Label}" />
+                    <TextBlock Text="{Binding TrackTempText}" Margin="12,0,0,0" Style="{StaticResource Caption}" />
+                    <TextBlock Text="{Binding AirTempText}" Margin="12,0,0,0" Style="{StaticResource Caption}" />
+                    <Border Margin="12,0,0,0"
+                            CornerRadius="5"
+                            Padding="6,2"
+                            Background="#26FFC24D"
+                            Visibility="{Binding IsWet, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding WetnessText}"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Warning}" />
+                    </Border>
+                    <TextBlock Text="{Binding IncidentsText}"
+                               Margin="12,0,0,0"
+                               Style="{StaticResource Caption}"
+                               Foreground="{StaticResource TextSecondary}" />
                 </StackPanel>
             </DockPanel>
 
@@ -81,14 +94,14 @@
             <ItemsControl ItemsSource="{Binding Rows}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Height="24" CornerRadius="6" Padding="6,0" Margin="0,1">
+                        <Border Height="32" CornerRadius="8" Margin="0,1">
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="Background" Value="Transparent" />
                                     <Setter Property="Visibility" Value="Visible" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsPlayer}" Value="True">
-                                            <Setter Property="Background" Value="#3338BDF8" />
+                                            <Setter Property="Background" Value="{StaticResource AccentDim}" />
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding IsVisible}" Value="False">
                                             <Setter Property="Visibility" Value="Hidden" />
@@ -96,30 +109,44 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
+
                             <Grid VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="20" />
-                                    <ColumnDefinition Width="34" />
+                                    <ColumnDefinition Width="4" />
+                                    <ColumnDefinition Width="38" />
+                                    <ColumnDefinition Width="58" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="44" />
-                                    <ColumnDefinition Width="34" />
-                                    <ColumnDefinition Width="48" />
+                                    <ColumnDefinition Width="66" />
+                                    <ColumnDefinition Width="58" />
+                                    <ColumnDefinition Width="92" />
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding PositionText}"
-                                           FontSize="11"
-                                           Foreground="{StaticResource TextMuted}" />
+                                <!-- left accent bar on the player row -->
+                                <Border Grid.Column="0"
+                                        Width="4"
+                                        Margin="-20,4,0,4"
+                                        CornerRadius="2,0,0,2"
+                                        Background="{StaticResource Accent}"
+                                        Visibility="{Binding IsPlayer, Converter={StaticResource BoolToVis}}" />
 
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding CarNumberText}"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
+                                           Text="{Binding PositionText}"
+                                           VerticalAlignment="Center"
+                                           Margin="6,0,0,0"
+                                           FontSize="13"
                                            Foreground="{StaticResource TextMuted}" />
 
                                 <TextBlock Grid.Column="2"
-                                           Text="{Binding Name}"
+                                           Text="{Binding CarNumberText}"
+                                           VerticalAlignment="Center"
                                            FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextSecondary}" />
+
+                                <TextBlock Grid.Column="3"
+                                           Text="{Binding Name}"
+                                           VerticalAlignment="Center"
+                                           FontSize="16"
                                            FontWeight="SemiBold"
                                            TextTrimming="CharacterEllipsis">
                                     <TextBlock.Style>
@@ -133,35 +160,43 @@
                                                     <Setter Property="Foreground" Value="{StaticResource LapBehindText}" />
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding InPits}" Value="True">
-                                                    <Setter Property="Opacity" Value="0.55" />
+                                                    <Setter Property="Opacity" Value="0.5" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
 
-                                <TextBlock Grid.Column="3"
-                                           Text="{Binding License}"
-                                           FontSize="11"
-                                           Foreground="{StaticResource TextMuted}" />
-
                                 <TextBlock Grid.Column="4"
-                                           Text="{Binding IRatingText}"
-                                           FontSize="11"
+                                           Text="{Binding License}"
+                                           VerticalAlignment="Center"
+                                           FontSize="12"
                                            Foreground="{StaticResource TextMuted}" />
 
-                                <StackPanel Grid.Column="5"
+                                <TextBlock Grid.Column="5"
+                                           Text="{Binding IRatingText}"
+                                           VerticalAlignment="Center"
+                                           FontSize="12"
+                                           Foreground="{StaticResource TextMuted}" />
+
+                                <StackPanel Grid.Column="6"
                                             Orientation="Horizontal"
-                                            HorizontalAlignment="Right">
-                                    <TextBlock Text="PIT"
-                                               Margin="0,0,5,0"
-                                               VerticalAlignment="Center"
-                                               FontSize="9"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource Warning}"
-                                               Visibility="{Binding InPits, Converter={StaticResource BoolToVis}}" />
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,4,0">
+                                    <Border CornerRadius="4"
+                                            Padding="5,1"
+                                            Margin="0,0,7,0"
+                                            Background="#26FFC24D"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding InPits, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="PIT"
+                                                   FontSize="9"
+                                                   FontWeight="Bold"
+                                                   Foreground="{StaticResource Warning}" />
+                                    </Border>
                                     <TextBlock Text="{Binding DeltaText}"
-                                               FontSize="12"
+                                               FontSize="16"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimary}" />
                                 </StackPanel>
