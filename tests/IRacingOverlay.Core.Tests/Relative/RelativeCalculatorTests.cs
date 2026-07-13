@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Relative;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Telemetry;
@@ -166,7 +167,11 @@ public class RelativeCalculatorTests
         Assert.Equal("Driver 1", other.DisplayName);
         Assert.Equal("1", other.CarNumber);
         Assert.Equal(2000, other.IRating);
+        Assert.Equal(IRatingTier.Mid, other.IRatingTier);
         Assert.Equal("A 4.99", other.License);
+        Assert.Equal(LicenseTier.A, other.LicenseTier);
+        Assert.Equal("GT3", other.ClassShortName);
+        Assert.Equal("#FF9933", other.ClassColorHex);
     }
 
     [Fact]
@@ -221,7 +226,9 @@ public class RelativeCalculatorTests
                 idx.ToString(),
                 IRating: 2000,
                 License: "A 4.99",
-                ClassEstLapTimeSeconds: LapTimeSeconds);
+                ClassEstLapTimeSeconds: LapTimeSeconds,
+                ClassShortName: "GT3",
+                ClassColorRaw: "16750899");
         }
 
         return new SessionMetadata(drivers, new Dictionary<int, string> { [0] = "Race" });

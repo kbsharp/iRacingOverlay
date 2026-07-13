@@ -1,3 +1,5 @@
+using IRacingOverlay.Core.Formatting;
+
 namespace IRacingOverlay.Core.Relative;
 
 /// <summary>How a car's race progress compares to the player's, in whole laps.</summary>
@@ -16,7 +18,11 @@ public sealed record RelativeRow(
     string CarNumber,
     string DisplayName,
     string License,
+    LicenseTier LicenseTier,
     int IRating,
+    IRatingTier IRatingTier,
+    string ClassShortName,
+    string? ClassColorHex,
     double DeltaSeconds,
     LapDifference LapDifference,
     bool InPits);

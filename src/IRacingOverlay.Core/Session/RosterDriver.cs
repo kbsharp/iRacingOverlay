@@ -7,4 +7,6 @@ public sealed record RosterDriver(
     string CarNumber,
     int IRating,
     string License,
-    float ClassEstLapTimeSeconds);
+    float ClassEstLapTimeSeconds,
+    string ClassShortName,
+    string? ClassColorRaw);

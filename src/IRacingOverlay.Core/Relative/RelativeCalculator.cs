@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Telemetry;
 
@@ -131,14 +132,21 @@ public static class RelativeCalculator
         RosterDriver? driver = null;
         metadata?.DriversByCarIdx.TryGetValue(car.CarIdx, out driver);
 
+        var license = driver?.License ?? string.Empty;
+        var irating = driver?.IRating ?? 0;
+
         return new RelativeRow(
             CarIdx: car.CarIdx,
             IsPlayer: car.CarIdx == player.CarIdx,
             Position: car.Position,
             CarNumber: driver?.CarNumber ?? string.Empty,
             DisplayName: driver?.DisplayName ?? $"Car {car.CarIdx}",
-            License: driver?.License ?? string.Empty,
-            IRating: driver?.IRating ?? 0,
+            License: license,
+            LicenseTier: RatingFormat.ParseLicenseTier(license),
+            IRating: irating,
+            IRatingTier: RatingFormat.ClassifyIRating(irating),
+            ClassShortName: driver?.ClassShortName ?? string.Empty,
+            ClassColorHex: RatingFormat.NormalizeHexColor(driver?.ClassColorRaw),
             DeltaSeconds: deltaSeconds,
             LapDifference: Classify(car, player),
             InPits: car.OnPitRoad || car.Surface == CarTrackSurface.InPitStall);
