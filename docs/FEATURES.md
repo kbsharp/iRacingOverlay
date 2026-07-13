@@ -34,10 +34,35 @@ between runs.
 **Row list:** fixed 3-ahead / player / 3-behind slots (`slotsPerSide = 3` in
 both `RelativeCalculator.Compute` and `RelativeViewModel`). Rows are updated
 in place each frame rather than rebuilt, so the list is allocation-free and
-the layout doesn't jump. Each row shows: race position, car number, driver
-name, license string, iRating (abbreviated to `n.nk` above 1000), a PIT badge
-when the car is on pit road or in a pit stall, and a signed time delta
-(`+n.n` / `-n.n`).
+the layout doesn't jump. Each row shows: race position, a class-colour bar,
+car number, driver name, a license badge, an iRating badge, a PIT badge when
+the car is on pit road or in a pit stall, and a signed time delta (`+n.n` /
+`-n.n`).
+
+**Colour coding** (the widget's main visual identity — deliberately not
+blue-dominated; blue is reserved for the header label and the A-license
+badge specifically):
+- **Class bar** (4px, left edge of every row): the car's class colour exactly
+  as reported by the sim (`CarClassColor`), not an invented palette. Single-
+  class sessions show one colour throughout; multiclass sessions show each
+  nearby car's real class colour. `RatingFormat.NormalizeHexColor` converts
+  iRacing's decimal-packed `0xRRGGBB` int (its real wire format, e.g.
+  `"16750899"` → `#FF9933`) to a CSS-style hex string; a hex-string value is
+  also accepted defensively. Unparseable/missing colour falls back to grey.
+- **License badge**: a filled chip using iRacing's own license-class colours,
+  so it reads instantly to anyone who's played the sim — Rookie red, D
+  orange, C yellow, B green, A blue, Pro gold. `RatingFormat.
+  ParseLicenseTier` reads the leading letter of the sim's `LicString` (e.g.
+  `"B 3.44"` → `LicenseTier.B`).
+- **iRating badge**: a filled chip in a separate cool/vivid colour family
+  (grey → teal → violet → magenta) so it's never confused with the license
+  badge next to it, banded by `RatingFormat.ClassifyIRating`: Low `<1500`,
+  Mid `<2500`, High `<4000`, Elite `4000+`.
+- **Player row**: a warm amber background wash plus a matching amber border —
+  intentionally not the blue accent colour, so "this is you" doesn't visually
+  compete with the class/license/iRating colours now on every row.
+- Lapped/lapping name colouring (below) and the PIT/wetness amber badges are
+  unchanged from before this pass.
 
 **Delta calculation:** uses iRacing's `CarIdxEstTime` (the sim's own estimate
 of time-to-reach-current-position-on-lap), which is more accurate through
@@ -61,21 +86,26 @@ roster in `IrsdkTelemetrySource.HandleSessionInfo` before it ever reaches
 NotInWorld`, e.g. not yet spawned) are excluded per-frame.
 
 **Known limitations:**
-- Single-class colouring only — no per-class colour coding yet (multiclass is
-  on the roadmap).
+- Class colouring is per-row, not grouped — there's no separate multiclass
+  standings view (that's a distinct roadmap item; the relative always shows
+  the nearest cars regardless of class).
 - If the player's own car isn't found "in world" for a frame (e.g. between
   sessions), all rows are hidden rather than showing stale data.
-- Roster (names/numbers/iRating/license) only refreshes when the sim
+- Roster (names/numbers/iRating/license/class) only refreshes when the sim
   re-broadcasts session info; mid-session driver swaps may lag briefly.
+- No car manufacturer badge/logo (needs custom art assets) — on the roadmap.
 
 ### Fuel — `FuelWindow` / `FuelViewModel` / `FuelCalculator` + `FuelStrategyCalculator` + `LapTimeTracker`
 
 A strategy calculator, not just a burn-rate readout — the numbers shown are
 the ones a driver acts on mid-race.
 
-**Layout:** 340px wide, same borderless/transparent/topmost/draggable
+**Layout:** 330px wide, same borderless/transparent/topmost/draggable
 behaviour as the relative. Fixed position on first launch (`Left=80, Top=140`
-— manual, not persisted).
+— manual, not persisted). Deliberately compact vertically — every field from
+the original layout is still present, just with tighter margins/padding and a
+smaller headline number, so it takes noticeably less screen height without
+losing any of the strategy numbers.
 
 **Displayed fields:**
 - Current fuel level (`nn.nn L`) and laps of running left in the tank at
@@ -149,9 +179,12 @@ on-pit-road flag, `CarTrackSurface`, race position.
 ExtremelyWet).
 
 **`SessionMetadata`** — slow-changing roster data: `DriversByCarIdx`
-(car number, display name, iRating, license string, class-estimated lap
-time) and `SessionTypesByNum`. Refreshed whenever the sim re-broadcasts
-session info.
+(`RosterDriver`: car number, display name, iRating, license string,
+class-estimated lap time, class short name, raw class colour from the sim)
+and `SessionTypesByNum`. Refreshed whenever the sim re-broadcasts session
+info. `RelativeRow` carries the same driver fields plus the parsed
+`LicenseTier`, `IRatingTier`, and normalised `ClassColorHex` used for the
+relative widget's colour coding (see the Relative widget section above).
 
 **`ITelemetrySource`** contract — `TelemetryReceived`, `SessionMetadataReceived`,
 `ConnectionChanged`, `ErrorOccurred` events, plus `Start()`/`Stop()`. Events
@@ -178,7 +211,9 @@ fire on background threads; all marshalling to the UI thread happens in
   fall back to a default rather than throwing.
 - Session info parsing (`HandleSessionInfo`) filters out spectators
   (`IsSpectator != 0`) and the pace car (`CarIsPaceCar != 0`) when building
-  the roster.
+  the roster, and reads each driver's `CarClassShortName` and `CarClassColor`
+  (iRacing's own per-class colour, normalised by `RatingFormat.
+  NormalizeHexColor`) for the relative widget's class colouring.
 
 **`SimulatedTelemetrySource`** (`--demo`): drives the app without iRacing
 running, on a `System.Threading.Timer` ticking at the same ~15Hz as live
@@ -188,6 +223,10 @@ mode.
   ends up a lap ahead (D. Whitmore), one a lap down (K. Larsen), and one
   parked in the pits (C. Ibarra) — enough variety to see every relative
   widget state at once.
+- Also assigns a fake class (`DemoClasses`: GT3 pink, GTE cyan, DP gold) to
+  every car, purely so the relative widget's class-colour bar has something
+  real to show without a live multiclass session. Cars added via the dev
+  panel cycle through the same three classes.
 - Player laps run ~15s so estimates populate within seconds of starting.
 - Simulated fuel burn varies per lap (`sin` modulation) so average and
   last-lap figures differ, the way real telemetry does.
@@ -272,10 +311,24 @@ unlimited/negative), `IRating` (`n.nk` above 1000), `Delta` (explicit-sign
 1dp, e.g. `+1.2`/`-0.8`), `Wetness` (short badge text per `TrackWetness`
 level), `Temperature` (rounded whole degrees with `°`).
 
+**`RatingFormat`**: the relative widget's colour-coding logic, kept pure and
+testable in `Core` even though the actual brushes live in `App.xaml`.
+- `ParseLicenseTier(license)` → `LicenseTier` (Unknown/Rookie/D/C/B/A/Pro) by
+  reading the leading letter of the sim's `LicString`.
+- `ClassifyIRating(irating)` → `IRatingTier` (Low `<1500` / Mid `<2500` /
+  High `<4000` / Elite `4000+`).
+- `NormalizeHexColor(raw)` → `"#RRGGBB"` or null. Handles iRacing's real
+  `CarClassColor` format (a decimal-packed `0xRRGGBB` int, e.g. `"16750899"`)
+  and, defensively, an already-hex value (`"FFCC00"`, `"#ffcc00"`, or an
+  8-digit ARGB/RGBA string).
+
 ## UI shell (`App.xaml`)
 
 Shared resources used by both windows — the single source of truth for the
-visual style:
+visual style. Deliberately not blue-dominated: `Accent` is reserved for
+branding (window header labels) and the A-license badge specifically; every
+other colour carries a distinct meaning (class, license tier, iRating tier,
+lap status, "this is you").
 - `PanelBackground` — a navy-blue vertical gradient (not near-black; a prior
   pass was too dark/desaturated and was corrected).
 - `PanelTopHighlight` — a 1px bright line along the top inner edge for a
@@ -283,6 +336,17 @@ visual style:
 - `PanelBorder`, `Separator`, `RowHover`, `HeaderBand` — structural chrome.
 - `Accent` (azure blue), `Positive` (green), `Negative` (red), `Warning`
   (amber) — status colours.
+- `PlayerHighlight` / `PlayerBorder` — the relative widget's "this is you"
+  row wash and outline; warm amber, intentionally not `Accent`, so it doesn't
+  compete with the license/iRating/class colours now on every row.
+- `LicenseRookie`/`LicenseD`/`LicenseC`/`LicenseB`/`LicenseA`/`LicensePro` —
+  iRacing's real license-class colours (red/orange/yellow/green/blue/gold),
+  driving the `LicenseBadgeBackground`/`LicenseBadgeText` styles via
+  `DataTrigger`s on `RelativeRowViewModel.LicenseTier`.
+- `IRatingLow`/`IRatingMid`/`IRatingHigh`/`IRatingElite` — a separate
+  grey/teal/violet/magenta family for the iRating badge
+  (`IRatingBadgeBackground`/`IRatingBadgeText`), so it's never confused with
+  the license badge next to it.
 - `TextPrimary`/`TextSecondary`/`TextMuted` — text hierarchy.
 - `LapAheadText` (red-ish) / `LapBehindText` (blue-ish) — relative row
   colouring.
@@ -291,13 +355,20 @@ visual style:
 - `DevButton` — flat, rounded button style used by the dev control panel
   (accent-tinted on hover, dimmed when disabled).
 
+The relative row's class-colour bar is the one colour that **isn't** a static
+resource — it comes from live sim data, so it can't be a fixed set of
+`DataTrigger`s. `RelativeRowViewModel.ClassColorBrush` parses the row's
+normalised hex string into a frozen `SolidColorBrush` at the ViewModel layer
+(falling back to plain grey on a parse failure) and the row binds
+`Background="{Binding ClassColorBrush}"` directly.
+
 All windows share: `DropShadowEffect` for panel lift, `CornerRadius="16"`,
 `BooleanToVisibilityConverter` (`BoolToVis`) for conditional badges, and the
 drag-to-move + right-click-exit interaction pattern.
 
 ## Test coverage
 
-76 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+106 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -306,14 +377,15 @@ drag-to-move + right-click-exit interaction pattern.
 | `Fuel/FuelCalculatorTests.cs` | Rolling burn average, refuel detection, lap jumps/resets, window trimming |
 | `Fuel/FuelStrategyCalculatorTests.cs` | Fuel-to-finish, margin, add-fuel, save target, race-laps estimation (lap-limited and timed) |
 | `Fuel/LapTimeTrackerTests.cs` | Rolling lap-time average, jump/reset handling |
-| `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging |
+| `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging, license/iRating tier and class colour propagation |
 | `Formatting/SessionFormatTests.cs` | Time/IRating/delta/wetness/temperature formatting |
 | `Formatting/TelemetryFormatTests.cs` | Gear, kph conversion, liters/laps placeholders |
+| `Formatting/RatingFormatTests.cs` | License tier parsing, iRating tier boundaries, CarClassColor normalisation (decimal-packed and hex forms) |
 
 ## Not yet implemented
 
 Tracked in the [README roadmap](../README.md#roadmap): radar/spotter widget,
-standings widget, delta bar, multiclass colouring on the relative,
-drag-to-resize + persisted window layout, click-through mode, pinning/auto-
-showing the tray icon, running at Windows startup, and a settings surface
-(units, refresh rate, widget scale).
+standings widget, delta bar, car manufacturer badges (needs custom art
+assets), drag-to-resize + persisted window layout, click-through mode,
+pinning/auto-showing the tray icon, running at Windows startup, and a
+settings surface (units, refresh rate, widget scale).

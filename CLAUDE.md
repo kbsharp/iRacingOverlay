@@ -43,9 +43,11 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   simulated `--demo` source. Reuse buffers for the `CarIdx*` arrays; no per-frame allocs.
 - **`App`** — WPF windows + view models + the composition root in `App.xaml.cs`
   (manual DI; swap in a container only when wiring outgrows it). Also has
-  `UseWindowsForms` on (for the tray icon) alongside `UseWPF` — new files here
-  must fully-qualify `System.Windows.Application` and `System.Drawing.Color`,
-  both ambiguous between the two SDKs' global usings.
+  `UseWindowsForms` on (for the tray icon) alongside `UseWPF` — any type name that
+  exists in both `System.Windows.*` and `System.Drawing`/`System.Windows.Forms`
+  (seen so far: `Application`, `Color`, `Brush`) is ambiguous under the two SDKs'
+  global usings. Fully qualify it, or add an explicit `using X = System.Windows.
+  Media.X;` alias at the top of the file if it's used more than once or twice.
 
 ## Patterns to keep
 
@@ -68,6 +70,17 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   tests — a real `IndexOutOfRangeException` shipped here once. Stress-test any
   change with a throwaway console harness before trusting it; see
   [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#dev-control-panel-demo-mode).
+- **Prefer real sim data over invented colours/values when one exists.** The
+  relative widget's class colouring uses iRacing's own `CarClassColor` rather
+  than a made-up palette, and the license badge uses iRacing's actual
+  license-class colours — both read as instantly familiar to anyone who's
+  used the sim, which an invented scheme wouldn't. Check the SDK model
+  (`IRacingSdkSessionInfo` via reflection, or the IRSDKSharper docs) before
+  hardcoding a value that the sim might already provide.
+- Keep colour **purposeful, not decorative**: each hue should mean one thing
+  (class, license tier, iRating tier, lap status, "this is you"). Don't reach
+  for the same accent colour for everything — that's what made the first pass
+  at the relative widget feel flat ("too much blue") before this rework.
 
 ## Behaviour
 
