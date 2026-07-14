@@ -16,6 +16,7 @@ public sealed class TrayIconService : IDisposable
     private readonly NotifyIcon _icon;
 
     public TrayIconService(
+        System.Windows.Window standingsWindow,
         System.Windows.Window relativeWindow,
         System.Windows.Window fuelWindow,
         System.Windows.Window setupWindow,
@@ -24,6 +25,7 @@ public sealed class TrayIconService : IDisposable
         Action requestExit)
     {
         var menu = new ContextMenuStrip();
+        menu.Items.Add("Show Standings", null, (_, _) => Reveal(standingsWindow));
         menu.Items.Add("Show Relative", null, (_, _) => Reveal(relativeWindow));
         menu.Items.Add("Show Fuel", null, (_, _) => Reveal(fuelWindow));
         menu.Items.Add("Show Setup", null, (_, _) => Reveal(setupWindow));

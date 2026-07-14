@@ -35,6 +35,7 @@ public partial class App : System.Windows.Application
         var demoMode = e.Args.Contains("--demo", StringComparer.OrdinalIgnoreCase);
         var connectedLabel = demoMode ? "Demo" : "Live";
 
+        var standingsViewModel = new StandingsViewModel(connectedLabel);
         var relativeViewModel = new RelativeViewModel(connectedLabel);
         var fuelViewModel = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), connectedLabel);
         var setupViewModel = new SetupViewModel(connectedLabel);
@@ -46,6 +47,7 @@ public partial class App : System.Windows.Application
 
         _telemetrySource.TelemetryReceived += (_, snapshot) => Dispatcher.BeginInvoke(() =>
         {
+            standingsViewModel.ApplyTelemetry(snapshot);
             relativeViewModel.ApplyTelemetry(snapshot);
             fuelViewModel.ApplyTelemetry(snapshot);
             setupViewModel.ApplyTelemetry(snapshot);
@@ -53,11 +55,13 @@ public partial class App : System.Windows.Application
         });
         _telemetrySource.SessionMetadataReceived += (_, metadata) => Dispatcher.BeginInvoke(() =>
         {
+            standingsViewModel.ApplySessionMetadata(metadata);
             relativeViewModel.ApplySessionMetadata(metadata);
             setupViewModel.ApplySessionMetadata(metadata);
         });
         _telemetrySource.ConnectionChanged += (_, connected) => Dispatcher.BeginInvoke(() =>
         {
+            standingsViewModel.SetConnectionState(connected);
             relativeViewModel.SetConnectionState(connected);
             fuelViewModel.SetConnectionState(connected);
             setupViewModel.SetConnectionState(connected);
@@ -65,22 +69,26 @@ public partial class App : System.Windows.Application
         });
         _telemetrySource.ErrorOccurred += (_, exception) => Dispatcher.BeginInvoke(() =>
         {
+            standingsViewModel.ReportError(exception);
             relativeViewModel.ReportError(exception);
             fuelViewModel.ReportError(exception);
             setupViewModel.ReportError(exception);
             radarViewModel.ReportError(exception);
         });
 
+        var standingsWindow = new StandingsWindow { DataContext = standingsViewModel };
         var relativeWindow = new RelativeWindow { DataContext = relativeViewModel };
         var fuelWindow = new FuelWindow { DataContext = fuelViewModel };
         var setupWindow = new SetupWindow { DataContext = setupViewModel };
         var radarWindow = new RadarWindow { DataContext = radarViewModel };
+        standingsWindow.Closing += HideInsteadOfClose;
         relativeWindow.Closing += HideInsteadOfClose;
         fuelWindow.Closing += HideInsteadOfClose;
         setupWindow.Closing += HideInsteadOfClose;
         radarWindow.Closing += HideInsteadOfClose;
 
         MainWindow = relativeWindow;
+        standingsWindow.Show();
         relativeWindow.Show();
         fuelWindow.Show();
         setupWindow.Show();
@@ -96,7 +104,7 @@ public partial class App : System.Windows.Application
         }
 
         _trayIcon = new TrayIconService(
-            relativeWindow, fuelWindow, setupWindow, radarWindow, devControlWindow, RequestExit);
+            standingsWindow, relativeWindow, fuelWindow, setupWindow, radarWindow, devControlWindow, RequestExit);
 
         _telemetrySource.Start();
     }
