@@ -20,6 +20,12 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     private const float BaseLitersPerLap = 2.4f;
     private const int MinCarCountValue = 3;
 
+    // The demo laps are deliberately short (~15 s) so estimates appear fast, but
+    // that would make the standings show silly "0:15" lap times. These give the
+    // standings realistic-looking figures without touching the sim cadence.
+    private const double ReferenceLapSeconds = 100.0;
+    private static readonly double[] DemoClassBaseLap = [100.4, 103.1, 95.7];
+
     private static readonly TrackWetness[] WetnessCycle =
     [
         TrackWetness.Dry,
@@ -283,6 +289,8 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
                 : driver.StartProgressLaps + _sessionTime / driver.LapSeconds;
         }
 
+        var leaderProgress = totalProgress.DefaultIfEmpty(0).Max();
+
         foreach (var driver in _field)
         {
             var inPits = IsInPits(driver);
@@ -290,6 +298,10 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             var lap = (int)progress + 1;
             var pct = (float)(progress - Math.Floor(progress));
             var position = 1 + totalProgress.Count(p => p > progress);
+            var classPosition = 1 + _field.Count(d =>
+                d.ClassIndex == driver.ClassIndex && totalProgress[d.CarIdx] > progress);
+            var bestLap = DemoBestLap(driver.ClassIndex, driver.CarIdx);
+            var lastLap = bestLap + 0.3f + 0.9f * MathF.Abs(MathF.Sin((float)(_sessionTime * 0.2) + driver.CarIdx));
 
             cars.Add(new CarTelemetry(
                 driver.CarIdx,
@@ -298,7 +310,14 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
                 EstTimeSeconds: (float)(pct * driver.LapSeconds),
                 OnPitRoad: inPits,
                 inPits ? CarTrackSurface.InPitStall : CarTrackSurface.OnTrack,
-                position));
+                position,
+                ClassPosition: classPosition,
+                LapsCompleted: (int)Math.Floor(progress),
+                BestLapTimeSeconds: bestLap,
+                LastLapTimeSeconds: lastLap,
+                // F2Time is "time behind the session leader"; derive it from the
+                // track-position gap scaled by a realistic reference lap time.
+                F2TimeSeconds: (float)Math.Max(0, (leaderProgress - progress) * ReferenceLapSeconds)));
         }
 
         var player = cars[PlayerIdx];
@@ -341,6 +360,13 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     }
 
     private bool IsInPits(SimDriver driver) => driver.CarIdx == PlayerIdx ? _playerInPits : driver.InPits;
+
+    /// <summary>A deterministic, realistic-looking best lap per car for the standings.</summary>
+    private static float DemoBestLap(int classIndex, int carIdx)
+    {
+        var baseLap = DemoClassBaseLap[classIndex % DemoClassBaseLap.Length];
+        return (float)(baseLap + (carIdx % 5) * 0.18 + (carIdx * 0.041 % 0.7));
+    }
 
     private SessionMetadata BuildMetadata()
     {

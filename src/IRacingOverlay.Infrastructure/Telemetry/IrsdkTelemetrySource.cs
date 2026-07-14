@@ -25,6 +25,11 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
     private readonly bool[] _carOnPitRoad = new bool[MaxCars];
     private readonly int[] _carTrackSurface = new int[MaxCars];
     private readonly int[] _carPosition = new int[MaxCars];
+    private readonly int[] _carClassPosition = new int[MaxCars];
+    private readonly int[] _carLapsCompleted = new int[MaxCars];
+    private readonly float[] _carBestLap = new float[MaxCars];
+    private readonly float[] _carLastLap = new float[MaxCars];
+    private readonly float[] _carF2Time = new float[MaxCars];
 
     public event EventHandler<TelemetrySnapshot>? TelemetryReceived;
     public event EventHandler<SessionMetadata>? SessionMetadataReceived;
@@ -105,6 +110,12 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
         data.GetBoolArray("CarIdxOnPitRoad", _carOnPitRoad, 0, MaxCars);
         data.GetIntArray("CarIdxTrackSurface", _carTrackSurface, 0, MaxCars);
         data.GetIntArray("CarIdxPosition", _carPosition, 0, MaxCars);
+        // Standings arrays - guarded, since not every build/session exposes them all.
+        ReadIntArray(data, "CarIdxClassPosition", _carClassPosition);
+        ReadIntArray(data, "CarIdxLapCompleted", _carLapsCompleted);
+        ReadFloatArray(data, "CarIdxBestLapTime", _carBestLap);
+        ReadFloatArray(data, "CarIdxLastLapTime", _carLastLap);
+        ReadFloatArray(data, "CarIdxF2Time", _carF2Time);
 
         var cars = new List<CarTelemetry>();
         for (var i = 0; i < MaxCars; i++)
@@ -121,7 +132,12 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
                 _carEstTime[i],
                 _carOnPitRoad[i],
                 (CarTrackSurface)_carTrackSurface[i],
-                _carPosition[i]));
+                _carPosition[i],
+                _carClassPosition[i],
+                _carLapsCompleted[i],
+                _carBestLap[i],
+                _carLastLap[i],
+                _carF2Time[i]));
         }
 
         TelemetryReceived?.Invoke(this, new TelemetrySnapshot
@@ -152,4 +168,28 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
 
     private static float GetFloatOrDefault(IRacingSdkData data, string name, float fallback = 0f) =>
         data.TelemetryDataProperties.TryGetValue(name, out var datum) ? data.GetFloat(datum) : fallback;
+
+    private void ReadIntArray(IRacingSdkData data, string name, int[] buffer)
+    {
+        if (data.TelemetryDataProperties.ContainsKey(name))
+        {
+            data.GetIntArray(name, buffer, 0, MaxCars);
+        }
+        else
+        {
+            Array.Clear(buffer);
+        }
+    }
+
+    private void ReadFloatArray(IRacingSdkData data, string name, float[] buffer)
+    {
+        if (data.TelemetryDataProperties.ContainsKey(name))
+        {
+            data.GetFloatArray(name, buffer, 0, MaxCars);
+        }
+        else
+        {
+            Array.Clear(buffer);
+        }
+    }
 }
