@@ -191,7 +191,9 @@ public class RelativeCalculatorTests
         float pct = 0f,
         bool onPitRoad = false,
         CarTrackSurface surface = CarTrackSurface.OnTrack) =>
-        new(idx, lap, pct, EstTimeSeconds: pct * LapTimeSeconds, onPitRoad, surface, Position: idx + 1);
+        new(idx, lap, pct, EstTimeSeconds: pct * LapTimeSeconds, onPitRoad, surface, Position: idx + 1,
+            ClassPosition: idx + 1, LapsCompleted: lap - 1, BestLapTimeSeconds: 0f,
+            LastLapTimeSeconds: 0f, F2TimeSeconds: 0f);
 
     private static TelemetrySnapshot Snapshot(params CarTelemetry[] cars) => new()
     {
