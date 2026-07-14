@@ -6,10 +6,12 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
         <!-- Neutral graphite surface - deliberately NOT navy, so the panel material
-             stops competing with the accent/badge colours that carry meaning. -->
+             stops competing with the accent/badge colours that carry meaning. The
+             ~80% alpha lets the track read through, RaceLab/LMU-style, while the
+             drop shadow and fully-opaque text keep the data legible. -->
         <LinearGradientBrush x:Key="PanelBackground" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#F2242629" Offset="0" />
-            <GradientStop Color="#F2131417" Offset="1" />
+            <GradientStop Color="#CC242629" Offset="0" />
+            <GradientStop Color="#CC131417" Offset="1" />
         </LinearGradientBrush>
         <!-- Very subtle warm undertone in the header zone only - a hint of material
              richness without tipping the whole panel back towards a colour cast. -->
@@ -46,6 +48,10 @@
 
         <SolidColorBrush x:Key="LapAheadText" Color="#FF7A85" />
         <SolidColorBrush x:Key="LapBehindText" Color="#6FB4FF" />
+
+        <!-- Purple for the session's fastest lap in the standings, echoing
+             iRacing's own timing colours. -->
+        <SolidColorBrush x:Key="FastestLap" Color="#C08BFF" />
 
         <!-- iRacing's own license-class colours, so the badge reads instantly to
              anyone who races there. Reuses Negative/Positive/Accent where the

@@ -10,8 +10,8 @@
         ResizeMode="NoResize"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="Manual"
-        Left="80"
-        Top="470"
+        Left="600"
+        Top="300"
         FontFamily="Segoe UI Variable Display, Segoe UI"
         MouseLeftButtonDown="OnDragWindow">
 

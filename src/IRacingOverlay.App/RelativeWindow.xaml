@@ -9,7 +9,9 @@
         ShowInTaskbar="False"
         ResizeMode="NoResize"
         SizeToContent="WidthAndHeight"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
+        Left="24"
+        Top="760"
         FontFamily="Segoe UI Variable Display, Segoe UI"
         MouseLeftButtonDown="OnDragWindow">
 
@@ -20,22 +22,22 @@
     </Window.ContextMenu>
 
     <Grid Margin="16">
-    <Border Width="640"
-            Padding="20,14,20,16"
-            CornerRadius="16"
+    <Border Width="468"
+            Padding="16,10,16,12"
+            CornerRadius="14"
             Background="{StaticResource PanelBackground}"
             BorderBrush="{StaticResource PanelBorder}"
             BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="34" ShadowDepth="0" Opacity="0.62" Color="#000000" />
+            <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="#000000" />
         </Border.Effect>
         <Grid>
-        <Border CornerRadius="16" Margin="-20,-14,-20,-16" Background="{StaticResource PanelSheen}" IsHitTestVisible="False" />
+        <Border CornerRadius="14" Margin="-16,-10,-16,-12" Background="{StaticResource PanelSheen}" IsHitTestVisible="False" />
         <StackPanel>
 
             <!-- header -->
-            <DockPanel Margin="0,0,0,10">
-                <Ellipse Width="9" Height="9" VerticalAlignment="Center" DockPanel.Dock="Left">
+            <DockPanel Margin="0,0,0,8">
+                <Ellipse Width="8" Height="8" VerticalAlignment="Center" DockPanel.Dock="Left">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource Warning}" />
@@ -52,31 +54,31 @@
                            VerticalAlignment="Center"
                            Style="{StaticResource Caption}" />
                 <TextBlock Text="RELATIVE"
-                           Margin="10,0,0,0"
+                           Margin="9,0,0,0"
                            VerticalAlignment="Center"
-                           FontSize="13"
+                           FontSize="12"
                            FontWeight="Bold"
                            Foreground="{StaticResource Accent}" />
             </DockPanel>
 
             <!-- session strip: session/time · brake bias · temps · wetness · incidents -->
-            <DockPanel Margin="0,0,0,10">
+            <DockPanel Margin="0,0,0,8">
                 <TextBlock Text="{Binding SessionText}"
                            DockPanel.Dock="Left"
                            VerticalAlignment="Center"
-                           FontSize="12"
+                           FontSize="11"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource TextPrimary}" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock Text="{Binding BrakeBiasText}"
-                               Margin="12,0,0,0"
+                               Margin="10,0,0,0"
                                Style="{StaticResource Caption}"
                                Visibility="{Binding HasBrakeBias, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding TrackTempText}" Margin="12,0,0,0" Style="{StaticResource Caption}" />
-                    <TextBlock Text="{Binding AirTempText}" Margin="12,0,0,0" Style="{StaticResource Caption}" />
-                    <Border Margin="12,0,0,0"
+                    <TextBlock Text="{Binding TrackTempText}" Margin="10,0,0,0" Style="{StaticResource Caption}" />
+                    <TextBlock Text="{Binding AirTempText}" Margin="10,0,0,0" Style="{StaticResource Caption}" />
+                    <Border Margin="10,0,0,0"
                             CornerRadius="5"
-                            Padding="6,2"
+                            Padding="6,1"
                             Background="#26FFC24D"
                             Visibility="{Binding IsWet, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="{Binding WetnessText}"
@@ -85,18 +87,18 @@
                                    Foreground="{StaticResource Warning}" />
                     </Border>
                     <TextBlock Text="{Binding IncidentsText}"
-                               Margin="12,0,0,0"
+                               Margin="10,0,0,0"
                                Style="{StaticResource Caption}"
                                Foreground="{StaticResource TextSecondary}" />
                 </StackPanel>
             </DockPanel>
 
-            <Border Height="1" Background="{StaticResource Separator}" Margin="0,0,0,6" />
+            <Border Height="1" Background="{StaticResource Separator}" Margin="0,0,0,4" />
 
             <ItemsControl ItemsSource="{Binding Rows}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Height="34" CornerRadius="8" Margin="0,1" BorderThickness="1">
+                        <Border Height="26" CornerRadius="7" Margin="0,1" BorderThickness="1">
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="Background" Value="Transparent" />
@@ -117,39 +119,37 @@
                             <Grid VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="4" />
-                                    <ColumnDefinition Width="30" />
-                                    <ColumnDefinition Width="46" />
+                                    <ColumnDefinition Width="26" />
+                                    <ColumnDefinition Width="40" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="58" />
-                                    <ColumnDefinition Width="58" />
-                                    <ColumnDefinition Width="92" />
+                                    <ColumnDefinition Width="70" />
                                 </Grid.ColumnDefinitions>
 
                                 <!-- class colour bar - straight from the sim's own CarClassColor -->
                                 <Border Grid.Column="0"
                                         Width="4"
-                                        Margin="-20,4,0,4"
+                                        Margin="-16,3,0,3"
                                         CornerRadius="2,0,0,2"
                                         Background="{Binding ClassColorBrush}" />
 
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding PositionText}"
                                            VerticalAlignment="Center"
-                                           Margin="6,0,0,0"
-                                           FontSize="13"
+                                           Margin="5,0,0,0"
+                                           FontSize="11"
                                            Foreground="{StaticResource TextMuted}" />
 
                                 <TextBlock Grid.Column="2"
                                            Text="{Binding CarNumberText}"
                                            VerticalAlignment="Center"
-                                           FontSize="13"
+                                           FontSize="11"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource TextSecondary}" />
 
                                 <TextBlock Grid.Column="3"
                                            Text="{Binding Name}"
                                            VerticalAlignment="Center"
-                                           FontSize="16"
+                                           FontSize="13"
                                            FontWeight="SemiBold"
                                            Margin="0,0,6,0"
                                            TextTrimming="CharacterEllipsis">
@@ -171,38 +171,14 @@
                                     </TextBlock.Style>
                                 </TextBlock>
 
-                                <!-- license badge: coloured per iRacing's own license classes -->
-                                <Border Grid.Column="4"
-                                        CornerRadius="5"
-                                        Padding="5,2"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource LicenseBadgeBackground}">
-                                    <TextBlock Text="{Binding License}"
-                                               FontSize="11"
-                                               FontWeight="SemiBold"
-                                               Style="{StaticResource LicenseBadgeText}" />
-                                </Border>
-
-                                <!-- iRating badge: coloured by rating band -->
-                                <Border Grid.Column="5"
-                                        CornerRadius="5"
-                                        Padding="5,2"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource IRatingBadgeBackground}">
-                                    <TextBlock Text="{Binding IRatingText}"
-                                               FontSize="11"
-                                               FontWeight="SemiBold"
-                                               Style="{StaticResource IRatingBadgeText}" />
-                                </Border>
-
-                                <StackPanel Grid.Column="6"
+                                <StackPanel Grid.Column="4"
                                             Orientation="Horizontal"
                                             HorizontalAlignment="Right"
                                             VerticalAlignment="Center"
-                                            Margin="0,0,4,0">
+                                            Margin="0,0,3,0">
                                     <Border CornerRadius="4"
                                             Padding="5,1"
-                                            Margin="0,0,7,0"
+                                            Margin="0,0,6,0"
                                             Background="#26FFC24D"
                                             VerticalAlignment="Center"
                                             Visibility="{Binding InPits, Converter={StaticResource BoolToVis}}">
@@ -212,7 +188,7 @@
                                                    Foreground="{StaticResource Warning}" />
                                     </Border>
                                     <TextBlock Text="{Binding DeltaText}"
-                                               FontSize="16"
+                                               FontSize="13"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource TextPrimary}" />
                                 </StackPanel>
@@ -227,7 +203,7 @@
     </Border>
     <Border Height="1"
             Margin="1,1,1,0"
-            CornerRadius="16,16,0,0"
+            CornerRadius="14,14,0,0"
             VerticalAlignment="Top"
             Background="{StaticResource PanelTopHighlight}"
             IsHitTestVisible="False" />
