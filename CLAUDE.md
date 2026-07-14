@@ -1,10 +1,12 @@
 # iRacing Overlay — working guide
 
 Lightweight, always-on-top WPF telemetry overlay for iRacing. MVP scope: build
-small, but leave clean seams to scale. Widgets so far: relative (flagship), fuel,
-setup (flashes for the first minute of Qualify/Race as a reminder), radar
-(blind-spot proximity, built on iRacing's own CarLeftRight spotter signal). A
-system tray icon controls the app; demo mode also shows a dev control panel.
+small, but leave clean seams to scale. Widgets so far: standings (full
+class-grouped field), relative (compact glance widget), fuel, setup (flashes
+for the first minute of Qualify/Race as a reminder), radar (blind-spot
+proximity, built on iRacing's own CarLeftRight spotter signal). Panels are
+~80% transparent. A system tray icon controls the app; demo mode also shows a
+dev control panel.
 
 ## Build & run
 
@@ -57,8 +59,15 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   out of the view model; the app stays a thin shell over `Core`.
 - Telemetry events arrive on **background threads**; marshal to the UI thread in the
   composition root before touching a view model.
-- The relative updates **fixed row slots in place** rather than rebuilding the list, to
-  stay allocation-free and keep the layout stable — follow that for other list widgets.
+- List widgets update **row slots in place**, not by rebuilding the collection, so
+  ordering swaps don't flicker. The relative uses fixed slots; the standings uses a flat
+  `ObservableCollection` (headers interleaved with rows) that only changes length when the
+  field size does. Follow one of these for any new list.
+- Prefer **time-based** reasoning over lap-count differences for gaps/laps-down. A raw
+  completed-lap difference flickers to "+1L" for a car only tenths behind whenever the
+  leader crosses the line; the standings derives laps-down from the time gap versus the
+  class leader's best lap instead. (Found via a scratchpad dump harness — when a
+  demo/live value looks wrong, instrument it rather than reason about it.)
 - SDK vars missing on older sim builds must **degrade gracefully** (see the
   `GetIntOrDefault`/`GetFloatOrDefault` helpers), never throw.
 - Format numbers with `InvariantCulture`; shared display logic goes in `Core/Formatting`.

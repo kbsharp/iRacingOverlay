@@ -1,14 +1,17 @@
 # iRacing Overlay
 
-A lightweight, always-on-top telemetry overlay for iRacing. Four widgets so far:
+A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
 
-- **Relative** (the flagship): the three cars ahead of and behind you on track with
-  live time deltas, race position, and car number. License and iRating are colour-coded
-  badges (iRacing's real license colours, plus a separate iRating band colour), and each
-  row carries its class's actual colour from the sim. Lapping cars are red, lapped cars
-  blue, pitting cars flagged, your own row highlighted in amber. A session strip on top
-  shows session type + time remaining, brake bias, track/air temps, a wetness badge, and
-  your incident count.
+- **Standings**: the full, class-grouped field (top-left by default) — each car by
+  position within its class, with car number, driver, colour-coded license and iRating
+  badges, best and last lap times (session-fastest in purple), and gap to the class
+  leader. Your own row is highlighted; the widgets read the sim's real timing data.
+- **Relative** (the flagship glance): the three cars ahead of and behind you on track with
+  live time deltas, race position and car number, kept **compact** (bottom by default) so
+  it complements the standings rather than repeating it. Each row carries its class's
+  actual colour from the sim; lapping cars are red, lapped cars blue, pitting cars flagged,
+  your own row highlighted in amber. A session strip on top shows session type + time
+  remaining, brake bias, track/air temps, a wetness badge, and your incident count.
 - **Fuel**: a strategy calculator — fuel level and laps in tank, average/last-lap burn,
   and the numbers you act on: fuel to finish, the margin you'll finish with (green spare
   / red short), fuel to add at the next stop, and a save-per-lap target.
@@ -64,7 +67,11 @@ Usage notes:
   cycle Practice/Qualify/Race (retriggers the setup-reminder flash), cycle the radar through
   all six proximity states — all live, no rebuild. See
   [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.
-- Drag each widget anywhere with the left mouse button.
+- Drag each widget anywhere with the left mouse button. Default positions (standings
+  top-left, relative bottom-left, the rest in a right column) aren't remembered between
+  runs yet — that's on the roadmap.
+- Panels are semi-transparent (~80%) so the track shows through; drop shadows and opaque
+  text keep everything legible.
 - iRacing must run in **windowed or borderless** mode — overlays are not visible over exclusive fullscreen.
 - If no data appears while driving, check that `irsdkEnableMem=1` is set in iRacing's `app.ini` (it is by default).
 
@@ -86,7 +93,6 @@ the pattern for adding a new widget, and debugging notes; see
 
 ## Roadmap
 
-- Standings widget (full field, gaps, multiclass split)
 - Delta bar (lap delta to session/all-time best)
 - Car manufacturer badges on the relative (needs custom art assets)
 - Drag-to-resize widgets and remembered window positions/scale
