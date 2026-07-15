@@ -52,6 +52,17 @@
                                MouseLeftButtonDown="OnCloseGlyphClicked" />
                 </DockPanel>
 
+                <TextBlock Text="RACE TYPE" Style="{StaticResource Caption}" Margin="0,0,0,4" />
+                <Button Content="Cycle race type"
+                        Command="{Binding CycleRaceTypeCommand}"
+                        Style="{StaticResource DevButton}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,4" />
+                <TextBlock Text="{Binding RaceTypeText}"
+                           Foreground="{StaticResource TextSecondary}"
+                           FontSize="11"
+                           Margin="0,0,0,12" />
+
                 <TextBlock Text="FIELD" Style="{StaticResource Caption}" Margin="0,0,0,4" />
                 <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>

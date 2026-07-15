@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Demo;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Telemetry;
 
@@ -21,10 +22,10 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     private const int MinCarCountValue = 3;
 
     // The demo laps are deliberately short (~15 s) so estimates appear fast, but
-    // that would make the standings show silly "0:15" lap times. These give the
-    // standings realistic-looking figures without touching the sim cadence.
+    // that would make the standings show silly "0:15" lap times. This gives the
+    // F2Time gaps a realistic scale without touching the sim cadence; per-class
+    // best-lap figures come from the active preset instead.
     private const double ReferenceLapSeconds = 100.0;
-    private static readonly double[] DemoClassBaseLap = [100.4, 103.1, 95.7];
 
     private static readonly TrackWetness[] WetnessCycle =
     [
@@ -34,45 +35,21 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         TrackWetness.VeryWet,
     ];
 
-    /// <summary>Fake multiclass field so the relative widget's class colouring is
-    /// visible in demo mode too, without needing a live multiclass session.</summary>
-    private static readonly (string Name, string ColorHex)[] DemoClasses =
+    /// <summary>Driver names/numbers the field is drawn from, in order. The field
+    /// is rebuilt from the active <see cref="RacePreset"/>; car 0 is always the
+    /// player. Sized to a full 40-car grid, which caps <see cref="MaxCarCount"/>.</summary>
+    private static readonly (string Name, string Number)[] RosterPool =
     [
-        ("GT3", "E8579E"),
-        ("GTE", "3AC6D9"),
-        ("DP", "FFC94D"),
-    ];
-
-    /// <summary>Initial field: name, number, iRating, license, class index (into
-    /// <see cref="DemoClasses"/>), lap time, starting progress (in laps), and pit
-    /// state. Offsets put one car a lap up, one a lap down, and one parked in the
-    /// pits, so every relative-widget state is visible immediately.</summary>
-    private static readonly SimDriver[] InitialField =
-    [
-        new(0, "K. Bevan", "23", 2350, "B 3.44", 0, 15.0, 5.30, InPits: false),
-        new(1, "T. Ridley", "7", 2410, "B 3.02", 0, 14.9, 5.42, InPits: false),
-        new(2, "S. Okafor", "88", 2280, "C 2.77", 0, 15.1, 5.18, InPits: false),
-        new(3, "L. Fontaine", "4", 2590, "B 3.91", 0, 14.8, 5.55, InPits: false),
-        new(4, "R. Tanaka", "51", 2150, "C 2.31", 0, 15.2, 5.05, InPits: false),
-        new(5, "D. Whitmore", "12", 3105, "A 4.21", 1, 14.6, 6.40, InPits: false), // lap ahead
-        new(6, "K. Larsen", "31", 1720, "D 2.08", 1, 15.6, 4.22, InPits: false),   // lap down
-        new(7, "P. Moreau", "9", 2035, "C 2.50", 2, 15.3, 5.68, InPits: false),
-        new(8, "C. Ibarra", "77", 2760, "B 3.66", 2, 14.7, 5.93, InPits: true),    // parked in pits
-    ];
-
-    /// <summary>Extra drivers the dev panel can add on top of <see cref="InitialField"/>.
-    /// Caps <see cref="MaxCarCount"/> at InitialField.Length + this array's length - sized
-    /// so the demo can reach a full 40-car multiclass grid.</summary>
-    private static readonly (string Name, string Number)[] ExtraRoster =
-    [
-        ("A. Novak", "14"), ("E. Duarte", "22"), ("H. Kessler", "35"), ("N. Osei", "41"),
-        ("V. Petrov", "56"), ("F. Laurent", "63"), ("Y. Takahashi", "70"), ("C. Bianchi", "82"),
-        ("M. Alvarez", "91"), ("S. Lindqvist", "3"), ("D. Kowalski", "18"), ("G. Rossi", "5"),
-        ("O. Bergström", "16"), ("T. Nguyen", "27"), ("J. Fischer", "33"), ("W. Park", "44"),
-        ("L. Costa", "52"), ("B. Andersen", "61"), ("R. Haas", "68"), ("K. Yamamoto", "74"),
-        ("Z. Popov", "80"), ("N. Dubois", "86"), ("A. Silva", "92"), ("M. Weber", "6"),
-        ("E. Johansson", "19"), ("D. Marchetti", "28"), ("P. Sørensen", "36"), ("H. Meyer", "47"),
-        ("F. Romano", "53"), ("C. Nielsen", "66"), ("V. Ivanov", "75"),
+        ("K. Bevan", "23"), ("T. Ridley", "7"), ("S. Okafor", "88"), ("L. Fontaine", "4"),
+        ("R. Tanaka", "51"), ("D. Whitmore", "12"), ("K. Larsen", "31"), ("P. Moreau", "9"),
+        ("C. Ibarra", "77"), ("A. Novak", "14"), ("E. Duarte", "22"), ("H. Kessler", "35"),
+        ("N. Osei", "41"), ("V. Petrov", "56"), ("F. Laurent", "63"), ("Y. Takahashi", "70"),
+        ("C. Bianchi", "82"), ("M. Alvarez", "91"), ("S. Lindqvist", "3"), ("D. Kowalski", "18"),
+        ("G. Rossi", "5"), ("O. Bergström", "16"), ("T. Nguyen", "27"), ("J. Fischer", "33"),
+        ("W. Park", "44"), ("L. Costa", "52"), ("B. Andersen", "61"), ("R. Haas", "68"),
+        ("K. Yamamoto", "74"), ("Z. Popov", "80"), ("N. Dubois", "86"), ("A. Silva", "92"),
+        ("M. Weber", "6"), ("E. Johansson", "19"), ("D. Marchetti", "28"), ("P. Sørensen", "36"),
+        ("H. Meyer", "47"), ("F. Romano", "53"), ("C. Nielsen", "66"), ("V. Ivanov", "75"),
     ];
 
     /// <summary>Session types the dev panel's "Cycle Session" control steps through,
@@ -87,7 +64,10 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     ];
 
     private readonly object _gate = new();
-    private readonly List<SimDriver> _field = [.. InitialField];
+    private readonly List<SimDriver> _field = [];
+
+    private RacePreset _preset = RacePresets.Default;
+    private int _presetIndex;
 
     private Timer? _timer;
     private double _sessionTime;
@@ -96,7 +76,6 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     private int _incidentCount = 2;
     private bool _playerInPits;
     private bool _connectionAnnounced;
-    private int _extrasAdded;
 
     // Starts already in "Race" to match this demo's original fixed behaviour
     // (a short timed race, so the fuel widget has a healthy margin by default).
@@ -115,6 +94,11 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     public event EventHandler<Exception>? ErrorOccurred;
 #pragma warning restore CS0067
 
+    public SimulatedTelemetrySource()
+    {
+        RebuildField(_preset.DefaultCarCount);
+    }
+
     public int CarCount
     {
         get { lock (_gate) { return _field.Count; } }
@@ -122,7 +106,12 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
 
     public int MinCarCount => MinCarCountValue;
 
-    public int MaxCarCount => InitialField.Length + ExtraRoster.Length;
+    public int MaxCarCount => RosterPool.Length;
+
+    public string CurrentRaceType
+    {
+        get { lock (_gate) { return _preset.Name; } }
+    }
 
     public void Start()
     {
@@ -146,22 +135,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
                 return false;
             }
 
-            var carIdx = _field.Count;
-            // Indexed by a counter that only ever increases, not by the current field
-            // size - RemoveCar can shrink the field below InitialField.Length, which
-            // would otherwise make this index go negative after a remove-then-add.
-            var (name, number) = ExtraRoster[_extrasAdded % ExtraRoster.Length];
-            var classIndex = _extrasAdded % DemoClasses.Length;
-            _extrasAdded++;
-            var lapSeconds = PlayerLapSeconds * (1.0 + 0.02 * ((carIdx % 5) - 2));
-            var startProgress = 4.0 + (carIdx % 10) * 0.55;
-            var iRating = 1400 + carIdx * 173 % 2600;
-            var licenseLetter = "ABCD"[carIdx % 4];
-            var licenseValue = 2.0 + carIdx * 0.37 % 3.0;
-            var license = $"{licenseLetter} {licenseValue:0.00}";
-
-            _field.Add(new SimDriver(
-                carIdx, name, number, iRating, license, classIndex, lapSeconds, startProgress, InPits: false));
+            RebuildField(_field.Count + 1);
             return true;
         }
     }
@@ -175,8 +149,19 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
                 return false;
             }
 
-            _field.RemoveAt(_field.Count - 1);
+            RebuildField(_field.Count - 1);
             return true;
+        }
+    }
+
+    public string CycleRaceType()
+    {
+        lock (_gate)
+        {
+            _presetIndex = (_presetIndex + 1) % RacePresets.All.Count;
+            _preset = RacePresets.All[_presetIndex];
+            RebuildField(_preset.DefaultCarCount);
+            return _preset.Name;
         }
     }
 
@@ -367,10 +352,58 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
 
     private bool IsInPits(SimDriver driver) => driver.CarIdx == PlayerIdx ? _playerInPits : driver.InPits;
 
-    /// <summary>A deterministic, realistic-looking best lap per car for the standings.</summary>
-    private static float DemoBestLap(int classIndex, int carIdx)
+    /// <summary>Rebuilds the field for the active preset at the given size, clamped to
+    /// [<see cref="MinCarCount"/>, <see cref="MaxCarCount"/>]. Car 0 is the player, in
+    /// the preset's player class; the rest are split across classes by the planner.
+    /// Deterministic, so the same (preset, count) always yields the same grid.
+    /// Callers must hold <see cref="_gate"/>.</summary>
+    private void RebuildField(int carCount)
     {
-        var baseLap = DemoClassBaseLap[classIndex % DemoClassBaseLap.Length];
+        carCount = Math.Clamp(carCount, MinCarCountValue, MaxCarCount);
+        var classByCar = DemoFieldPlanner.PlanClassByCar(_preset, carCount);
+        var playerClassLap = _preset.Classes[_preset.PlayerClassIndex].BaseLapSeconds;
+
+        _field.Clear();
+        for (var carIdx = 0; carIdx < carCount; carIdx++)
+        {
+            var classIndex = classByCar[carIdx];
+            var (name, number) = RosterPool[carIdx];
+            var iRating = 1400 + carIdx * 173 % 2600;
+            var licenseLetter = "ABCD"[carIdx % 4];
+            var licenseValue = 2.0 + carIdx * 0.37 % 3.0;
+            var license = $"{licenseLetter} {licenseValue:0.00}";
+
+            // Keep the demo's short ~15 s cadence laps, but scale by the class's
+            // relative pace so a faster class visibly laps a slower one.
+            var paceFactor = _preset.Classes[classIndex].BaseLapSeconds / playerClassLap;
+            var jitter = 1.0 + 0.02 * ((carIdx % 5) - 2);
+            var lapSeconds = PlayerLapSeconds * paceFactor * jitter;
+
+            // Spread the field along the track, then deliberately place a car a lap
+            // up, a car a lap down, and a car parked in the pits, so every
+            // relative-widget state is visible immediately.
+            var startProgress = 5.30 + (carIdx % 10) * 0.06;
+            if (carIdx == 1)
+            {
+                startProgress += 1.05;
+            }
+            else if (carIdx == 2)
+            {
+                startProgress = Math.Max(0.2, startProgress - 1.05);
+            }
+
+            var inPits = carIdx == carCount - 1 && carCount > MinCarCountValue;
+
+            _field.Add(new SimDriver(
+                carIdx, name, number, iRating, license, classIndex, lapSeconds, startProgress, inPits));
+        }
+    }
+
+    /// <summary>A deterministic, realistic-looking best lap per car for the standings,
+    /// anchored to the car's class base lap in the active preset.</summary>
+    private float DemoBestLap(int classIndex, int carIdx)
+    {
+        var baseLap = _preset.Classes[classIndex].BaseLapSeconds;
         return (float)(baseLap + (carIdx % 5) * 0.18 + (carIdx * 0.041 % 0.7));
     }
 
@@ -384,10 +417,10 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
                 d => d.CarIdx,
                 d =>
                 {
-                    var (className, classColorHex) = DemoClasses[d.ClassIndex];
+                    var carClass = _preset.Classes[d.ClassIndex];
                     return new RosterDriver(
                         d.CarIdx, d.Name, d.Number, d.IRating, d.License, (float)d.LapSeconds,
-                        className, classColorHex);
+                        carClass.ShortName, carClass.ColorHex);
                 });
         }
 

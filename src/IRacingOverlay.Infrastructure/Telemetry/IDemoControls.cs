@@ -15,6 +15,14 @@ public interface IDemoControls
 
     int MaxCarCount { get; }
 
+    /// <summary>Display name of the current race type preset.</summary>
+    string CurrentRaceType { get; }
+
+    /// <summary>Advances to the next race type preset (Mazda MX-5 Cup, GT3, IMSA
+    /// multiclass, ...), rebuilding the field with that series' classes and typical
+    /// grid size. Returns the new preset's display name.</summary>
+    string CycleRaceType();
+
     /// <summary>Adds one car to the field. Returns false if already at <see cref="MaxCarCount"/>.</summary>
     bool AddCar();
 

@@ -399,22 +399,31 @@ fire on background threads; all marshalling to the UI thread happens in
 **`SimulatedTelemetrySource`** (`--demo`): drives the app without iRacing
 running, on a `System.Threading.Timer` ticking at the same ~15Hz as live
 mode.
-- Starts with a 9-car field (`InitialField`) with names, car numbers,
-  iRatings, licenses, and slightly different lap times, defined so one car
-  ends up a lap ahead (D. Whitmore), one a lap down (K. Larsen), and one
-  parked in the pits (C. Ibarra) — enough variety to see every relative
-  widget state at once.
-- Also assigns a fake class (`DemoClasses`: GT3 pink, GTE cyan, DP gold) to
-  every car, purely so the relative widget's class-colour bar has something
-  real to show without a live multiclass session. Cars added via the dev
-  panel cycle through the same three classes.
-- Player laps run ~15s so estimates populate within seconds of starting.
+- Builds its field from a selectable **race preset** (`RacePresets`,
+  `Core/Demo`) modelled on a real iRacing series — its classes, class colours,
+  per-class pace, and a typical grid size. It opens on the IMSA preset (3-class
+  GTP/LMP2/GTD); the dev panel's "Cycle race type" button switches to the GT3
+  single-class series, the Porsche Cup single-make, or the Mazda MX-5 Cups.
+- The field is generated deterministically by `RebuildField(count)`: names,
+  numbers, iRatings, and licenses come in order from a 40-name roster pool;
+  `DemoFieldPlanner` splits the cars across the preset's classes by share
+  (largest-remainder, guaranteeing every class and the player's class a seat).
+  Car 0 is always the player. Starting offsets put one car a lap ahead, one a
+  lap down, and one parked in the pits — enough variety to see every relative
+  widget state at once — and the same builder handles add/remove and race-type
+  switches, so there is no separate "reserve roster" path.
+- Class colours come from the preset (each hue meaning one class), so the
+  relative widget's class-colour bar and the standings class groups have
+  something meaningful to show without a live multiclass session.
+- Player laps run ~15s so estimates populate within seconds of starting; other
+  classes' cadence scales by their relative pace, so a faster class visibly laps
+  a slower one.
 - For the standings, each car also gets a simulated class position, a
-  realistic-looking best/last lap (~95-105s via `DemoBestLap`, so the table
-  doesn't show silly "0:15" times from the short sim laps), and an F2Time
-  derived from its track-position gap to the leader scaled by a 100s
-  reference lap. That scaling makes the demo gaps look larger than a real
-  race's, but the format and lapped/same-lap behaviour are correct.
+  realistic-looking best/last lap (anchored to its class's base lap via
+  `DemoBestLap`, so the table doesn't show silly "0:15" times from the short sim
+  laps), and an F2Time derived from its track-position gap to the leader scaled
+  by a 100s reference lap. That scaling makes the demo gaps look larger than a
+  real race's, but the format and lapped/same-lap behaviour are correct.
 - Simulated fuel burn varies per lap (`sin` modulation) so average and
   last-lap figures differ, the way real telemetry does.
 - Session is a ~4 minute timed race (see Fuel widget limitations above),
@@ -469,7 +478,8 @@ control in live mode and doesn't appear there.
 
 | Control | Effect |
 |---|---|
-| **+ Add car** / **− Remove** | Grows/shrinks the simulated field, 3-40 cars (`MinCarCount`/`MaxCarCount`). Extra cars are drawn from a reserve roster (enough to reach a full 40-car multiclass grid); removing always drops the most recently added car. |
+| **Cycle race type** | Steps through the demo race presets (`RacePresets`) — IMSA (3-class GTP/LMP2/GTD multiclass), the GT3 single-class series, the Porsche Cup single-make, and the two Mazda MX-5 Cups — wrapping around. Each rebuilds the field with that series' classes, class colours, per-class pace, and a typical grid size, so the standings/relative widgets can be exercised against a single-make grid, a single-class GT3 field, or a full multiclass grid. IMSA is the default the demo opens on. |
+| **+ Add car** / **− Remove** | Grows/shrinks the simulated field, 3-40 cars (`MinCarCount`/`MaxCarCount`). The field is rebuilt deterministically from the active race preset for the new size (drivers drawn in order from a 40-name roster pool, split across the preset's classes); removing shrinks by one from the end. |
 | **− 5 L** / **+ 5 L** | Adjusts player fuel, clamped to a 65 L tank capacity. Adding fuel mid-lap exercises the same refuel-detection path (`FuelCalculator`'s 0.2 L threshold) that a real pit stop would. |
 | **Set critical (2 L)** | Drops fuel straight to 2 L, to check the fuel widget's red "LAPS SHORT" state without waiting for a real burn-down. |
 | **Cycle wetness** | Steps through Dry → Very Lightly Wet → Moderately Wet → Very Wet → (wraps to Dry), to check the relative widget's wetness badge. |
@@ -488,12 +498,14 @@ the same fields concurrently.
 **A real bug shipped and was caught here:** `AddCar()` originally indexed its
 name/number lookup by `currentFieldSize - initialFieldSize`, which goes
 negative (→ `IndexOutOfRangeException`, crashing the whole app) once
-`RemoveCar()` had shrunk the field below its initial 9. Fixed by indexing off
-a monotonically-increasing counter instead of the current field size. Caught
-via Windows Event Log forensics after a launched instance crashed silently,
-then confirmed fixed with a throwaway console harness hammering
-`AddCar`/`RemoveCar` in random order for 5000 iterations plus the specific
-drain-to-floor-then-regrow shape. See
+`RemoveCar()` had shrunk the field below its initial 9. It was caught via
+Windows Event Log forensics after a launched instance crashed silently, then
+confirmed fixed with a throwaway console harness hammering `AddCar`/`RemoveCar`
+in random order for 5000 iterations plus the specific drain-to-floor-then-regrow
+shape. That whole incremental-roster path has since been replaced: Add/Remove and
+Cycle race type now all funnel through one deterministic `RebuildField(count)`
+that regenerates the field from the active preset and a fixed roster pool, so the
+class of indexing that crashed is gone by construction. See
 [DEVELOPMENT.md](DEVELOPMENT.md#dev-control-panel-demo-mode) for why this
 file has no permanent automated tests and how to stress-test a change to it
 anyway.

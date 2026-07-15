@@ -17,6 +17,7 @@ public sealed class DevControlViewModel : ObservableObject
     private readonly IDemoControls _controls;
 
     private string _carCountText;
+    private string _raceTypeText;
     private string _wetnessText = SessionFormat.Wetness(TrackWetness.VeryLightlyWet);
     private string _sessionTypeText = "RACE";
     private bool _isSetupModified;
@@ -26,7 +27,14 @@ public sealed class DevControlViewModel : ObservableObject
     {
         _controls = controls;
         _carCountText = FormatCarCount();
+        _raceTypeText = controls.CurrentRaceType;
 
+        CycleRaceTypeCommand = new RelayCommand(() =>
+        {
+            // Switching race type rebuilds the field, so the car count changes too.
+            RaceTypeText = _controls.CycleRaceType();
+            CarCountText = FormatCarCount();
+        });
         AddCarCommand = new RelayCommand(() => { if (_controls.AddCar()) CarCountText = FormatCarCount(); });
         RemoveCarCommand = new RelayCommand(() => { if (_controls.RemoveCar()) CarCountText = FormatCarCount(); });
         DrainFuelCommand = new RelayCommand(() => _controls.AdjustFuel(-5f));
@@ -48,6 +56,8 @@ public sealed class DevControlViewModel : ObservableObject
         CycleRadarCommand = new RelayCommand(() =>
             RadarText = _controls.CycleCarLeftRight().ToString().ToUpperInvariant());
     }
+
+    public ICommand CycleRaceTypeCommand { get; }
 
     public ICommand AddCarCommand { get; }
 
@@ -75,6 +85,12 @@ public sealed class DevControlViewModel : ObservableObject
     {
         get => _carCountText;
         private set => SetProperty(ref _carCountText, value);
+    }
+
+    public string RaceTypeText
+    {
+        get => _raceTypeText;
+        private set => SetProperty(ref _raceTypeText, value);
     }
 
     public string WetnessText
