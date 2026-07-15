@@ -61,12 +61,18 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     ];
 
     /// <summary>Extra drivers the dev panel can add on top of <see cref="InitialField"/>.
-    /// Caps <see cref="MaxCarCount"/> at InitialField.Length + this array's length.</summary>
+    /// Caps <see cref="MaxCarCount"/> at InitialField.Length + this array's length - sized
+    /// so the demo can reach a full 40-car multiclass grid.</summary>
     private static readonly (string Name, string Number)[] ExtraRoster =
     [
         ("A. Novak", "14"), ("E. Duarte", "22"), ("H. Kessler", "35"), ("N. Osei", "41"),
         ("V. Petrov", "56"), ("F. Laurent", "63"), ("Y. Takahashi", "70"), ("C. Bianchi", "82"),
-        ("M. Alvarez", "91"), ("S. Lindqvist", "3"), ("D. Kowalski", "18"),
+        ("M. Alvarez", "91"), ("S. Lindqvist", "3"), ("D. Kowalski", "18"), ("G. Rossi", "5"),
+        ("O. Bergström", "16"), ("T. Nguyen", "27"), ("J. Fischer", "33"), ("W. Park", "44"),
+        ("L. Costa", "52"), ("B. Andersen", "61"), ("R. Haas", "68"), ("K. Yamamoto", "74"),
+        ("Z. Popov", "80"), ("N. Dubois", "86"), ("A. Silva", "92"), ("M. Weber", "6"),
+        ("E. Johansson", "19"), ("D. Marchetti", "28"), ("P. Sørensen", "36"), ("H. Meyer", "47"),
+        ("F. Romano", "53"), ("C. Nielsen", "66"), ("V. Ivanov", "75"),
     ];
 
     /// <summary>Session types the dev panel's "Cycle Session" control steps through,
