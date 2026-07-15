@@ -22,6 +22,7 @@ public sealed class TrayIconService : IDisposable
         System.Windows.Window setupWindow,
         System.Windows.Window radarWindow,
         System.Windows.Window? devControlWindow,
+        Action<double> setScale,
         Action requestExit)
     {
         var menu = new ContextMenuStrip();
@@ -30,6 +31,15 @@ public sealed class TrayIconService : IDisposable
         menu.Items.Add("Show Fuel", null, (_, _) => Reveal(fuelWindow));
         menu.Items.Add("Show Setup", null, (_, _) => Reveal(setupWindow));
         menu.Items.Add("Show Radar", null, (_, _) => Reveal(radarWindow));
+
+        menu.Items.Add(new ToolStripSeparator());
+        var scaleMenu = new ToolStripMenuItem("UI Scale");
+        foreach (var (label, value) in new[] { ("100%", 1.0), ("125%", 1.25), ("150%", 1.5), ("175%", 1.75) })
+        {
+            scaleMenu.DropDownItems.Add(label, null, (_, _) => setScale(value));
+        }
+
+        menu.Items.Add(scaleMenu);
 
         if (devControlWindow is not null)
         {

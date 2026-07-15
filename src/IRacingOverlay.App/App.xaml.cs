@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Media;
 using IRacingOverlay.App.Services;
 using IRacingOverlay.App.ViewModels;
 using IRacingOverlay.Core.Fuel;
@@ -24,6 +25,7 @@ namespace IRacingOverlay.App;
 /// </summary>
 public partial class App : System.Windows.Application
 {
+    private readonly List<Window> _scalableWindows = [];
     private ITelemetrySource? _telemetrySource;
     private TrayIconService? _trayIcon;
     private bool _isExiting;
@@ -93,6 +95,7 @@ public partial class App : System.Windows.Application
         fuelWindow.Show();
         setupWindow.Show();
         radarWindow.Show();
+        _scalableWindows.AddRange([standingsWindow, relativeWindow, fuelWindow, setupWindow, radarWindow]);
 
         DevControlWindow? devControlWindow = null;
         if (_telemetrySource is IDemoControls demoControls)
@@ -101,10 +104,12 @@ public partial class App : System.Windows.Application
             devControlWindow = new DevControlWindow { DataContext = devControlViewModel };
             devControlWindow.Closing += HideInsteadOfClose;
             devControlWindow.Show();
+            _scalableWindows.Add(devControlWindow);
         }
 
         _trayIcon = new TrayIconService(
-            standingsWindow, relativeWindow, fuelWindow, setupWindow, radarWindow, devControlWindow, RequestExit);
+            standingsWindow, relativeWindow, fuelWindow, setupWindow, radarWindow, devControlWindow,
+            SetScale, RequestExit);
 
         _telemetrySource.Start();
     }
@@ -114,6 +119,19 @@ public partial class App : System.Windows.Application
     {
         _isExiting = true;
         Shutdown();
+    }
+
+    /// <summary>Scales every overlay window by applying a layout transform to its
+    /// content root; SizeToContent then resizes the window to fit.</summary>
+    public void SetScale(double scale)
+    {
+        foreach (var window in _scalableWindows)
+        {
+            if (window.Content is FrameworkElement root)
+            {
+                root.LayoutTransform = new ScaleTransform(scale, scale);
+            }
+        }
     }
 
     private void HideInsteadOfClose(object? sender, CancelEventArgs e)
