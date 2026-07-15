@@ -4,4 +4,5 @@ namespace IRacingOverlay.Core.Standings;
 public sealed record StandingsClassGroup(
     string ClassShortName,
     string? ClassColorHex,
+    int StrengthOfField,
     IReadOnlyList<StandingsRow> Rows);

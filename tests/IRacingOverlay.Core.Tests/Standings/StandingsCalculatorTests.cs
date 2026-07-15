@@ -72,8 +72,8 @@ public class StandingsCalculatorTests
         // car1 is only 5 s back -> same lap.
         var groups = StandingsCalculator.Compute(MulticlassSnapshot(), MulticlassRoster());
 
-        Assert.Equal(1, Assert.Single(groups[0].Rows, r => r.CarIdx == 2).LapsDown);
-        Assert.Equal(0, Assert.Single(groups[0].Rows, r => r.CarIdx == 1).LapsDown);
+        Assert.Equal(1, Assert.Single(groups[0].Rows, r => r.CarIdx == 2).GapLapsDown);
+        Assert.Equal(0, Assert.Single(groups[0].Rows, r => r.CarIdx == 1).GapLapsDown);
     }
 
     [Fact]
@@ -88,7 +88,47 @@ public class StandingsCalculatorTests
 
         var down = StandingsCalculator.Compute(snapshot, Roster((0, "GT3"), (1, "GT3")))[0].Rows[1];
 
-        Assert.Equal(2, down.LapsDown);
+        Assert.Equal(2, down.GapLapsDown);
+    }
+
+    [Fact]
+    public void Compute_Interval_IsGapToTheCarDirectlyAhead()
+    {
+        var groups = StandingsCalculator.Compute(MulticlassSnapshot(), MulticlassRoster());
+
+        var gt3 = groups[0].Rows;
+        Assert.Null(gt3[0].IntervalSeconds);                       // leader has no car ahead
+        Assert.Equal(5.0, gt3[1].IntervalSeconds!.Value, 3);       // 5.0 - 0.0
+        Assert.Equal(90.0, gt3[2].IntervalSeconds!.Value, 3);      // 95.0 - 5.0
+        Assert.Equal(1, gt3[2].IntervalLapsDown);                  // 90 s over a ~90 s lap -> a lap
+    }
+
+    [Fact]
+    public void Compute_LastDelta_IsLastMinusBest()
+    {
+        var leader = StandingsCalculator.Compute(MulticlassSnapshot(), MulticlassRoster())[0].Rows[0];
+
+        // car0: last 90.5, best 90.0 -> +0.5
+        Assert.Equal(0.5, leader.LastDeltaSeconds!.Value, 3);
+    }
+
+    [Fact]
+    public void Compute_LastDelta_NullWhenBestOrLastUnknown()
+    {
+        var snapshot = Snapshot(
+            playerCarIdx: 0,
+            Car(0, position: 1, classPosition: 1, lapsCompleted: 5, best: 90f, last: -1f, f2: 0f));
+
+        Assert.Null(StandingsCalculator.Compute(snapshot, Roster((0, "GT3")))[0].Rows[0].LastDeltaSeconds);
+    }
+
+    [Fact]
+    public void Compute_PopulatesStrengthOfFieldPerClass()
+    {
+        // Every roster driver is iR 2000, so each class's SoF is 2000.
+        var groups = StandingsCalculator.Compute(MulticlassSnapshot(), MulticlassRoster());
+
+        Assert.All(groups, g => Assert.Equal(2000, g.StrengthOfField));
     }
 
     [Fact]

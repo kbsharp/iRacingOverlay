@@ -19,7 +19,10 @@ public sealed record StandingsRow(
     string? ClassColorHex,
     double? BestLapSeconds,
     double? LastLapSeconds,
+    double? LastDeltaSeconds,
     double? GapToClassLeaderSeconds,
-    int LapsDown,
+    int GapLapsDown,
+    double? IntervalSeconds,
+    int IntervalLapsDown,
     bool IsSessionBestLap,
     bool InPits);
