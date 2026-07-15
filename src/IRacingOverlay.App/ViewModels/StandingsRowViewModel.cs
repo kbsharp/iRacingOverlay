@@ -8,9 +8,9 @@ using Brushes = System.Windows.Media.Brushes;
 namespace IRacingOverlay.App.ViewModels;
 
 /// <summary>
-/// One line of the standings list. A line is either a class-group header or a
-/// car row; the same view-model type serves both so the list can be a single
-/// flat collection updated in place (no per-frame collection churn or flicker).
+/// One line of the standings list — either a class-group header or a car row.
+/// One view-model type serves both so the list can be a single flat collection
+/// updated in place (no per-frame collection churn or flicker).
 /// </summary>
 public sealed class StandingsRowViewModel : ObservableObject
 {
@@ -19,11 +19,13 @@ public sealed class StandingsRowViewModel : ObservableObject
 
     // Header
     private string _className = string.Empty;
+    private string _classSofText = string.Empty;
     private string _classCountText = string.Empty;
     private Brush _headerColorBrush = Brushes.Gray;
 
     // Row
     private bool _isPlayer;
+    private bool _isAltRow;
     private bool _inPits;
     private string _positionText = string.Empty;
     private string _carNumberText = string.Empty;
@@ -35,7 +37,9 @@ public sealed class StandingsRowViewModel : ObservableObject
     private Brush _classColorBrush = Brushes.Gray;
     private string _bestText = string.Empty;
     private bool _isSessionBest;
-    private string _lastText = string.Empty;
+    private string _lastDeltaText = string.Empty;
+    private bool _lastDeltaIsSlower;
+    private string _intervalText = string.Empty;
     private string _gapText = string.Empty;
 
     public bool IsHeader
@@ -56,6 +60,12 @@ public sealed class StandingsRowViewModel : ObservableObject
         private set => SetProperty(ref _className, value);
     }
 
+    public string ClassSofText
+    {
+        get => _classSofText;
+        private set => SetProperty(ref _classSofText, value);
+    }
+
     public string ClassCountText
     {
         get => _classCountText;
@@ -72,6 +82,13 @@ public sealed class StandingsRowViewModel : ObservableObject
     {
         get => _isPlayer;
         private set => SetProperty(ref _isPlayer, value);
+    }
+
+    /// <summary>Every other car row gets a faint background stripe.</summary>
+    public bool IsAltRow
+    {
+        get => _isAltRow;
+        private set => SetProperty(ref _isAltRow, value);
     }
 
     public bool InPits
@@ -141,12 +158,27 @@ public sealed class StandingsRowViewModel : ObservableObject
         private set => SetProperty(ref _isSessionBest, value);
     }
 
-    public string LastText
+    /// <summary>Last lap versus this car's own best, e.g. "+0.4" / "-0.2".</summary>
+    public string LastDeltaText
     {
-        get => _lastText;
-        private set => SetProperty(ref _lastText, value);
+        get => _lastDeltaText;
+        private set => SetProperty(ref _lastDeltaText, value);
     }
 
+    public bool LastDeltaIsSlower
+    {
+        get => _lastDeltaIsSlower;
+        private set => SetProperty(ref _lastDeltaIsSlower, value);
+    }
+
+    /// <summary>Interval to the car directly ahead in class.</summary>
+    public string IntervalText
+    {
+        get => _intervalText;
+        private set => SetProperty(ref _intervalText, value);
+    }
+
+    /// <summary>Gap to the class leader.</summary>
     public string GapText
     {
         get => _gapText;
@@ -158,15 +190,19 @@ public sealed class StandingsRowViewModel : ObservableObject
         IsHeader = true;
         IsRow = false;
         ClassName = group.ClassShortName.Length > 0 ? group.ClassShortName : "FIELD";
+        ClassSofText = group.StrengthOfField > 0
+            ? "SoF " + group.StrengthOfField.ToString(CultureInfo.InvariantCulture)
+            : string.Empty;
         ClassCountText = group.Rows.Count.ToString(CultureInfo.InvariantCulture);
         HeaderColorBrush = ViewModels.ClassColorBrush.Resolve(group.ClassColorHex);
     }
 
-    public void ShowRow(StandingsRow row)
+    public void ShowRow(StandingsRow row, bool isAltRow)
     {
         IsHeader = false;
         IsRow = true;
         IsPlayer = row.IsPlayer;
+        IsAltRow = isAltRow;
         InPits = row.InPits;
         PositionText = row.ClassPosition > 0
             ? row.ClassPosition.ToString(CultureInfo.InvariantCulture)
@@ -180,7 +216,9 @@ public sealed class StandingsRowViewModel : ObservableObject
         ClassColorBrush = ViewModels.ClassColorBrush.Resolve(row.ClassColorHex);
         BestText = StandingsFormat.LapTime(row.BestLapSeconds);
         IsSessionBest = row.IsSessionBestLap;
-        LastText = StandingsFormat.LapTime(row.LastLapSeconds);
-        GapText = StandingsFormat.Gap(row.GapToClassLeaderSeconds, row.LapsDown);
+        LastDeltaText = row.LastDeltaSeconds is { } d ? SessionFormat.Delta(d) : TelemetryFormat.Placeholder;
+        LastDeltaIsSlower = row.LastDeltaSeconds is > 0;
+        IntervalText = StandingsFormat.Gap(row.IntervalSeconds, row.IntervalLapsDown);
+        GapText = StandingsFormat.Gap(row.GapToClassLeaderSeconds, row.GapLapsDown);
     }
 }

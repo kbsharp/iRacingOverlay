@@ -16,13 +16,12 @@
         MouseLeftButtonDown="OnDragWindow">
 
     <Window.Resources>
-        <!-- Shared pulse behaviour for a proximity zone: continuous (not
-             time-limited, unlike the setup reminder) while the bound
-             condition holds - the hazard is only "over" once the sim says so. -->
+        <!-- Continuous pulse while a car is alongside (not time-limited, unlike
+             the setup reminder) - the hazard is only "over" once the sim says so. -->
         <Style x:Key="ProximityZone" TargetType="Border">
-            <Setter Property="Width" Value="46" />
-            <Setter Property="Height" Value="76" />
-            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Height" Value="72" />
+            <Setter Property="CornerRadius" Value="3" />
             <Setter Property="Background" Value="#14FFFFFF" />
         </Style>
     </Window.Resources>
@@ -33,158 +32,117 @@
         </ContextMenu>
     </Window.ContextMenu>
 
-    <Grid Margin="16">
-        <Border Width="220"
-                Padding="16,12,16,13"
-                CornerRadius="14"
+    <Grid Margin="14">
+        <Border Padding="14,12,14,12"
+                CornerRadius="3"
                 Background="{StaticResource PanelBackground}"
                 BorderBrush="{StaticResource PanelBorder}"
                 BorderThickness="1">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="#000000" />
+                <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.6" Color="#000000" />
             </Border.Effect>
-            <Grid>
-                <Border CornerRadius="14"
-                        Margin="-16,-12,-16,-13"
-                        Background="{StaticResource PanelSheen}"
-                        IsHitTestVisible="False" />
 
-                <StackPanel>
+            <StackPanel>
+                <Grid HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <DockPanel Margin="0,0,0,10">
-                        <Ellipse Width="8" Height="8" VerticalAlignment="Center" DockPanel.Dock="Left">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="{StaticResource Warning}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                            <Setter Property="Fill" Value="{StaticResource Positive}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
-                        <TextBlock Text="{Binding ConnectionStatus}"
-                                   DockPanel.Dock="Right"
+                    <!-- left proximity zone -->
+                    <Border Grid.Column="0" Margin="0,0,7,0">
+                        <Border.Background>
+                            <SolidColorBrush Color="#14FFFFFF" />
+                        </Border.Background>
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource ProximityZone}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasCarLeft}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard Name="LeftFlash">
+                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                    <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                                    To="#B0FF5C6C"
+                                                                    Duration="0:0:0.45" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="LeftFlash" />
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="2"
+                                   HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
-                                   Style="{StaticResource Caption}" />
-                        <TextBlock Text="RADAR"
-                                   Margin="9,0,0,0"
-                                   VerticalAlignment="Center"
-                                   FontSize="12"
+                                   FontSize="18"
                                    FontWeight="Bold"
-                                   Foreground="{StaticResource Accent}" />
-                    </DockPanel>
+                                   Foreground="{StaticResource TextPrimary}"
+                                   Visibility="{Binding HasTwoCarsLeft, Converter={StaticResource BoolToVis}}" />
+                    </Border>
 
-                    <Grid HorizontalAlignment="Center">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <!-- player car -->
+                    <Border Grid.Column="1"
+                            Width="26"
+                            Height="58"
+                            CornerRadius="2"
+                            VerticalAlignment="Center"
+                            Background="{StaticResource TextMuted}"
+                            Opacity="0.9">
+                        <Border Width="14"
+                                Height="10"
+                                Margin="0,8,0,0"
+                                CornerRadius="1"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Top"
+                                Background="{StaticResource PanelBackground}" />
+                    </Border>
 
-                        <!-- left proximity zone -->
-                        <Border Grid.Column="0" Margin="0,0,6,0">
-                            <Border.Background>
-                                <SolidColorBrush Color="#14FFFFFF" />
-                            </Border.Background>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource ProximityZone}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasCarLeft}" Value="True">
-                                            <DataTrigger.EnterActions>
-                                                <BeginStoryboard Name="LeftFlash">
-                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                                        To="#B0FF5C6C"
-                                                                        Duration="0:0:0.45" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </DataTrigger.EnterActions>
-                                            <DataTrigger.ExitActions>
-                                                <StopStoryboard BeginStoryboardName="LeftFlash" />
-                                            </DataTrigger.ExitActions>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="2"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontSize="18"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource TextPrimary}"
-                                       Visibility="{Binding HasTwoCarsLeft, Converter={StaticResource BoolToVis}}" />
-                        </Border>
+                    <!-- right proximity zone -->
+                    <Border Grid.Column="2" Margin="7,0,0,0">
+                        <Border.Background>
+                            <SolidColorBrush Color="#14FFFFFF" />
+                        </Border.Background>
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource ProximityZone}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasCarRight}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard Name="RightFlash">
+                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                    <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                                    To="#B0FF5C6C"
+                                                                    Duration="0:0:0.45" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="RightFlash" />
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="2"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimary}"
+                                   Visibility="{Binding HasTwoCarsRight, Converter={StaticResource BoolToVis}}" />
+                    </Border>
+                </Grid>
 
-                        <!-- player car -->
-                        <Border Grid.Column="1"
-                                Width="26"
-                                Height="60"
-                                CornerRadius="8"
-                                VerticalAlignment="Center"
-                                Background="{StaticResource TextMuted}"
-                                Opacity="0.9">
-                            <Border Width="14"
-                                    Height="10"
-                                    Margin="0,8,0,0"
-                                    CornerRadius="3"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Top"
-                                    Background="{StaticResource PanelBackground}" />
-                        </Border>
-
-                        <!-- right proximity zone -->
-                        <Border Grid.Column="2" Margin="6,0,0,0">
-                            <Border.Background>
-                                <SolidColorBrush Color="#14FFFFFF" />
-                            </Border.Background>
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource ProximityZone}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasCarRight}" Value="True">
-                                            <DataTrigger.EnterActions>
-                                                <BeginStoryboard Name="RightFlash">
-                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                                        To="#B0FF5C6C"
-                                                                        Duration="0:0:0.45" />
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </DataTrigger.EnterActions>
-                                            <DataTrigger.ExitActions>
-                                                <StopStoryboard BeginStoryboardName="RightFlash" />
-                                            </DataTrigger.ExitActions>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="2"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontSize="18"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource TextPrimary}"
-                                       Visibility="{Binding HasTwoCarsRight, Converter={StaticResource BoolToVis}}" />
-                        </Border>
-
-                    </Grid>
-
-                    <TextBlock Text="waiting for spotter data"
-                               Margin="0,10,0,0"
-                               HorizontalAlignment="Center"
-                               FontSize="10"
-                               Foreground="{StaticResource TextMuted}"
-                               Visibility="{Binding IsWaitingForData, Converter={StaticResource BoolToVis}}" />
-
-                </StackPanel>
-            </Grid>
+                <TextBlock Text="waiting for spotter data"
+                           Margin="0,10,0,0"
+                           HorizontalAlignment="Center"
+                           FontSize="10"
+                           Foreground="{StaticResource TextMuted}"
+                           Visibility="{Binding IsWaitingForData, Converter={StaticResource BoolToVis}}" />
+            </StackPanel>
         </Border>
-        <Border Height="1"
-                Margin="1,1,1,0"
-                CornerRadius="14,14,0,0"
-                VerticalAlignment="Top"
-                Background="{StaticResource PanelTopHighlight}"
-                IsHitTestVisible="False" />
     </Grid>
 </Window>

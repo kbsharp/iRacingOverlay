@@ -24,7 +24,7 @@
     <Grid Margin="16">
         <Border Width="260"
                 Padding="16,12,16,13"
-                CornerRadius="14"
+                CornerRadius="3"
                 Background="{StaticResource PanelBackground}"
                 BorderBrush="{StaticResource PanelBorder}"
                 BorderThickness="1">
@@ -32,14 +32,14 @@
                 <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="#000000" />
             </Border.Effect>
             <Grid>
-                <Border CornerRadius="14"
+                <Border CornerRadius="3"
                         Margin="-16,-12,-16,-13"
                         Background="{StaticResource PanelSheen}"
                         IsHitTestVisible="False" />
 
                 <!-- Pulses for the first minute of a Qualify/Race session - a
                      reminder to double-check the loaded setup. -->
-                <Border CornerRadius="14"
+                <Border CornerRadius="3"
                         Margin="-16,-12,-16,-13"
                         IsHitTestVisible="False">
                     <Border.Background>
@@ -142,7 +142,7 @@
         </Border>
         <Border Height="1"
                 Margin="1,1,1,0"
-                CornerRadius="14,14,0,0"
+                CornerRadius="3,3,0,0"
                 VerticalAlignment="Top"
                 Background="{StaticResource PanelTopHighlight}"
                 IsHitTestVisible="False" />

@@ -21,6 +21,7 @@ public sealed class RelativeRowViewModel : ObservableObject
 
     private bool _isVisible;
     private bool _isPlayer;
+    private bool _isAltRow;
     private bool _inPits;
     private string _positionText = string.Empty;
     private string _carNumberText = string.Empty;
@@ -44,6 +45,14 @@ public sealed class RelativeRowViewModel : ObservableObject
     {
         get => _isPlayer;
         private set => SetProperty(ref _isPlayer, value);
+    }
+
+    /// <summary>Fixed by the slot's position (set once), so the zebra striping
+    /// stays stable as rows update in place.</summary>
+    public bool IsAltRow
+    {
+        get => _isAltRow;
+        set => SetProperty(ref _isAltRow, value);
     }
 
     public bool InPits

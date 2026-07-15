@@ -21,250 +21,252 @@
         </ContextMenu>
     </Window.ContextMenu>
 
-    <Grid Margin="16">
-        <Border Width="524"
-                Padding="16,12,16,14"
-                CornerRadius="14"
+    <Grid Margin="14">
+        <Border Width="560"
+                Padding="14,10,14,10"
+                CornerRadius="3"
                 Background="{StaticResource PanelBackground}"
                 BorderBrush="{StaticResource PanelBorder}"
-                BorderThickness="1">
+                BorderThickness="1"
+                ClipToBounds="True">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="34" ShadowDepth="0" Opacity="0.62" Color="#000000" />
+                <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="#000000" />
             </Border.Effect>
-            <Grid>
-                <Border CornerRadius="14"
-                        Margin="-16,-12,-16,-14"
-                        Background="{StaticResource PanelSheen}"
-                        IsHitTestVisible="False" />
 
-                <StackPanel>
+            <StackPanel>
 
-                    <!-- header -->
-                    <DockPanel Margin="0,0,0,8">
-                        <Ellipse Width="9" Height="9" VerticalAlignment="Center" DockPanel.Dock="Left">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="{StaticResource Warning}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                            <Setter Property="Fill" Value="{StaticResource Positive}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
-                        <TextBlock Text="{Binding ConnectionStatus}"
-                                   DockPanel.Dock="Right"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource Caption}" />
-                        <TextBlock Text="STANDINGS"
-                                   Margin="10,0,0,0"
-                                   VerticalAlignment="Center"
-                                   FontSize="13"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource Accent}" />
-                    </DockPanel>
+                <!-- session strip (no widget-name label - the content identifies it) -->
+                <DockPanel Margin="0,0,0,8">
+                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" DockPanel.Dock="Left">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="{StaticResource Warning}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Fill" Value="{StaticResource Positive}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+                    <TextBlock Text="{Binding ConnectionStatus}"
+                               DockPanel.Dock="Right"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource Caption}" />
+                    <TextBlock Text="{Binding SessionText}"
+                               Margin="9,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimary}" />
+                    <TextBlock Text="{Binding CarCountText}"
+                               Margin="12,0,0,0"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource Caption}" />
+                </DockPanel>
 
-                    <DockPanel Margin="0,0,0,6">
-                        <TextBlock Text="{Binding SessionText}"
-                                   DockPanel.Dock="Left"
-                                   VerticalAlignment="Center"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextPrimary}" />
-                        <TextBlock Text="{Binding CarCountText}"
-                                   HorizontalAlignment="Right"
-                                   Style="{StaticResource Caption}" />
-                    </DockPanel>
+                <!-- column captions -->
+                <Grid Margin="0,0,0,3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="5" />
+                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="40" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="46" />
+                        <ColumnDefinition Width="44" />
+                        <ColumnDefinition Width="54" />
+                        <ColumnDefinition Width="54" />
+                        <ColumnDefinition Width="66" />
+                        <ColumnDefinition Width="52" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="1" Text="P" Style="{StaticResource Caption}" Margin="3,0,0,0" />
+                    <TextBlock Grid.Column="3" Text="DRIVER" Style="{StaticResource Caption}" />
+                    <TextBlock Grid.Column="6" Text="INT" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                    <TextBlock Grid.Column="7" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                    <TextBlock Grid.Column="8" Text="FASTEST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                    <TextBlock Grid.Column="9" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
+                </Grid>
 
-                    <!-- column captions -->
-                    <Grid Margin="0,0,0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="4" />
-                            <ColumnDefinition Width="26" />
-                            <ColumnDefinition Width="42" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="46" />
-                            <ColumnDefinition Width="46" />
-                            <ColumnDefinition Width="62" />
-                            <ColumnDefinition Width="62" />
-                            <ColumnDefinition Width="52" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="1" Text="P" Style="{StaticResource Caption}" Margin="4,0,0,0" />
-                        <TextBlock Grid.Column="3" Text="DRIVER" Style="{StaticResource Caption}" />
-                        <TextBlock Grid.Column="6" Text="BEST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                        <TextBlock Grid.Column="7" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                        <TextBlock Grid.Column="8" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
-                    </Grid>
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
 
-                    <Border Height="1" Background="{StaticResource Separator}" Margin="0,0,0,2" />
-
-                    <ItemsControl ItemsSource="{Binding Items}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-
-                                    <!-- class-group header line -->
-                                    <StackPanel Orientation="Horizontal"
-                                                Margin="0,7,0,3"
-                                                Visibility="{Binding IsHeader, Converter={StaticResource BoolToVis}}">
-                                        <Border Width="11" Height="11" CornerRadius="3"
-                                                VerticalAlignment="Center"
-                                                Background="{Binding HeaderColorBrush}" />
+                                <!-- class-group banner -->
+                                <Grid Height="22"
+                                      Margin="0,5,0,1"
+                                      Visibility="{Binding IsHeader, Converter={StaticResource BoolToVis}}">
+                                    <Border Background="{Binding HeaderColorBrush}" Opacity="0.16" Margin="-14,0,-14,0" />
+                                    <Border Background="{Binding HeaderColorBrush}" Width="5" HorizontalAlignment="Left" Margin="-14,0,0,0" />
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,0,0">
                                         <TextBlock Text="{Binding ClassName}"
-                                                   Margin="8,0,0,0"
                                                    FontSize="12"
                                                    FontWeight="Bold"
                                                    Foreground="{Binding HeaderColorBrush}" />
-                                        <TextBlock Text="{Binding ClassCountText}"
-                                                   Margin="8,0,0,0"
+                                        <TextBlock Text="{Binding ClassSofText}"
+                                                   Margin="10,0,0,0"
                                                    VerticalAlignment="Center"
                                                    Style="{StaticResource Caption}" />
                                     </StackPanel>
-
-                                    <!-- car row -->
-                                    <Border Height="26"
-                                            CornerRadius="6"
-                                            BorderThickness="1"
-                                            Margin="0,1"
-                                            Visibility="{Binding IsRow, Converter={StaticResource BoolToVis}}">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Setter Property="BorderBrush" Value="Transparent" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsPlayer}" Value="True">
-                                                        <Setter Property="Background" Value="{StaticResource PlayerHighlight}" />
-                                                        <Setter Property="BorderBrush" Value="{StaticResource PlayerBorder}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-
-                                        <Grid VerticalAlignment="Center">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="4" />
-                                                <ColumnDefinition Width="26" />
-                                                <ColumnDefinition Width="42" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="46" />
-                                                <ColumnDefinition Width="46" />
-                                                <ColumnDefinition Width="62" />
-                                                <ColumnDefinition Width="62" />
-                                                <ColumnDefinition Width="52" />
-                                            </Grid.ColumnDefinitions>
-
-                                            <Border Grid.Column="0" Width="4" Margin="1,4,0,4"
-                                                    CornerRadius="2" Background="{Binding ClassColorBrush}" />
-
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding PositionText}"
-                                                       VerticalAlignment="Center"
-                                                       Margin="4,0,0,0"
-                                                       FontSize="12"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextSecondary}" />
-
-                                            <TextBlock Grid.Column="2"
-                                                       Text="{Binding CarNumberText}"
-                                                       VerticalAlignment="Center"
-                                                       FontSize="12"
-                                                       Foreground="{StaticResource TextMuted}" />
-
-                                            <TextBlock Grid.Column="3"
-                                                       Text="{Binding Name}"
-                                                       VerticalAlignment="Center"
-                                                       Margin="0,0,6,0"
-                                                       FontSize="13"
-                                                       FontWeight="SemiBold"
-                                                       TextTrimming="CharacterEllipsis">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding InPits}" Value="True">
-                                                                <Setter Property="Opacity" Value="0.5" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-
-                                            <Border Grid.Column="4"
-                                                    CornerRadius="4"
-                                                    Padding="4,1"
-                                                    Height="17"
-                                                    HorizontalAlignment="Left"
-                                                    VerticalAlignment="Center"
-                                                    Style="{StaticResource LicenseBadgeBackground}">
-                                                <TextBlock Text="{Binding License}"
-                                                           FontSize="10"
-                                                           FontWeight="SemiBold"
-                                                           Style="{StaticResource LicenseBadgeText}" />
-                                            </Border>
-
-                                            <Border Grid.Column="5"
-                                                    CornerRadius="4"
-                                                    Padding="4,1"
-                                                    Height="17"
-                                                    HorizontalAlignment="Left"
-                                                    VerticalAlignment="Center"
-                                                    Style="{StaticResource IRatingBadgeBackground}">
-                                                <TextBlock Text="{Binding IRatingText}"
-                                                           FontSize="10"
-                                                           FontWeight="SemiBold"
-                                                           Style="{StaticResource IRatingBadgeText}" />
-                                            </Border>
-
-                                            <TextBlock Grid.Column="6"
-                                                       Text="{Binding BestText}"
-                                                       VerticalAlignment="Center"
-                                                       HorizontalAlignment="Right"
-                                                       Margin="0,0,6,0"
-                                                       FontSize="12">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsSessionBest}" Value="True">
-                                                                <Setter Property="Foreground" Value="{StaticResource FastestLap}" />
-                                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-
-                                            <TextBlock Grid.Column="7"
-                                                       Text="{Binding LastText}"
-                                                       VerticalAlignment="Center"
-                                                       HorizontalAlignment="Right"
-                                                       Margin="0,0,6,0"
-                                                       FontSize="12"
-                                                       Foreground="{StaticResource TextMuted}" />
-
-                                            <TextBlock Grid.Column="8"
-                                                       Text="{Binding GapText}"
-                                                       VerticalAlignment="Center"
-                                                       HorizontalAlignment="Right"
-                                                       FontSize="12"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextSecondary}" />
-                                        </Grid>
-                                    </Border>
+                                    <TextBlock Text="{Binding ClassCountText}"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               Style="{StaticResource Caption}" />
                                 </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
 
-                </StackPanel>
-            </Grid>
+                                <!-- car row -->
+                                <Border Height="22"
+                                        Visibility="{Binding IsRow, Converter={StaticResource BoolToVis}}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsAltRow}" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource RowStripe}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsPlayer}" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource PlayerHighlight}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+
+                                    <Grid VerticalAlignment="Stretch">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="5" />
+                                            <ColumnDefinition Width="24" />
+                                            <ColumnDefinition Width="40" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="46" />
+                                            <ColumnDefinition Width="44" />
+                                            <ColumnDefinition Width="54" />
+                                            <ColumnDefinition Width="54" />
+                                            <ColumnDefinition Width="66" />
+                                            <ColumnDefinition Width="52" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- full-height class colour bar, flush to the panel edge -->
+                                        <Border Grid.Column="0" Width="5" Margin="-14,0,0,0"
+                                                Background="{Binding ClassColorBrush}" />
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding PositionText}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="3,0,0,0"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextSecondary}" />
+
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding CarNumberText}"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource TextMuted}" />
+
+                                        <TextBlock Grid.Column="3"
+                                                   Text="{Binding Name}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,6,0"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding InPits}" Value="True">
+                                                            <Setter Property="Opacity" Value="0.5" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <Border Grid.Column="4"
+                                                CornerRadius="2"
+                                                Padding="4,1"
+                                                Height="16"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                Style="{StaticResource LicenseBadgeBackground}">
+                                            <TextBlock Text="{Binding License}"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold"
+                                                       Style="{StaticResource LicenseBadgeText}" />
+                                        </Border>
+
+                                        <Border Grid.Column="5"
+                                                CornerRadius="2"
+                                                Padding="4,1"
+                                                Height="16"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                Style="{StaticResource IRatingBadgeBackground}">
+                                            <TextBlock Text="{Binding IRatingText}"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold"
+                                                       Style="{StaticResource IRatingBadgeText}" />
+                                        </Border>
+
+                                        <TextBlock Grid.Column="6"
+                                                   Text="{Binding IntervalText}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Right"
+                                                   Margin="0,0,6,0"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource TextMuted}" />
+
+                                        <TextBlock Grid.Column="7"
+                                                   Text="{Binding GapText}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Right"
+                                                   Margin="0,0,6,0"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextSecondary}" />
+
+                                        <TextBlock Grid.Column="8"
+                                                   Text="{Binding BestText}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Right"
+                                                   Margin="0,0,6,0"
+                                                   FontSize="12">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSessionBest}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource FastestLap}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <TextBlock Grid.Column="9"
+                                                   Text="{Binding LastDeltaText}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Right"
+                                                   FontSize="11">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding LastDeltaIsSlower}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource Negative}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
         </Border>
-        <Border Height="1"
-                Margin="1,1,1,0"
-                CornerRadius="14,14,0,0"
-                VerticalAlignment="Top"
-                Background="{StaticResource PanelTopHighlight}"
-                IsHitTestVisible="False" />
     </Grid>
 </Window>

@@ -31,7 +31,7 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         var rows = new RelativeRowViewModel[SlotsPerSide * 2 + 1];
         for (var i = 0; i < rows.Length; i++)
         {
-            rows[i] = new RelativeRowViewModel();
+            rows[i] = new RelativeRowViewModel { IsAltRow = i % 2 == 1 };
         }
 
         Rows = rows;

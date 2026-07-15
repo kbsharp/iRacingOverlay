@@ -70,6 +70,7 @@ public sealed class StandingsViewModel : OverlayViewModelBase
             }
         }
 
+        var carRowIndex = 0;
         for (var i = 0; i < plan.Count; i++)
         {
             if (plan[i].IsHeader)
@@ -78,7 +79,8 @@ public sealed class StandingsViewModel : OverlayViewModelBase
             }
             else
             {
-                Items[i].ShowRow(plan[i].Row!);
+                Items[i].ShowRow(plan[i].Row!, isAltRow: carRowIndex % 2 == 1);
+                carRowIndex++;
             }
         }
     }
