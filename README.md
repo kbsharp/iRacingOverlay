@@ -2,10 +2,11 @@
 
 A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
 
-- **Standings**: the full, class-grouped field (top-left by default) — each car by
-  position within its class, with car number, driver, colour-coded license and iRating
-  badges, best and last lap times (session-fastest in purple), and gap to the class
-  leader. Your own row is highlighted; the widgets read the sim's real timing data.
+- **Standings**: the full, class-grouped field (top-left by default) — colour-tinted class
+  banners with **Strength of Field**, then each car by class position with car number,
+  driver, colour-coded license and iRating badges, interval to the car ahead, gap to the
+  class leader, best lap (session-fastest in purple) and last-lap delta. Zebra rows, your
+  own row highlighted, up to a full 40-car multiclass grid — all from the sim's real timing.
 - **Relative** (the flagship glance): the three cars ahead of and behind you on track with
   live time deltas, race position and car number, kept **compact** (bottom by default) so
   it complements the standings rather than repeating it. Each row carries its class's
@@ -56,22 +57,23 @@ dotnet test
 Usage notes:
 
 - **Control the app from the system tray icon**, not the terminal: show/hide any
-  widget, open the dev control panel (demo mode), or Exit. New tray icons are hidden by
-  Windows behind the **`^`** overflow arrow the first time — click it to find the icon, and
-  drag it out onto the taskbar to pin it permanently.
+  widget, set the **UI scale** (100/125/150/175% — scales every widget together), open the
+  dev control panel (demo mode), or Exit. New tray icons are hidden by Windows behind the
+  **`^`** overflow arrow the first time — click it to find the icon, and drag it out onto
+  the taskbar to pin it permanently.
 - Closing a widget window (Alt+F4, etc.) just hides it — it's not gone, use the tray icon
   to bring it back. The tray's **Exit** (or a widget's right-click **Exit**) is what actually
   quits the app.
-- **Demo mode** also opens a **dev control panel**: add/remove cars (3-20), drain/add fuel,
-  set fuel critical, cycle track wetness, add an incident, toggle the player into the pits,
-  cycle Practice/Qualify/Race (retriggers the setup-reminder flash), cycle the radar through
-  all six proximity states — all live, no rebuild. See
+- **Demo mode** also opens a **dev control panel**: add/remove cars (up to a full 40-car
+  grid), drain/add fuel, set fuel critical, cycle track wetness, add an incident, toggle the
+  player into the pits, cycle Practice/Qualify/Race (retriggers the setup-reminder flash),
+  cycle the radar through all six proximity states — all live, no rebuild. See
   [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.
 - Drag each widget anywhere with the left mouse button. Default positions (standings
   top-left, relative bottom-left, the rest in a right column) aren't remembered between
   runs yet — that's on the roadmap.
-- Panels are semi-transparent (~80%) so the track shows through; drop shadows and opaque
-  text keep everything legible.
+- Panels are near-opaque and flat/sharp-cornered (RaceLab/LMU-style); the track shows only
+  faintly through.
 - iRacing must run in **windowed or borderless** mode — overlays are not visible over exclusive fullscreen.
 - If no data appears while driving, check that `irsdkEnableMem=1` is set in iRacing's `app.ini` (it is by default).
 

@@ -16,20 +16,24 @@ The full, class-grouped field table — the "big" widget, anchored top-left by
 default. Every car ordered by position within its class, with best/last lap
 times and gaps.
 
-**Layout:** 524px wide, borderless, transparent, always-on-top, draggable,
-right-click → Exit. Manual position, top-left (`Left=24, Top=24`); not
-persisted between runs.
+**Layout:** 560px wide, borderless, always-on-top, draggable, right-click →
+Exit. Flat, sharp-cornered, near-opaque — styled after RaceLab/iOverlay/LMU
+standings. Manual position, top-left (`Left=24, Top=24`); not persisted
+between runs. No widget-name label — the class banners and columns identify
+it; the top strip carries session type + time/laps remaining + car count.
 
-**Header:** session type + time/laps remaining (shared `SessionFormat`
-helpers with the relative), and a car count.
-
-**Rows** are grouped by class. Each class shows a coloured header (the sim's
-`CarClassColor`, class short name, and count), then its cars ordered by
-position. Each car row: class position, a class-colour bar, car number,
-driver name, a license badge and iRating badge (the same tier-coloured chips
-as the relative), best lap, last lap, and gap. Up to 12 cars per class are
-shown; if the player falls outside that window, their row is appended so it's
-always visible.
+**Rows** are grouped by class. Each class shows a colour-tinted **banner** (a
+translucent wash of the sim's `CarClassColor`) with the class short name, its
+**Strength of Field** (`StrengthOfField.Compute`, iRacing's real SoF formula),
+and a car count. Under it, its cars ordered by position, each with a
+full-height class-colour bar flush to the panel's left edge, and alternating
+(zebra) row shading. Each car row: class position, car number, driver name, a
+license badge and iRating badge (the same tier-coloured chips as the
+relative), then **Int** (interval to the car ahead), **Gap** (to the class
+leader), **Fastest** (best lap, purple when session-best), and **Last**
+(last-lap delta to that car's own best, red when slower). Up to 30 cars per
+class are shown (a full class in a typical multiclass split); if the player
+falls outside that window, their row is appended so it's always visible.
 
 **Lap times & the fastest-lap highlight:** best/last come from
 `CarIdxBestLapTime`/`CarIdxLastLapTime` (formatted `m:ss.fff` by
@@ -37,16 +41,18 @@ always visible.
 single fastest valid best lap in the whole field is flagged
 `IsSessionBestLap` and rendered in purple, matching iRacing's own timing.
 
-**Gaps** come from `CarIdxF2Time` (a car's time behind the session leader);
-the gap shown is that value minus the class leader's, so it reads as a gap to
-the class leader regardless of whether F2Time is measured against the overall
-or class leader. Laps down is derived from that time gap versus the class
-leader's best lap (`(int)(gap / leaderBest)`), **not** a raw completed-lap
-difference — the latter flickers to "+1L" for a car only tenths behind
-whenever the leader has just crossed the line. It falls back to the
-completed-lap difference only when no lap time is known.
+**Gaps & interval** come from `CarIdxF2Time` (a car's time behind the session
+leader). The **gap** shown is that value minus the class leader's; the
+**interval** is the difference to the car directly ahead in class — both read
+correctly regardless of whether F2Time is measured against the overall or
+class leader, since they're differences either way. Laps down is derived from
+the time gap versus the class leader's best lap (`(int)(gap / leaderBest)`),
+**not** a raw completed-lap difference — the latter flickers to "+1L" for a
+car only tenths behind whenever the leader has just crossed the line. It falls
+back to the completed-lap difference only when no lap time is known.
 `StandingsFormat.Gap` renders "+n.n", "+nL" when a lap or more down, or blank
-for the class leader.
+for the class leader / car ahead. **Last** is the last lap minus that car's
+own best (`SessionFormat.Delta`, signed).
 
 **In-place updates:** the list is a single flat `ObservableCollection`
 (`StandingsViewModel.Items`) of `StandingsRowViewModel` items, each of which
@@ -56,11 +62,15 @@ in place, so position swaps are flicker-free with no per-frame collection
 churn.
 
 **Known limitations:**
-- Gaps are a class-leader-relative transform of `CarIdxF2Time`. In practice
-  and qualifying, iRacing reports a best lap time in F2Time rather than a race
-  gap, so the gap column is only meaningful in race sessions.
-- Up to 12 cars per class (`MaxPerClass`), plus the player if outside that —
-  not a scrollable full-grid view of a huge field.
+- Gaps/interval are a transform of `CarIdxF2Time`. In practice and qualifying,
+  iRacing reports a best lap time in F2Time rather than a race gap, so those
+  columns are only meaningful in race sessions.
+- Up to 30 cars per class (`MaxPerClass`), plus the player if outside that.
+  Verified rendering a 40-car three-class demo grid; a hypothetical single
+  class of 40+ would truncate at 30 (plus player).
+- No car-manufacturer logos or iRating ▲/▼ position-change arrows (both shown
+  in reference overlays) — the first needs licensed art assets, the second
+  needs per-driver start-position tracking. Both are roadmap items.
 - Demo-mode gaps are exaggerated (tens of seconds between adjacent positions)
   because the fake F2Time is scaled from the demo's track-position spread;
   real sessions show true sub-second gaps.
@@ -70,13 +80,13 @@ churn.
 The flagship glance widget: the cars nearest the player on track, ordered
 farthest ahead to farthest behind, with a session info strip on top.
 Deliberately **compact** — it complements the full standings rather than
-duplicating it, so it drops the license/iRating badge columns the standings
-carries.
+duplicating it.
 
-**Layout:** 468px wide (down from 640), 26px rows (down from 34), borderless,
-transparent, always-on-top, draggable, right-click → Exit. Manual position,
-lower-left (`Left=24, Top=760`) so it sits at the bottom opposite the
-top-left standings; not persisted between runs.
+**Layout:** 470px wide, 24px zebra-striped rows, flat and sharp-cornered to
+match the standings, borderless, always-on-top, draggable, right-click →
+Exit. Manual position, lower-left (`Left=24, Top=760`) so it sits at the
+bottom opposite the top-left standings; not persisted between runs. No
+widget-name label — the session strip heads it.
 
 **Session strip (top):**
 - Session type (from the sim's session-info YAML, e.g. "RACE") + either time
@@ -93,9 +103,10 @@ top-left standings; not persisted between runs.
 both `RelativeCalculator.Compute` and `RelativeViewModel`). Rows are updated
 in place each frame rather than rebuilt, so the list is allocation-free and
 the layout doesn't jump. Each row shows: race position, a class-colour bar,
-car number, driver name, a PIT badge when the car is on pit road or in a pit
-stall, and a signed time delta (`+n.n` / `-n.n`). License and iRating badges
-were moved to the standings when the relative was compacted.
+car number, driver name, a license badge and iRating badge, a PIT badge when
+the car is on pit road or in a pit stall, and a signed time delta (`+n.n` /
+`-n.n`). Zebra striping is fixed per slot (`RelativeRowViewModel.IsAltRow`) so
+it stays stable as rows update in place.
 
 **Colour coding** (the widget's main visual identity — deliberately not
 blue-dominated; blue is reserved for the header label and the A-license
@@ -276,9 +287,11 @@ A blind-spot proximity indicator, RaceLab/LMU-style: a small car icon in the
 middle with a left and right zone either side of it that light up (and
 pulse) when there's a car alongside.
 
-**Layout:** 220px wide, same borderless/transparent/topmost/draggable
-behaviour as the others. Fixed position on first launch (`Left=80, Top=650`
-— below the setup widget).
+**Layout:** auto-sized, same borderless/topmost/draggable/sharp behaviour as
+the others. **No header label** — a radar is self-evident, so the redundant
+"RADAR" title was removed; when the sim isn't reporting yet it shows a small
+"waiting for spotter data" caption instead. Fixed position on first launch
+(`Left=600, Top=470`, right column).
 
 **How it works:** built entirely on iRacing's own `CarLeftRight` telemetry
 variable — the exact signal iRacing's built-in spotter uses, not an invented
@@ -435,8 +448,11 @@ stop the app was closing the terminal that launched it.
 - Icon is drawn at runtime (a navy circle with an azure dot, matching the
   app palette) rather than shipped as an asset file.
 - Context menu: **Show Standings**, **Show Relative**, **Show Fuel**, **Show
-  Setup**, **Show Radar**, **Dev Controls** (demo mode only), **Exit**.
-  Double-click the icon = Show Relative.
+  Setup**, **Show Radar**, a **UI Scale** submenu (100/125/150/175%), **Dev
+  Controls** (demo mode only), **Exit**. Double-click the icon = Show
+  Relative. **UI Scale** applies a `ScaleTransform` to every overlay window's
+  content root (`App.SetScale`); `SizeToContent` then resizes each window to
+  fit, so the whole set scales together. Not persisted between runs.
 - The app runs under `ShutdownMode="OnExplicitShutdown"`: closing a widget
   window hides it (`App.HideInsteadOfClose`) rather than destroying it, so
   the tray's Show items always work. The tray's **Exit** (or any window's
@@ -453,7 +469,7 @@ control in live mode and doesn't appear there.
 
 | Control | Effect |
 |---|---|
-| **+ Add car** / **− Remove** | Grows/shrinks the simulated field, 3-20 cars (`MinCarCount`/`MaxCarCount`). Extra cars are drawn from an 11-name reserve roster; removing always drops the most recently added car. |
+| **+ Add car** / **− Remove** | Grows/shrinks the simulated field, 3-40 cars (`MinCarCount`/`MaxCarCount`). Extra cars are drawn from a reserve roster (enough to reach a full 40-car multiclass grid); removing always drops the most recently added car. |
 | **− 5 L** / **+ 5 L** | Adjusts player fuel, clamped to a 65 L tank capacity. Adding fuel mid-lap exercises the same refuel-detection path (`FuelCalculator`'s 0.2 L threshold) that a real pit stop would. |
 | **Set critical (2 L)** | Drops fuel straight to 2 L, to check the fuel widget's red "LAPS SHORT" state without waiting for a real burn-down. |
 | **Cycle wetness** | Steps through Dry → Very Lightly Wet → Moderately Wet → Very Wet → (wraps to Dry), to check the relative widget's wetness badge. |
@@ -513,6 +529,11 @@ blank for the class leader, placeholder when unknown).
 booleans the radar widget binds to - `HasCarLeft`, `HasCarRight`,
 `HasTwoCarsLeft`, `HasTwoCarsRight`, `IsActive`.
 
+**`StrengthOfField`** (`Core.Standings`): `Compute(iRatings)` returns iRacing's
+real SoF for a class — `B·ln(n / Σ 2^(−ir/1600))`, weighting lower ratings
+more heavily than a plain mean; ignores non-positive ratings, 0 for an empty
+field.
+
 **`RatingFormat`**: the relative widget's colour-coding logic, kept pure and
 testable in `Core` even though the actual brushes live in `App.xaml`.
 - `ParseLicenseTier(license)` → `LicenseTier` (Unknown/Rookie/D/C/B/A/Pro) by
@@ -532,20 +553,19 @@ branding (window header labels) and the A-license badge specifically; every
 other colour carries a distinct meaning (class, license tier, iRating tier,
 lap status, "this is you").
 - `PanelBackground` — a neutral graphite/charcoal vertical gradient
-  (`#242629` → `#131417`) at **~80% alpha** (`CC`), so the track reads
-  through the panel RaceLab/LMU-style while the drop shadow and fully-opaque
-  text keep the data legible. Earlier passes used a lit navy-blue surface;
-  that read as a "navy theme" fighting the accent/badge colours, so the panel
-  material was moved to a low-saturation neutral — the same move used by
-  Linear/Arc/Vercel's dark themes, letting colour be reserved for things that
-  carry meaning.
-- `PanelSheen` — a very subtle warm radial highlight in the upper-left of
-  each panel (`#14FFDDAA` fading to transparent), for material richness
-  without reintroducing a colour cast across the whole surface. Layered as a
-  same-sized `Border` sibling behind the content inside the outer panel
-  `Border` (see any window's XAML for the pattern).
-- `PanelTopHighlight` — a 1px bright *neutral white* line along the top inner
-  edge for a glassy look (previously cyan-tinted).
+  (`#1B1D21` → `#121316`) at **~94% alpha** (`F0`): near-opaque, the track
+  shows only faintly through, matching the flat/solid look of
+  RaceLab/iOverlay/LMU standings. (An earlier ~80% blanket transparency read
+  as too see-through and was dialled back.) The material stays a low-
+  saturation neutral so colour is reserved for things that carry meaning —
+  class, license tier, iRating tier, lap status, "this is you".
+- The look is **flat and sharp**, not glassy: panels use a tiny `CornerRadius`
+  (~3px, near-square — "ultra modern, not soft"), and the old `PanelSheen`
+  (warm glow) and `PanelTopHighlight` (bright edge line) are neutralised to
+  near-invisible, kept only as resource keys so existing windows that
+  reference them don't need structural edits.
+- `RowStripe` — a very faint white (`#0DFFFFFF`) for zebra striping on every
+  other row (standings and relative).
 - `PanelBorder` — neutral translucent white, not colour-tinted.
 - `Separator`, `RowHover`, `HeaderBand` — structural chrome.
 - `Accent` (azure blue), `Positive` (green), `Negative` (red), `Warning`
@@ -577,16 +597,17 @@ normalised hex string into a frozen `SolidColorBrush` (grey fallback on a
 parse failure); both the relative and standings rows bind their class bar to
 it directly.
 
-All windows share: `DropShadowEffect` for panel lift, `PanelSheen` and
-`PanelTopHighlight` overlays, `BooleanToVisibilityConverter` (`BoolToVis`) for
-conditional badges, and the drag-to-move + right-click-exit interaction
-pattern. Default positions (all draggable, none persisted yet) are laid out
-non-overlapping: standings top-left, relative bottom-left, fuel/setup/radar in
-a right column, dev controls far right.
+All windows share: `DropShadowEffect` for panel lift, a tiny `CornerRadius`,
+`BooleanToVisibilityConverter` (`BoolToVis`) for conditional badges, and the
+drag-to-move + right-click-exit interaction pattern. Default positions (all
+draggable, none persisted yet) are laid out non-overlapping: standings
+top-left, relative bottom-left, fuel/setup/radar in a right column, dev
+controls far right. UI scale is applied per-window via a `ScaleTransform` on
+the content root (see the tray icon section).
 
 ## Test coverage
 
-174 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+182 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -596,7 +617,8 @@ a right column, dev controls far right.
 | `Fuel/FuelStrategyCalculatorTests.cs` | Fuel-to-finish, margin, add-fuel, save target, race-laps estimation (lap-limited and timed) |
 | `Fuel/LapTimeTrackerTests.cs` | Rolling lap-time average, jump/reset handling |
 | `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging, license/iRating tier and class colour propagation |
-| `Standings/StandingsCalculatorTests.cs` | Class grouping/ordering, within-class ordering, class-leader gaps, time-based laps-down (+ lap-count fallback), best/last nulls, session-fastest flag, per-class truncation keeping the player, no-metadata fallback, filtering |
+| `Standings/StandingsCalculatorTests.cs` | Class grouping/ordering, within-class ordering, class-leader gaps + interval, time-based laps-down (+ lap-count fallback), last-lap delta, per-class SoF, best/last nulls, session-fastest flag, per-class truncation keeping the player, no-metadata fallback, filtering |
+| `Standings/StrengthOfFieldTests.cs` | SoF formula (uniform field, empty, non-positive filtering, sub-mean weighting) |
 | `Setup/SetupReminderTrackerTests.cs` | Race/Qualify type detection, flash window timing and boundary, session-change restart, first-frame-mid-session behaviour |
 | `Formatting/SessionFormatTests.cs` | Time/IRating/delta/wetness/temperature formatting |
 | `Formatting/TelemetryFormatTests.cs` | Gear, kph conversion, liters/laps placeholders |
