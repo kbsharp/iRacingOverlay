@@ -10,4 +10,5 @@ public sealed record SessionMetadata(
     IReadOnlyDictionary<int, RosterDriver> DriversByCarIdx,
     IReadOnlyDictionary<int, string> SessionTypesByNum,
     string PlayerSetupName,
-    bool PlayerSetupIsModified);
+    bool PlayerSetupIsModified,
+    double TrackLengthMeters = 0);
