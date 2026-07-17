@@ -6,6 +6,7 @@ using IRacingOverlay.App.ViewModels;
 using IRacingOverlay.Core.Fuel;
 using IRacingOverlay.Core.Telemetry;
 using IRacingOverlay.Infrastructure.Telemetry;
+using Velopack;
 
 namespace IRacingOverlay.App;
 
@@ -29,6 +30,26 @@ public partial class App : System.Windows.Application
     private ITelemetrySource? _telemetrySource;
     private TrayIconService? _trayIcon;
     private bool _isExiting;
+
+    /// <summary>
+    /// Explicit process entry point (WPF would otherwise generate one from
+    /// App.xaml - see the csproj for why we opt out). Velopack must run first:
+    /// on install/update/uninstall the app is relaunched with hook arguments,
+    /// and <see cref="VelopackApp.Run"/> services those and exits before any
+    /// window is created. A normal launch (including <c>--demo</c>) falls
+    /// through to the usual startup below. Command-line args are still surfaced
+    /// on <see cref="StartupEventArgs.Args"/>, so <see cref="OnStartup"/> is
+    /// unaffected by owning Main here.
+    /// </summary>
+    [STAThread]
+    public static void Main()
+    {
+        VelopackApp.Build().Run();
+
+        var app = new App();
+        app.InitializeComponent();
+        app.Run();
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {

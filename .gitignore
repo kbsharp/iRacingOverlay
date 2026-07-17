@@ -185,6 +185,10 @@ DocProject/Help/html
 # Click-Once directory
 publish/
 
+# Velopack local packaging output (`vpk pack` default dir). Release artifacts are
+# built and published by CI (.github/workflows/release.yml), never committed.
+Releases/
+
 # Publish Web Output
 *.[Pp]ublish.xml
 *.azurePubxml

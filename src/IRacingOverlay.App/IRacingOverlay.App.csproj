@@ -8,10 +8,26 @@
     <!-- For the system tray icon (System.Windows.Forms.NotifyIcon) - WPF has no native equivalent. -->
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>IRacingOverlay</AssemblyName>
+    <!-- Local/source-build version. Release builds override this from the git tag
+         (see .github/workflows/release.yml); it is the assembly's identity, and
+         Velopack compares it to decide when an update is available. -->
+    <Version>0.1.0</Version>
+    <!-- Velopack needs VelopackApp.Build().Run() to execute before any UI, so we
+         provide our own entry point (App.Main) instead of the one WPF generates
+         from App.xaml. That requires pointing the compiler at it and demoting
+         App.xaml from ApplicationDefinition (which would emit a competing Main)
+         to a plain Page (which still generates App.InitializeComponent). -->
+    <StartupObject>IRacingOverlay.App.App</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>

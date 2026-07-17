@@ -108,6 +108,14 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   (class, license tier, iRating tier, lap status, "this is you"). Don't reach
   for the same accent colour for everything — that's what made the first pass
   at the relative widget feel flat ("too much blue") before this rework.
+- **Packaging is Velopack → GitHub Releases** (self-contained, no runtime install
+  for users; CI in `.github/workflows/release.yml` fires on a `v*` git tag). The
+  app owns its entry point (`App.Main`, which runs `VelopackApp.Build().Run()`
+  before any UI) instead of the one WPF generates — hence the csproj's
+  `<StartupObject>` and `App.xaml` demoted from `ApplicationDefinition` to `Page`.
+  Don't re-add `StartupUri`, and keep the vpk CLI version pinned to the `Velopack`
+  NuGet version. In-app auto-update is a planned follow-up on this same feed. See
+  [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releasing).
 
 ## Behaviour
 

@@ -27,19 +27,39 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
 and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) for exactly what's
 implemented (every field, calculation, and known limitation).
 
+## Install (for the team)
+
+No .NET, Visual Studio, or iRacing SDK needed — just Windows and iRacing. The
+installer bundles everything else.
+
+1. Open the [**Releases**](../../releases) page and download **`Setup.exe`** from the
+   latest release.
+2. Run it. Windows SmartScreen will flag an **"unknown publisher"** — the build
+   isn't code-signed, which is normal for a small self-distributed app. Click
+   **More info → Run anyway**.
+3. It installs per-user to `%LocalAppData%\IRacingOverlay`, adds a Start-menu
+   shortcut, and launches automatically.
+
+From there see the usage notes below: control it from the **system tray icon**
+(hidden behind the taskbar `^` overflow arrow the first time), run iRacing in
+**windowed or borderless** mode, and drag each widget where you want it. To update
+for now, download and run the newer `Setup.exe` — a built-in auto-updater is
+planned.
+
 ## Prerequisites
 
-- Windows 10/11
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) — `winget install Microsoft.DotNet.SDK.8`
-- iRacing (only for live telemetry — demo mode runs without it)
+- **To use it:** Windows 10/11 and iRacing — nothing else (see [Install](#install-for-the-team) above).
+- **To build from source:** additionally the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) — `winget install Microsoft.DotNet.SDK.8`.
 
 There is **no separate iRacing SDK to install**: telemetry is read from the sim's
 shared memory via the [IRSDKSharper](https://github.com/mherbold/IRSDKSharper)
 NuGet package, which is restored automatically on first build.
 
-## Run
+## Build & run from source
 
-The fastest path — one command, and the app keeps running after the terminal closes:
+For development. End users should use the [installer](#install-for-the-team)
+instead. The fastest path — one command, and the app keeps running after the
+terminal closes:
 
 ```powershell
 .\scripts\run-demo.ps1   # simulated field, no iRacing needed
@@ -100,4 +120,5 @@ the pattern for adding a new widget, and debugging notes; see
 - Drag-to-resize widgets and remembered window positions/scale
 - Click-through mode
 - Pin the tray icon and/or run at Windows startup
+- In-app auto-update (checks GitHub Releases via Velopack; installer groundwork is done)
 - Settings: units (L/gal, km/h / mph), refresh rate, widget scale

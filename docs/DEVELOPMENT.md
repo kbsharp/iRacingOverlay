@@ -242,6 +242,54 @@ Conventional-commit style, feature-sized: `feat(core): ...`, `fix(app): ...`,
 `dotnet test` on its own — don't split a change across commits such that an
 intermediate one is broken.
 
+## Releasing
+
+Releases are packaged with [Velopack](https://velopack.io) and published to
+**GitHub Releases** by CI. End users download `Setup.exe` from a release and run
+it — no .NET runtime or SDK required, because the app is published
+**self-contained** (the runtime is bundled).
+
+**Cutting a release** — the version *is* the git tag:
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Pushing a `v*` tag triggers [`.github/workflows/release.yml`](../.github/workflows/release.yml),
+which on a `windows-latest` runner publishes self-contained, runs `vpk pack` /
+`vpk upload github`, and creates the GitHub Release for that tag. It authenticates
+with the built-in `GITHUB_TOKEN` — there are no secrets to configure. Bump the
+tag (and, if you want the source tree to match, `<Version>` in
+`src/IRacingOverlay.App/IRacingOverlay.App.csproj`) for each release.
+
+**One-time prerequisites:**
+
+- The repo must have a **GitHub remote** and be pushed there
+  (`git remote add origin <url>` — this clone may not have one yet), with
+  **Actions enabled** for the repo.
+- The **vpk CLI version is pinned to the `Velopack` NuGet version** (1.2.0) in the
+  workflow. When you bump one, bump the other — a mismatch between the CLI and the
+  library is unsupported.
+
+**Entry-point gotcha (why the build is wired the way it is):** Velopack requires
+`VelopackApp.Build().Run()` to execute before any UI, so the app provides its own
+`Main` (`App.Main` in `App.xaml.cs`) instead of the one WPF generates from
+`App.xaml`. That's why the csproj sets `<StartupObject>` and demotes `App.xaml`
+from `ApplicationDefinition` to a `Page` (an `ApplicationDefinition` would emit a
+competing `Main` and fail to compile). `Main` calls `app.InitializeComponent()`
+itself — the step the generated entry point used to do. Don't re-add
+`StartupUri`; the composition root in `OnStartup` owns window creation.
+
+**Code signing** is not set up, so Windows SmartScreen shows an "unknown
+publisher" prompt on first run (users click *More info → Run anyway*). Fine for a
+small team; revisit if the audience grows.
+
+**In-app auto-update** is a planned follow-up. Velopack's `UpdateManager`, pointed
+at this same GitHub release feed, is what will let an installed copy update itself
+— the packaging here is the foundation for it, but the update-check code isn't
+wired up yet.
+
 ## Troubleshooting
 
 | Symptom | Likely cause |
