@@ -85,7 +85,8 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
                 driver.LicString ?? string.Empty,
                 driver.CarClassEstLapTime,
                 driver.CarClassShortName ?? string.Empty,
-                driver.CarClassColor);
+                driver.CarClassColor,
+                driver.CarPath ?? string.Empty);
         }
 
         var sessionTypes = new Dictionary<int, string>();

@@ -9,4 +9,5 @@ public sealed record RosterDriver(
     string License,
     float ClassEstLapTimeSeconds,
     string ClassShortName,
-    string? ClassColorRaw);
+    string? ClassColorRaw,
+    string CarPath = "");
