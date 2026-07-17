@@ -24,7 +24,7 @@
     <Grid Margin="14">
         <Border Width="470"
                 Padding="14,9,14,10"
-                CornerRadius="3"
+                CornerRadius="6"
                 Background="{StaticResource PanelBackground}"
                 BorderBrush="{StaticResource PanelBorder}"
                 BorderThickness="1"
@@ -84,12 +84,22 @@
                                     <Style TargetType="Border">
                                         <Setter Property="Background" Value="Transparent" />
                                         <Setter Property="Visibility" Value="Visible" />
+                                        <Setter Property="CornerRadius" Value="3" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsAltRow}" Value="True">
                                                 <Setter Property="Background" Value="{StaticResource RowStripe}" />
                                             </DataTrigger>
+                                            <!-- "You" row: warm wash + a warm outer glow so it reads as
+                                                 lit, not just tinted - the single most important row to
+                                                 find at a glance. -->
                                             <DataTrigger Binding="{Binding IsPlayer}" Value="True">
                                                 <Setter Property="Background" Value="{StaticResource PlayerHighlight}" />
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="16" ShadowDepth="0"
+                                                                          Color="#FFB03D" Opacity="0.5" />
+                                                    </Setter.Value>
+                                                </Setter>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding IsVisible}" Value="False">
                                                 <Setter Property="Visibility" Value="Hidden" />

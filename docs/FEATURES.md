@@ -17,8 +17,9 @@ default. Every car ordered by position within its class, with best/last lap
 times and gaps.
 
 **Layout:** 560px wide, borderless, always-on-top, draggable, right-click →
-Exit. Flat, sharp-cornered, near-opaque — styled after RaceLab/iOverlay/LMU
-standings. Default position top-left (`Left=24, Top=24`), then restored from
+Exit. Soft-cornered (`6px`), near-opaque with a top-lit panel material —
+styled after RaceLab/iOverlay/LMU standings. Default position top-left
+(`Left=24, Top=24`), then restored from
 saved settings. No widget-name label — the class banners and columns identify
 it; the top strip carries session type + time/laps remaining + car count.
 Under that strip, the column captions sit on a full-bleed **header band**
@@ -85,7 +86,7 @@ farthest ahead to farthest behind, with a session info strip on top.
 Deliberately **compact** — it complements the full standings rather than
 duplicating it.
 
-**Layout:** 470px wide, 24px zebra-striped rows, flat and sharp-cornered to
+**Layout:** 470px wide, 24px zebra-striped rows, soft-cornered top-lit panel to
 match the standings, borderless, always-on-top, draggable, right-click →
 Exit. Default position lower-left (`Left=24, Top=760`) so it sits at the
 bottom opposite the top-left standings, then restored from saved settings. No
@@ -132,11 +133,17 @@ badge specifically):
   Mid `<2500`, High `<4000`, Elite `4000+`.
 - Both badges are **tint fill + a 1px edge in the same hue**. The edge is what
   makes them read as chips: at 16px tall a bare tint fill has no boundary and
-  just looks like the text is sitting on a smudge. Same treatment on the
+  just looks like the text is sitting on a smudge. **On the player row** the
+  translucent tint is swapped for an opaque dark backing (an `IsPlayer`
+  `DataTrigger`): otherwise the warm amber wash bleeds up through the tint and
+  murders the contrast — the hue edge + text still carry the meaning. Same treatment on the
   relative's PIT badge and the fuel margin badge.
-- **Player row**: a warm amber background wash plus a matching amber border —
-  intentionally not the blue accent colour, so "this is you" doesn't visually
-  compete with the class/license/iRating colours now on every row.
+- **Player row**: a warm amber background wash plus a warm amber **outer glow**
+  (a zero-depth `DropShadowEffect` on the row) so your own line reads as lit, not
+  just tinted — the single most important row to find at a glance, in both the
+  relative and a full-field standings. Intentionally warm, not the blue accent,
+  so "this is you" doesn't compete with the class/license/iRating colours now on
+  every row.
 - Lapped/lapping name colouring (below) and the PIT/wetness amber badges are
   unchanged from before this pass.
 
@@ -300,7 +307,7 @@ through a corner leans the way the corner does. The whole widget **hides itself
 when nobody is near** and reappears the instant a car comes into range.
 
 **Layout:** a fixed 150×240 "scope" (`RadarLayout`) with faint centre axes,
-auto-sized panel, same borderless/topmost/draggable/sharp behaviour as the
+auto-sized panel, same borderless/topmost/draggable/soft-cornered behaviour as the
 others. **No header label** — a radar is self-evident. Fixed position on first
 launch (`Left=600, Top=470`, right column).
 
@@ -659,20 +666,26 @@ branding (window header labels) and the A-license badge specifically; every
 other colour carries a distinct meaning (class, license tier, iRating tier,
 lap status, "this is you").
 - `PanelBackground` — a neutral graphite/charcoal vertical gradient
-  (`#1B1D21` → `#121316`) at **~94% alpha** (`F0`): near-opaque, the track
-  shows only faintly through, matching the flat/solid look of
-  RaceLab/iOverlay/LMU standings. (An earlier ~80% blanket transparency read
-  as too see-through and was dialled back.) The material stays a low-
-  saturation neutral so colour is reserved for things that carry meaning —
-  class, license tier, iRating tier, lap status, "this is you".
-- The look is **flat and sharp**, not glassy: panels use a tiny `CornerRadius`
-  (~3px, near-square — "ultra modern, not soft"), and the old `PanelSheen`
-  (warm glow) and `PanelTopHighlight` (bright edge line) are neutralised to
-  near-invisible, kept only as resource keys so existing windows that
-  reference them don't need structural edits.
+  (`#242A34` → `#1A1D23` → `#0E0F13`) at **~94% alpha** (`F0`): near-opaque, the
+  track shows only faintly through. The gradient is deliberately wider than a
+  flat fill — a lighter, slightly cooler top falling to a deep bottom reads as a
+  surface **lit from above**, the material cue that stops the panel looking like
+  a flat console rectangle. (An earlier ~80% blanket transparency read as too
+  see-through and was dialled back; a still-earlier near-flat `#1B1D21`→`#121316`
+  fill read as "terminal".) The material stays a low-saturation neutral so
+  colour is reserved for things that carry meaning — class, license tier,
+  iRating tier, lap status, "this is you".
+- The look has **depth without being glassy**: panels use a `CornerRadius` of
+  `6px` (softened from an earlier near-square `3px`), and the once-neutralised
+  `PanelSheen` (a faint specular highlight concentrated at the top third) and
+  `PanelTopHighlight` (a 1px lit "catch light" along the top edge) are revived to
+  sell each panel as a raised object rather than a printed rectangle.
 - `RowStripe` — a very faint white (`#0DFFFFFF`) for zebra striping on every
   other row (standings and relative).
-- `PanelBorder` — neutral translucent white, not colour-tinted.
+- `PanelBorder` — a **top-lit gradient** (bright `#78FFFFFF` white along the top
+  edge, dimming to a dark warm-grey down the sides), not a flat hairline: a
+  subtle bevel that reads as a physical edge and keeps the widget a distinct
+  object over busy track scenery.
 - `Separator`, `RowHover`, `HeaderBand` — structural chrome.
 - `Accent` (azure blue), `Positive` (green), `Negative` (red), `Warning`
   (amber) — status colours.
@@ -741,7 +754,7 @@ normalised hex string into a frozen `SolidColorBrush` (grey fallback on a
 parse failure); both the relative and standings rows bind their class bar to
 it directly.
 
-All windows share: `DropShadowEffect` for panel lift, a tiny `CornerRadius`,
+All windows share: `DropShadowEffect` for panel lift, a `6px` `CornerRadius`,
 `BooleanToVisibilityConverter` (`BoolToVis`) for conditional badges, and the
 drag-to-move + right-click-exit interaction pattern. Default (first-run)
 positions are laid out non-overlapping: standings top-left, relative

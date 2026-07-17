@@ -5,7 +5,8 @@ small, but leave clean seams to scale. Widgets so far: standings (full
 class-grouped field), relative (compact glance widget), fuel, setup (flashes
 for the first minute of Qualify/Race as a reminder), radar (blind-spot
 proximity, built on iRacing's own CarLeftRight spotter signal). The theme is
-flat, sharp-cornered and near-opaque (RaceLab/LMU-style); a tray-menu UI-scale
+near-opaque with a top-lit panel material, soft 6px corners and a warm glow on
+your own row (RaceLab/LMU-style, with a touch more depth); a tray-menu UI-scale
 control sizes every widget together. A system tray icon controls the app; demo
 mode also shows a dev control panel.
 

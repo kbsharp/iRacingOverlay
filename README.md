@@ -101,8 +101,8 @@ Usage notes:
   the first launch uses sensible defaults — standings top-left, relative bottom-left, the
   rest in a right column. A layout saved on a monitor you've since unplugged falls back to
   the default rather than opening off-screen.
-- Panels are near-opaque and flat/sharp-cornered (RaceLab/LMU-style); the track shows only
-  faintly through.
+- Panels are near-opaque with a top-lit material and soft 6px corners (RaceLab/LMU-style);
+  the track shows only faintly through.
 - iRacing must run in **windowed or borderless** mode — overlays are not visible over exclusive fullscreen.
 - If no data appears while driving, check that `irsdkEnableMem=1` is set in iRacing's `app.ini` (it is by default).
 

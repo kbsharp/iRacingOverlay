@@ -20,21 +20,36 @@
 
         <!-- Neutral graphite surface - deliberately NOT navy, so the panel material
              stops competing with the accent/badge colours that carry meaning. Near
-             opaque (~94%): the track shows only faintly through, matching the flat,
-             solid look of RaceLab/iOverlay/LMU standings rather than a glassy panel. -->
+             opaque (~94%): the track shows only faintly through. The top-to-bottom
+             gradient is deliberately wider than a flat fill would be: a lighter,
+             slightly cooler top falling to a deep bottom reads as a surface lit from
+             above - that "material" cue is what stops the panel looking like a flat
+             console rectangle. Still solid enough (RaceLab/LMU) not to be glassy. -->
         <LinearGradientBrush x:Key="PanelBackground" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#F01B1D21" Offset="0" />
-            <GradientStop Color="#F0121316" Offset="1" />
+            <GradientStop Color="#F0242A34" Offset="0" />
+            <GradientStop Color="#F01A1D23" Offset="0.5" />
+            <GradientStop Color="#F00E0F13" Offset="1" />
         </LinearGradientBrush>
-        <!-- Sheen and top-highlight neutralised - the look is now flat and sharp,
-             not glassy. Kept as (invisible) resources so existing windows that
-             reference them don't need structural edits. -->
-        <SolidColorBrush x:Key="PanelSheen" Color="#00000000" />
-        <SolidColorBrush x:Key="PanelTopHighlight" Color="#14FFFFFF" />
-        <!-- Panel/separator edges sit brighter than a typical dark-UI hairline:
-             against the near-black panel a 20%-white border disappears, and the
-             widget stops reading as a distinct object over busy track scenery. -->
-        <SolidColorBrush x:Key="PanelBorder" Color="#59FFFFFF" />
+        <!-- Faint glassy sheen concentrated at the very top of the panel, fading to
+             nothing by a third of the way down - a specular highlight that lifts the
+             surface. Overlaid full-bleed by the windows that opt in (Fuel/Setup). -->
+        <LinearGradientBrush x:Key="PanelSheen" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#12FFFFFF" Offset="0" />
+            <GradientStop Color="#05FFFFFF" Offset="0.35" />
+            <GradientStop Color="#00FFFFFF" Offset="0.7" />
+        </LinearGradientBrush>
+        <!-- 1px lit hairline along the very top edge - the crisp "catch light" that
+             sells the panel as a raised object rather than a printed rectangle. -->
+        <SolidColorBrush x:Key="PanelTopHighlight" Color="#3DFFFFFF" />
+        <!-- Panel edge is a top-lit gradient, not a flat hairline: bright along the
+             top where light would catch it, dimmer down the sides - a subtle bevel
+             that reads as a physical edge and keeps the widget a distinct object over
+             busy track scenery. -->
+        <LinearGradientBrush x:Key="PanelBorder" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#78FFFFFF" Offset="0" />
+            <GradientStop Color="#4A2E3138" Offset="0.5" />
+            <GradientStop Color="#382E3138" Offset="1" />
+        </LinearGradientBrush>
         <SolidColorBrush x:Key="HeaderBand" Color="#1FFFFFFF" />
         <SolidColorBrush x:Key="Separator" Color="#38FFFFFF" />
         <SolidColorBrush x:Key="RowHover" Color="#14FFFFFF" />
@@ -147,6 +162,14 @@
                     <Setter Property="Background" Value="#3DE8B84D" />
                     <Setter Property="BorderBrush" Value="#8AE8B84D" />
                 </DataTrigger>
+                <!-- On the warm amber "you" row the translucent tint lets the row
+                     colour bleed through and mud the chip; give player-row badges an
+                     opaque dark backing so the hue edge + text stay legible. Declared
+                     last so it wins the Background over the tier triggers above; the
+                     tier BorderBrush (set alongside) still carries the hue. -->
+                <DataTrigger Binding="{Binding IsPlayer}" Value="True">
+                    <Setter Property="Background" Value="#E61B1E25" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -192,6 +215,11 @@
                 <DataTrigger Binding="{Binding IRatingTier}" Value="Elite">
                     <Setter Property="Background" Value="#3DE8579E" />
                     <Setter Property="BorderBrush" Value="#8AE8579E" />
+                </DataTrigger>
+                <!-- See LicenseBadgeBackground: opaque dark backing on the "you" row
+                     so the amber wash doesn't bleed through and kill the contrast. -->
+                <DataTrigger Binding="{Binding IsPlayer}" Value="True">
+                    <Setter Property="Background" Value="#E61B1E25" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
