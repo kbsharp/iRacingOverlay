@@ -129,6 +129,14 @@ Get-Process IRacingOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
   the whole point when the thing under review *is* the text. This is how the
   typography pass was verified. Note the harness needs the same `Color` /
   `Brush` alias workaround as `App` (see CLAUDE.md) once `UseWindowsForms` is on.
+  - **Radar caveat:** the radar auto-hides until its `TrackMap` is learned
+    (~one lap) *and* a car is in range, so a two-second demo warmup renders
+    nothing. Either drive the sim a full lap, or feed `RadarViewModel` synthetic
+    snapshots directly — step the player's `LapDistPct`/`PlayerYawRad` around a
+    lap to warm the map, then a final frame with cars nearby. Put the player on a
+    curved part of the heading function to see the car angles. One thing a render
+    *can't* settle: whether left/right matches iRacing's live `Yaw` sign — confirm
+    against the sim that a car on your left shows on your left.
 - **Live iRacing not connecting:** confirm `irsdkEnableMem=1` in iRacing's
   `app.ini` (on by default) and that the sim is running in windowed or
   borderless mode — overlays don't draw over exclusive fullscreen.
