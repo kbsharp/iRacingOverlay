@@ -1,0 +1,27 @@
+name: CI
+
+# Build and test on every push to main and every PR targeting it. Warnings are
+# errors (TreatWarningsAsErrors), so a clean build doubles as a lint gate; the
+# tested Core layer is exercised here before anything reaches a release tag.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: windows-latest # WPF build requires Windows
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build
+        run: dotnet build -c Release
+
+      - name: Test
+        run: dotnet test -c Release --no-build
