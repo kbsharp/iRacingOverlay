@@ -87,6 +87,7 @@ public partial class App : System.Windows.Application
             standingsViewModel.ApplySessionMetadata(metadata);
             relativeViewModel.ApplySessionMetadata(metadata);
             setupViewModel.ApplySessionMetadata(metadata);
+            radarViewModel.ApplySessionMetadata(metadata);
         });
         _telemetrySource.ConnectionChanged += (_, connected) => Dispatcher.BeginInvoke(() =>
         {
