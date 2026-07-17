@@ -114,7 +114,9 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   before any UI) instead of the one WPF generates — hence the csproj's
   `<StartupObject>` and `App.xaml` demoted from `ApplicationDefinition` to `Page`.
   Don't re-add `StartupUri`, and keep the vpk CLI version pinned to the `Velopack`
-  NuGet version. In-app auto-update is a planned follow-up on this same feed. See
+  NuGet version. In-app auto-update (`Services/UpdateService.cs`) runs off this same
+  public feed — background check/download, tray-driven restart, and it no-ops unless
+  `UpdateManager.IsInstalled` (so `dotnet run`/demo is unaffected). See
   [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releasing).
 
 ## Behaviour

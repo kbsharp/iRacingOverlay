@@ -42,9 +42,13 @@ installer bundles everything else.
 
 From there see the usage notes below: control it from the **system tray icon**
 (hidden behind the taskbar `^` overflow arrow the first time), run iRacing in
-**windowed or borderless** mode, and drag each widget where you want it. To update
-for now, download and run the newer `Setup.exe` — a built-in auto-updater is
-planned.
+**windowed or borderless** mode, and drag each widget where you want it.
+
+**Updates are automatic.** On launch the app quietly checks GitHub for a newer
+release and downloads it in the background. When one is ready, the tray icon shows
+a **"Restart to install update"** item (and a notification) — it never restarts
+mid-session on its own, so you install it between races on your own schedule. You
+can also trigger a check anytime from the tray's **Check for updates**.
 
 ## Prerequisites
 
@@ -120,5 +124,4 @@ the pattern for adding a new widget, and debugging notes; see
 - Drag-to-resize widgets and remembered window positions/scale
 - Click-through mode
 - Pin the tray icon and/or run at Windows startup
-- In-app auto-update (checks GitHub Releases via Velopack; installer groundwork is done)
 - Settings: units (L/gal, km/h / mph), refresh rate, widget scale

@@ -285,10 +285,16 @@ itself — the step the generated entry point used to do. Don't re-add
 publisher" prompt on first run (users click *More info → Run anyway*). Fine for a
 small team; revisit if the audience grows.
 
-**In-app auto-update** is a planned follow-up. Velopack's `UpdateManager`, pointed
-at this same GitHub release feed, is what will let an installed copy update itself
-— the packaging here is the foundation for it, but the update-check code isn't
-wired up yet.
+**In-app auto-update** is implemented (`Services/UpdateService.cs`), pointed at
+this same public GitHub feed via Velopack's `UpdateManager` — no token needed. On
+launch (and from the tray's *Check for updates*) it checks and downloads any newer
+release in the background, then reveals a tray *"Restart to install update"* action;
+it never restarts on its own. It **only runs for a Velopack-installed copy** —
+`UpdateManager.IsInstalled` is false under `dotnet run` or a portable unzip, so
+dev/demo launches no-op. Update failures are swallowed (a flaky connection must not
+take down the overlay) and logged to `%LocalAppData%\IRacingOverlay\update.log`.
+Because the app owns its entry point, the `VelopackApp.Build().Run()` bootstrap in
+`App.Main` is what makes the install/update hooks fire — don't remove it.
 
 ## Troubleshooting
 

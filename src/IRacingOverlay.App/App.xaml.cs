@@ -29,6 +29,7 @@ public partial class App : System.Windows.Application
     private readonly List<Window> _scalableWindows = [];
     private ITelemetrySource? _telemetrySource;
     private TrayIconService? _trayIcon;
+    private UpdateService? _updateService;
     private bool _isExiting;
 
     /// <summary>
@@ -128,11 +129,64 @@ public partial class App : System.Windows.Application
             _scalableWindows.Add(devControlWindow);
         }
 
+        _updateService = new UpdateService();
         _trayIcon = new TrayIconService(
             standingsWindow, relativeWindow, fuelWindow, setupWindow, radarWindow, devControlWindow,
-            SetScale, RequestExit);
+            SetScale, RequestExit, () => _ = CheckForUpdatesAsync(manual: true));
 
         _telemetrySource.Start();
+
+        // Check for a new release in the background once the UI is up. Fire and
+        // forget: it must never block startup, and a dev/demo (non-installed)
+        // launch no-ops inside the service.
+        _ = CheckForUpdatesAsync(manual: false);
+    }
+
+    /// <summary>
+    /// Checks GitHub for a newer release and, if found, downloads it and reveals
+    /// the tray "restart to install" action. Runs on the UI thread up to the
+    /// first await; the Velopack work happens off-thread and the continuation
+    /// resumes on the dispatcher, so the tray calls here are UI-thread safe.
+    /// <paramref name="manual"/> distinguishes the user-triggered "Check for
+    /// updates" (which gives feedback either way) from the silent startup check.
+    /// </summary>
+    private async Task CheckForUpdatesAsync(bool manual)
+    {
+        if (_updateService is null)
+        {
+            return;
+        }
+
+        if (!_updateService.IsInstalled)
+        {
+            if (manual)
+            {
+                _trayIcon?.Notify(
+                    "iRacing Overlay",
+                    "Auto-update runs in the installed app - this looks like a dev or portable build.");
+            }
+
+            return;
+        }
+
+        var update = await _updateService.CheckAndDownloadAsync();
+        if (update is not null)
+        {
+            _trayIcon?.ShowUpdateReady(update.TargetFullRelease.Version.ToString(), () => ApplyUpdate(update));
+        }
+        else if (manual)
+        {
+            _trayIcon?.Notify("iRacing Overlay", "You're on the latest version.");
+        }
+    }
+
+    /// <summary>Installs a downloaded update and restarts the app. Ends the
+    /// process, so it's only ever invoked from the user's tray click.</summary>
+    private void ApplyUpdate(UpdateInfo update)
+    {
+        _isExiting = true;      // let shutdown proceed past HideInsteadOfClose
+        _trayIcon?.Dispose();   // pull the tray icon before the process restarts
+        _updateService!.ApplyAndRestart(update);
     }
 
     /// <summary>The only path that actually ends the process.</summary>

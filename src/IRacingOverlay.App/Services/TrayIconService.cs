@@ -15,6 +15,12 @@ public sealed class TrayIconService : IDisposable
 {
     private readonly NotifyIcon _icon;
 
+    // Revealed only once an update has been downloaded and is ready to install.
+    // Kept as fields so the composition root can flip it on from the UI thread.
+    private readonly ToolStripMenuItem _updateItem;
+    private readonly ToolStripSeparator _updateSeparator;
+    private Action? _applyUpdate;
+
     public TrayIconService(
         System.Windows.Window standingsWindow,
         System.Windows.Window relativeWindow,
@@ -23,9 +29,19 @@ public sealed class TrayIconService : IDisposable
         System.Windows.Window radarWindow,
         System.Windows.Window? devControlWindow,
         Action<double> setScale,
-        Action requestExit)
+        Action requestExit,
+        Action checkForUpdates)
     {
         var menu = new ContextMenuStrip();
+
+        // Update controls live at the very top so a ready update is the first
+        // thing seen. Both start hidden and are switched on by ShowUpdateReady.
+        _updateItem = new ToolStripMenuItem("Restart to install update") { Visible = false };
+        _updateItem.Click += (_, _) => _applyUpdate?.Invoke();
+        _updateSeparator = new ToolStripSeparator { Visible = false };
+        menu.Items.Add(_updateItem);
+        menu.Items.Add(_updateSeparator);
+
         menu.Items.Add("Show Standings", null, (_, _) => Reveal(standingsWindow));
         menu.Items.Add("Show Relative", null, (_, _) => Reveal(relativeWindow));
         menu.Items.Add("Show Fuel", null, (_, _) => Reveal(fuelWindow));
@@ -48,6 +64,7 @@ public sealed class TrayIconService : IDisposable
         }
 
         menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add("Check for updates", null, (_, _) => checkForUpdates());
         menu.Items.Add("Exit", null, (_, _) => requestExit());
 
         _icon = new NotifyIcon
@@ -59,6 +76,29 @@ public sealed class TrayIconService : IDisposable
         };
 
         _icon.DoubleClick += (_, _) => Reveal(relativeWindow);
+    }
+
+    /// <summary>
+    /// Reveals the "restart to install update" item and shows a balloon tip. Call
+    /// on the UI thread (NotifyIcon is UI-affine). <paramref name="apply"/> runs
+    /// when the user clicks the item - it restarts the app, so it's user-driven.
+    /// </summary>
+    public void ShowUpdateReady(string version, Action apply)
+    {
+        _applyUpdate = apply;
+        _updateItem.Text = $"Restart to install update v{version}";
+        _updateItem.Visible = true;
+        _updateSeparator.Visible = true;
+        Notify("Update ready", $"Version {version} downloaded. Restart from the tray icon when you're ready.");
+    }
+
+    /// <summary>Shows a passive balloon tip (e.g. the result of a manual update
+    /// check). UI-thread only.</summary>
+    public void Notify(string title, string text)
+    {
+        _icon.BalloonTipTitle = title;
+        _icon.BalloonTipText = text;
+        _icon.ShowBalloonTip(5000);
     }
 
     public void Dispose()

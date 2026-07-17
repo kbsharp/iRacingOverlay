@@ -468,10 +468,12 @@ stop the app was closing the terminal that launched it.
   app palette) rather than shipped as an asset file.
 - Context menu: **Show Standings**, **Show Relative**, **Show Fuel**, **Show
   Setup**, **Show Radar**, a **UI Scale** submenu (100/125/150/175%), **Dev
-  Controls** (demo mode only), **Exit**. Double-click the icon = Show
-  Relative. **UI Scale** applies a `ScaleTransform` to every overlay window's
-  content root (`App.SetScale`); `SizeToContent` then resizes each window to
-  fit, so the whole set scales together. Not persisted between runs.
+  Controls** (demo mode only), **Check for updates**, **Exit** — plus a
+  **Restart to install update** item that stays hidden until an update has been
+  downloaded (see Auto-update below). Double-click the icon = Show Relative.
+  **UI Scale** applies a `ScaleTransform` to every overlay window's content root
+  (`App.SetScale`); `SizeToContent` then resizes each window to fit, so the whole
+  set scales together. Not persisted between runs.
 - The app runs under `ShutdownMode="OnExplicitShutdown"`: closing a widget
   window hides it (`App.HideInsteadOfClose`) rather than destroying it, so
   the tray's Show items always work. The tray's **Exit** (or any window's
@@ -479,6 +481,28 @@ stop the app was closing the terminal that launched it.
   (`App.RequestExit`).
 - Windows hides newly created tray icons behind the taskbar's `^` overflow
   arrow by default — expected OS behaviour, not a bug.
+
+### Auto-update — `UpdateService`
+
+Built on Velopack's `UpdateManager`, pointed at the public GitHub Releases feed
+the app is published to (`.github/workflows/release.yml`). Public repo, so no
+access token.
+
+- On launch — and on demand via the tray's **Check for updates** — it checks the
+  feed and, if a newer release exists, **downloads it in the background**. When
+  the download is ready it reveals the tray **Restart to install update vX.Y.Z**
+  item and shows a balloon notification.
+- Applying an update (which restarts the app) only happens when the user clicks
+  that item — **never automatically mid-session**, which matters for a racing
+  overlay. `App.ApplyUpdate` disposes the tray icon and calls
+  `ApplyUpdatesAndRestart`.
+- **Installed copies only.** `UpdateManager.IsInstalled` is false under `dotnet
+  run` or a portable unzip, so dev/demo launches no-op — no network call, no
+  error. Requires the `VelopackApp.Build().Run()` bootstrap in `App.Main`.
+- Failures never surface: a flaky connection or bad feed is caught, swallowed,
+  and logged to `%LocalAppData%\IRacingOverlay\update.log`. No automated tests —
+  it's SDK glue (see Test coverage); the GitHub feed read was verified against
+  the live release during development.
 
 ### Dev control panel — `DevControlWindow` / `DevControlViewModel` / `IDemoControls`
 

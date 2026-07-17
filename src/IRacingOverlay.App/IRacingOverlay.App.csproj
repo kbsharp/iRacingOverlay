@@ -11,7 +11,7 @@
     <!-- Local/source-build version. Release builds override this from the git tag
          (see .github/workflows/release.yml); it is the assembly's identity, and
          Velopack compares it to decide when an update is available. -->
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <!-- Velopack needs VelopackApp.Build().Run() to execute before any UI, so we
          provide our own entry point (App.Main) instead of the one WPF generates
          from App.xaml. That requires pointing the compiler at it and demoting
