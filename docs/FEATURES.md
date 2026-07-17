@@ -291,53 +291,78 @@ running.
   panel's "Cycle session" button to see Practice → Qualify → Race
   transitions and re-trigger it on demand.
 
-### Radar — `RadarWindow` / `RadarViewModel` / `RadarFormat`
+### Radar — `RadarWindow` / `RadarViewModel` + `Core.Radar`
 
-A blind-spot proximity indicator, RaceLab/LMU-style: a small car icon in the
-middle with a left and right zone either side of it that light up (and
-pulse) when there's a car alongside.
+A top-down proximity radar, LMU-style: the player car sits dead centre facing
+up, with the nearby field drawn as class-coloured car icons at their real
+positions relative to you — **angled to match the track**, so a car alongside
+through a corner leans the way the corner does. The whole widget **hides itself
+when nobody is near** and reappears the instant a car comes into range.
 
-**Layout:** auto-sized, same borderless/topmost/draggable/sharp behaviour as
-the others. **No header label** — a radar is self-evident, so the redundant
-"RADAR" title was removed; when the sim isn't reporting yet it shows a small
-"waiting for spotter data" caption instead. Fixed position on first launch
-(`Left=600, Top=470`, right column).
+**Layout:** a fixed 150×240 "scope" (`RadarLayout`) with faint centre axes,
+auto-sized panel, same borderless/topmost/draggable/sharp behaviour as the
+others. **No header label** — a radar is self-evident. Fixed position on first
+launch (`Left=600, Top=470`, right column).
 
-**How it works:** built entirely on iRacing's own `CarLeftRight` telemetry
-variable — the exact signal iRacing's built-in spotter uses, not an invented
-lateral-position model. `IrsdkTelemetrySource` reads it via
-`GetIntOrDefault(data, "CarLeftRight")` and casts to the `CarLeftRight` enum
-(`Off`, `Clear`, `CarLeft`, `CarRight`, `CarLeftRight`, `TwoCarsLeft`,
-`TwoCarsRight` — mirrors iRacing's own values exactly, confirmed by
-reflecting the installed IRSDKSharper package). `RadarFormat`'s pure
-classification functions (`HasCarLeft`, `HasCarRight`, `HasTwoCarsLeft`,
-`HasTwoCarsRight`, `IsActive`) turn that single enum into the four
-independent booleans the widget binds to.
+**How it works — reconstructing positions iRacing won't give you.** iRacing's
+telemetry exposes each car's `LapDistPct` (how far round the lap it is) but *no*
+world position or heading for other cars — only the **player's** heading
+(`Yaw`). So the radar learns the track's shape from the player's own driving and
+reuses it to place everyone else. Pure, tested logic lives in `Core.Radar`:
+- **`TrackMap`** records the player's heading into 720 buckets keyed by
+  `LapDistPct`, filling every bucket driven through between samples (so one clean
+  lap maps the whole track, not several). A large forward jump — teleport, tow,
+  reset — fills only the current bucket, so it can't smear a false line. It
+  reports `IsReady` once ≥55% of the lap is mapped (about one lap).
+- **`RadarGeometry`** walks that heading table from the player's `LapDistPct` to
+  another car's, integrating the track's curve, to recover the car's position
+  (`RightMeters`/`ForwardMeters`) **and** orientation (`RelativeAngleRad`) in the
+  player's local frame. On a straight the walk is a straight line (cars sit
+  directly ahead/behind, parallel); through a corner it bends, so the car ends up
+  off to the side and rotated.
+- **`RadarCalculator`** builds the `RadarBlip` list for every rostered car within
+  range (`DefaultRangeMeters` = 60 m along the track), excluding pit and
+  pace/spectator cars, tagging each with its class colour.
+- **`TrackLengthParser`** turns iRacing's `WeekendInfo:TrackLength` (`"3.70 km"`,
+  occasionally miles) into the metres the geometry needs.
+
+`RadarViewModel` owns the `TrackMap`, feeds it the player's heading each frame
+(only while on track and moving >3 m/s), runs the calculator, and maps metres to
+canvas pixels in `RadarBlipViewModel` (fixed-size icons, positions scaled at
+`PixelsPerMeter`). Blip slots update in place — the collection only resizes when
+the number of nearby cars changes.
 
 **Visual behaviour:**
-- Each side zone pulses a red wash (`#00→#B0FF5C6C`, 0.45s each way,
-  looping) continuously while a car is detected there - unlike the setup
-  widget's flash, this is **not time-limited**: the hazard indicator only
-  stops when the sim reports the car has left the zone.
-- A "2" badge appears on a zone for `TwoCarsLeft`/`TwoCarsRight`.
-- Both zones can be active simultaneously (`CarLeftRight` value) if there's
-  a car on each side.
-- Before the sim is actively reporting (`CarLeftRight.Off` — e.g. not yet on
-  track), the widget shows a small "waiting for spotter data" caption
-  instead of two dim, ambiguous-looking zones.
+- The panel is visible only when there's something to show: the positional radar
+  once the track is mapped and a car is in range, the spotter fallback (below)
+  during the first lap, or a small "radar" placeholder before the sim reports (so
+  the auto-hiding widget can still be dragged into place).
+- Icons are class-coloured (iRacing's own `CarClassColor`); the player car is
+  white with an accent nose showing "up".
+
+**First-lap fallback.** Until `TrackMap.IsReady`, there's no shape to place cars
+against, so the widget falls back to iRacing's coarse `CarLeftRight` spotter
+signal — the same left/right blocks the widget used before this rework, shown via
+`RadarFormat`'s `HasCarLeft`/`HasCarRight` classifiers — turning red when a car is
+alongside. Once the lap is mapped, the positional radar takes over.
 
 **Known limitations:**
-- `CarLeftRight` is a single aggregate signal, not per-car — the radar can
-  tell you *that* someone is alongside and on which side, but not *which*
-  car (number/class), or their exact distance. iRacing doesn't expose true
-  lateral-offset telemetry per car to compute that honestly; a future
-  enhancement could cross-reference the closest car by longitudinal gap
-  (the same delta calculation `RelativeCalculator` already does) as a
-  best-effort label, but that would be an inference, not a direct read, so
-  it's deferred rather than shipped as if it were exact.
+- **Needs ~one lap to learn the track** (per session / track). Before then it's
+  the coarse left/right fallback.
+- **Lateral offset on a dead straight isn't resolvable.** With no per-car lateral
+  telemetry, two cars perfectly side-by-side on a straight both map onto the
+  centreline; the geometry separates cars by the track's curvature, which is zero
+  on a straight. The angle it *can* show (parallel) is still correct. The spotter
+  fallback's left/right remains the honest read for that exact case.
+- **Left/right handedness assumes iRacing's `Yaw` is anticlockwise-positive**
+  (standard, and what the geometry expects). Worth a live confirmation against the
+  sim that a car actually on your left shows on your left — if mirrored, it's a
+  one-line sign flip in `RadarBlipViewModel`/`RadarGeometry`.
 - No audio cue — visual only.
-- Demo mode's `CarLeftRight` is a fixed `Clear` by default; use the dev
-  panel's "Cycle radar" button to step through all six states.
+- Demo mode synthesises a weaving circuit (`SimulatedTelemetrySource.DemoHeading`,
+  3000 m) and seats the field in a pack around the player, so the radar populates
+  with visibly angled cars; the dev panel's "Cycle radar" button still steps the
+  `CarLeftRight` fallback through its states.
 
 ## Telemetry & session data (`Core.Telemetry`, `Core.Session`)
 
@@ -346,7 +371,9 @@ independent booleans the widget binds to.
 remaining/laps remaining, player lap/fuel/speed/gear/on-track flag, player
 car index, air/track temp, wetness, brake bias %, incident count,
 `CarLeftRight` (near-field proximity, see the Radar widget above), and the
-full per-car `Cars` list.
+full per-car `Cars` list. Also carries `PlayerYawRad` — the player car's
+heading (iRacing's `Yaw`), the one heading iRacing exposes, which the radar
+records around the lap to reconstruct the track shape.
 
 **`CarTelemetry`** — per-car state: car index, lap, lap distance %, `EstTime`,
 on-pit-road flag, `CarTrackSurface`, race position, plus the standings fields:
@@ -363,9 +390,10 @@ ExtremelyWet).
 **`SessionMetadata`** — slow-changing roster data: `DriversByCarIdx`
 (`RosterDriver`: car number, display name, iRating, license string,
 class-estimated lap time, class short name, raw class colour from the sim),
-`SessionTypesByNum`, and the player's own `PlayerSetupName`/
-`PlayerSetupIsModified` (drives the Setup widget). Refreshed whenever the sim
-re-broadcasts session info. `RelativeRow` carries the same driver fields plus
+`SessionTypesByNum`, the player's own `PlayerSetupName`/`PlayerSetupIsModified`
+(drives the Setup widget), and `TrackLengthMeters` (parsed from
+`WeekendInfo:TrackLength`, used by the radar to scale lap-fraction gaps into
+metres). Refreshed whenever the sim re-broadcasts session info. `RelativeRow` carries the same driver fields plus
 the parsed `LicenseTier`, `IRatingTier`, and normalised `ClassColorHex` used
 for the relative widget's colour coding (see the Relative widget section
 above).
@@ -446,11 +474,14 @@ mode.
   "Dev experience" below for how it's grown/shrunk live. Also implements
   `IDemoControls`, which the app checks for at startup to decide whether to
   show the dev control panel.
-- `CarLeftRight` defaults to `Clear` and is otherwise untouched by the
-  simulation loop — it only changes via the dev panel's "Cycle radar"
-  control, since deriving a realistic value from the simulated field's
-  actual proximity would need lateral-position data the demo doesn't model
-  either (see the Radar widget's known limitations above).
+- `CarLeftRight` defaults to `Clear` and only changes via the dev panel's
+  "Cycle radar" control; it drives the radar's first-lap spotter fallback.
+- The demo models a real track shape for the positional radar: `DemoHeading`
+  is a weaving 3000 m circuit (`TrackLengthMeters` on the metadata), the
+  player's `PlayerYawRad` follows it, and the field is seated in a pack
+  straddling the player (cars 1/2 shoved a lap ahead/behind for the relative
+  widget's lap-up/lap-down states, the last car in the pits). So the radar
+  learns the track within a lap and shows a believably angled pack.
 
 ## Dev experience
 
@@ -544,7 +575,7 @@ control in live mode and doesn't appear there.
 | **Toggle player pit** | Flags the player's own row as pitting (surface `InPitStall`), to check the PIT badge and opacity dimming on the player's row specifically. |
 | **Cycle session** | Steps Practice → Open Qualify → Race → (wraps), each with its matching setup file, bumping the session number so the Setup widget's flash re-triggers. Resets the "modified" flag, matching a freshly loaded setup. |
 | **Toggle setup modified** | Flags the loaded setup as modified, to check the Setup widget's "MODIFIED" tag. |
-| **Cycle radar** | Steps Clear → CarLeft → CarRight → CarLeftRight → TwoCarsLeft → TwoCarsRight → (wraps), to check every radar widget state including the pulse and the "2" badge. |
+| **Cycle radar** | Steps Clear → CarLeft → CarRight → CarLeftRight → TwoCarsLeft → TwoCarsRight → (wraps), to check the radar's first-lap spotter fallback (the positional radar itself is driven by the demo track shape, always on once the map is learned). |
 
 Implementation: `SimulatedTelemetrySource` implements `IDemoControls`
 (`src/IRacingOverlay.Infrastructure/Telemetry/`); all mutations happen under
@@ -595,8 +626,14 @@ positive) and `Gap` ("+n.n" for a time gap, "+nL" when a lap or more down,
 blank for the class leader, placeholder when unknown).
 
 **`RadarFormat`**: classifies iRacing's `CarLeftRight` signal into the
-booleans the radar widget binds to - `HasCarLeft`, `HasCarRight`,
-`HasTwoCarsLeft`, `HasTwoCarsRight`, `IsActive`.
+booleans the radar's first-lap spotter fallback binds to - `HasCarLeft`,
+`HasCarRight`, `HasTwoCarsLeft`, `HasTwoCarsRight`, `IsActive`.
+
+**`Core.Radar`** (positional radar): `TrackMap` (learns `heading(LapDistPct)`
+from the player's driving), `RadarGeometry` (walks that table to place a car in
+the player's local frame — position + angle), `RadarCalculator` (`RadarBlip`
+list for cars in range), `TrackLengthParser` (`"3.70 km"` → metres). See the
+Radar widget above for how they fit together.
 
 **`StrengthOfField`** (`Core.Standings`): `Compute(iRatings)` returns iRacing's
 real SoF for a class — `B·ln(n / Σ 2^(−ir/1600))`, weighting lower ratings
@@ -732,7 +769,11 @@ on the content root (see the tray icon section).
 | `Formatting/TelemetryFormatTests.cs` | Gear, kph conversion, liters/laps placeholders |
 | `Formatting/RatingFormatTests.cs` | License tier parsing, iRating tier boundaries, CarClassColor normalisation (decimal-packed and hex forms) |
 | `Formatting/SetupFormatTests.cs` | Setup file name display formatting |
-| `Formatting/RadarFormatTests.cs` | CarLeftRight classification into the four proximity booleans |
+| `Formatting/RadarFormatTests.cs` | CarLeftRight classification into the four proximity booleans (radar fallback) |
+| `Radar/TrackMapTests.cs` | Heading-bucket fill/coverage/readiness, gap-fill between samples (incl. across the line), teleport guard, nearest-bucket lookup |
+| `Radar/RadarGeometryTests.cs` | Local-frame placement: straight → ahead/behind at 0°, left/right corners → offset + rotated, reference-heading cancellation, start/finish wrap |
+| `Radar/RadarCalculatorTests.cs` | Blip building: map-not-ready/zero-length guards, range gating, pit/pace-car exclusion, roster colour+number |
+| `Radar/TrackLengthParserTests.cs` | `WeekendInfo:TrackLength` km/mi parsing, missing/invalid → 0 |
 | `Formatting/StandingsFormatTests.cs` | Lap-time (m:ss.fff) and gap ("+n.n"/"+nL"/blank) formatting |
 | `Settings/OverlaySettingsSerializerTests.cs` | JSON round-trip, missing/corrupt file → defaults, out-of-range scale sanitizing, unknown-field tolerance |
 | `Settings/LayoutGuardTests.cs` | Scale sanitizing (band + non-finite), on-screen validation across a multi-monitor virtual desktop |

@@ -19,9 +19,12 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
 - **Setup**: shows the currently loaded setup file and flashes for the first minute of
   Qualifying or Race — a reminder to catch the classic "raced on the qualifying setup"
   mistake before it costs you a fuel-short race.
-- **Radar**: a RaceLab/LMU-style blind-spot indicator — the left/right zones around a
-  car icon light up and pulse when iRacing's own spotter signal detects a car alongside,
-  with a "2" badge when there are two.
+- **Radar**: an LMU-style top-down proximity radar — nearby cars drawn as class-coloured
+  icons at their real positions relative to you, *angled to match the track* through
+  corners. It hides itself when nobody's near and reappears the moment a car comes into
+  range. iRacing exposes no position for other cars, so the radar learns the track's shape
+  from your own driving over the first lap; until it's learned, it falls back to iRacing's
+  coarse left/right spotter signal.
 
 **Full docs:** [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, commands, debugging,
 and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) for exactly what's
@@ -91,7 +94,7 @@ Usage notes:
 - **Demo mode** also opens a **dev control panel**: add/remove cars (up to a full 40-car
   grid), drain/add fuel, set fuel critical, cycle track wetness, add an incident, toggle the
   player into the pits, cycle Practice/Qualify/Race (retriggers the setup-reminder flash),
-  cycle the radar through all six proximity states — all live, no rebuild. See
+  cycle the radar's spotter-fallback states — all live, no rebuild. See
   [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.
 - Drag each widget anywhere with the left mouse button. **Positions and the UI scale
   are remembered between runs** (saved to `%LocalAppData%\IRacingOverlay\settings.json`);

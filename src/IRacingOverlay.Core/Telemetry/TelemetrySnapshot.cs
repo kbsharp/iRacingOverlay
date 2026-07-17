@@ -41,6 +41,11 @@ public sealed record TelemetrySnapshot
     /// <summary>Near-field proximity from iRacing's own spotter signal - see <see cref="Telemetry.CarLeftRight"/>.</summary>
     public required CarLeftRight CarLeftRight { get; init; }
 
+    /// <summary>The player car's heading in radians (iRacing's <c>Yaw</c>), world frame.
+    /// Only the player's heading is available - the radar records it around the lap to
+    /// reconstruct the track shape (see <c>Core.Radar.TrackMap</c>). Defaults to 0.</summary>
+    public float PlayerYawRad { get; init; }
+
     /// <summary>Cars currently in the world (the player included).</summary>
     public required IReadOnlyList<CarTelemetry> Cars { get; init; }
 }
