@@ -12,7 +12,7 @@
         WindowStartupLocation="Manual"
         Left="24"
         Top="760"
-        FontFamily="Segoe UI Variable Display, Segoe UI"
+        FontFamily="{StaticResource FontText}"
         MouseLeftButtonDown="OnDragWindow">
 
     <Window.ContextMenu>
@@ -117,21 +117,26 @@
                                                Text="{Binding PositionText}"
                                                VerticalAlignment="Center"
                                                Margin="3,0,0,0"
+                                               FontFamily="{StaticResource FontSmall}"
                                                FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Typography.NumeralAlignment="Tabular"
                                                Foreground="{StaticResource TextMuted}" />
 
                                     <TextBlock Grid.Column="2"
                                                Text="{Binding CarNumberText}"
                                                VerticalAlignment="Center"
+                                               FontFamily="{StaticResource FontSmall}"
                                                FontSize="11"
-                                               FontWeight="SemiBold"
+                                               FontWeight="Bold"
+                                               Typography.NumeralAlignment="Tabular"
                                                Foreground="{StaticResource TextSecondary}" />
 
                                     <TextBlock Grid.Column="3"
                                                Text="{Binding Name}"
                                                VerticalAlignment="Center"
                                                FontSize="13"
-                                               FontWeight="SemiBold"
+                                               FontWeight="Bold"
                                                Margin="0,0,6,0"
                                                TextTrimming="CharacterEllipsis">
                                         <TextBlock.Style>
@@ -161,7 +166,7 @@
                                             Style="{StaticResource LicenseBadgeBackground}">
                                         <TextBlock Text="{Binding License}"
                                                    FontSize="10"
-                                                   FontWeight="SemiBold"
+                                                   FontWeight="Bold"
                                                    Style="{StaticResource LicenseBadgeText}" />
                                     </Border>
 
@@ -174,7 +179,7 @@
                                             Style="{StaticResource IRatingBadgeBackground}">
                                         <TextBlock Text="{Binding IRatingText}"
                                                    FontSize="10"
-                                                   FontWeight="SemiBold"
+                                                   FontWeight="Bold"
                                                    Style="{StaticResource IRatingBadgeText}" />
                                     </Border>
 
@@ -186,17 +191,21 @@
                                         <Border CornerRadius="2"
                                                 Padding="4,1"
                                                 Margin="0,0,6,0"
-                                                Background="#26FFC24D"
+                                                Background="#3DFFB03D"
+                                                BorderBrush="#8AFFB03D"
+                                                BorderThickness="1"
                                                 VerticalAlignment="Center"
                                                 Visibility="{Binding InPits, Converter={StaticResource BoolToVis}}">
                                             <TextBlock Text="PIT"
+                                                       FontFamily="{StaticResource FontSmall}"
                                                        FontSize="9"
                                                        FontWeight="Bold"
                                                        Foreground="{StaticResource Warning}" />
                                         </Border>
                                         <TextBlock Text="{Binding DeltaText}"
                                                    FontSize="13"
-                                                   FontWeight="SemiBold"
+                                                   FontWeight="Bold"
+                                                   Typography.NumeralAlignment="Tabular"
                                                    Foreground="{StaticResource TextPrimary}" />
                                     </StackPanel>
                                 </Grid>

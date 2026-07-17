@@ -5,6 +5,19 @@
     <Application.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
+        <!-- Segoe UI Variable ships three optical sizes and they are NOT
+             interchangeable: Small is drawn for <=12px, Text for 12-28px, Display
+             for headlines. Display at 11px renders spindly and tightly tracked -
+             it reads as thin "terminal" text. Match the family to the size:
+             captions/badges use Small, row and body text uses Text, only the big
+             fuel readouts use Display.
+             AllowsTransparency="True" also forces WPF off ClearType onto greyscale
+             antialiasing, which thins stems further, so weights here run one step
+             heavier than they would in a normal window. -->
+        <FontFamily x:Key="FontSmall">Segoe UI Variable Small, Segoe UI</FontFamily>
+        <FontFamily x:Key="FontText">Segoe UI Variable Text, Segoe UI</FontFamily>
+        <FontFamily x:Key="FontDisplay">Segoe UI Variable Display, Segoe UI</FontFamily>
+
         <!-- Neutral graphite surface - deliberately NOT navy, so the panel material
              stops competing with the accent/badge colours that carry meaning. Near
              opaque (~94%): the track shows only faintly through, matching the flat,
@@ -18,9 +31,12 @@
              reference them don't need structural edits. -->
         <SolidColorBrush x:Key="PanelSheen" Color="#00000000" />
         <SolidColorBrush x:Key="PanelTopHighlight" Color="#14FFFFFF" />
-        <SolidColorBrush x:Key="PanelBorder" Color="#33FFFFFF" />
+        <!-- Panel/separator edges sit brighter than a typical dark-UI hairline:
+             against the near-black panel a 20%-white border disappears, and the
+             widget stops reading as a distinct object over busy track scenery. -->
+        <SolidColorBrush x:Key="PanelBorder" Color="#59FFFFFF" />
         <SolidColorBrush x:Key="HeaderBand" Color="#1FFFFFFF" />
-        <SolidColorBrush x:Key="Separator" Color="#1FFFFFFF" />
+        <SolidColorBrush x:Key="Separator" Color="#38FFFFFF" />
         <SolidColorBrush x:Key="RowHover" Color="#14FFFFFF" />
         <!-- Alternating row shading (zebra) - very subtle so it reads as texture,
              not stripes. -->
@@ -38,9 +54,12 @@
         <SolidColorBrush x:Key="PlayerHighlight" Color="#5CFFB03D" />
         <SolidColorBrush x:Key="PlayerBorder" Color="#B0FFB03D" />
 
-        <SolidColorBrush x:Key="TextPrimary" Color="#F6F9FF" />
-        <SolidColorBrush x:Key="TextSecondary" Color="#C3D2EA" />
-        <SolidColorBrush x:Key="TextMuted" Color="#7C8CAB" />
+        <!-- Three clearly separated steps. The muted step was #7C8CAB, which at
+             ~4:1 on this panel is where the greyness came from - captions read as
+             dim noise rather than as a quiet tier of a hierarchy. -->
+        <SolidColorBrush x:Key="TextPrimary" Color="#FBFCFF" />
+        <SolidColorBrush x:Key="TextSecondary" Color="#D8E3F5" />
+        <SolidColorBrush x:Key="TextMuted" Color="#98A9C6" />
 
         <SolidColorBrush x:Key="LapAheadText" Color="#FF7A85" />
         <SolidColorBrush x:Key="LapBehindText" Color="#6FB4FF" />
@@ -61,52 +80,78 @@
 
         <!-- iRating bands - a distinct cool/vivid family so the badge is never
              confused with the license badge sitting next to it. -->
-        <SolidColorBrush x:Key="IRatingLow" Color="#7C8CAB" />
+        <SolidColorBrush x:Key="IRatingLow" Color="#98A9C6" />
         <SolidColorBrush x:Key="IRatingMid" Color="#3FC7C0" />
         <SolidColorBrush x:Key="IRatingHigh" Color="#9B7BFA" />
         <SolidColorBrush x:Key="IRatingElite" Color="#E8579E" />
 
         <!-- Small uppercase field caption -->
         <Style x:Key="Caption" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource FontSmall}" />
             <Setter Property="FontSize" Value="10" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
         </Style>
 
         <!-- Primary numeric value -->
         <Style x:Key="Value" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource FontText}" />
             <Setter Property="FontSize" Value="19" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+            <!-- Fixed-width digits: without this, proportional figures make the
+                 numbers jitter as they tick and the columns read ragged. -->
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
         </Style>
 
-        <!-- License badge chip: tinted background + vivid text, coloured by
-             RelativeRowViewModel.LicenseTier -->
+        <!-- Timing figures in list rows (gap, interval, lap times). Tabular so the
+             right-aligned columns line up digit-for-digit like a real timing
+             screen. -->
+        <Style x:Key="Timing" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource FontText}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+        </Style>
+
+        <!-- License badge chip: tinted background + a 1px edge in the same hue +
+             vivid text, coloured by RelativeRowViewModel.LicenseTier. The edge is
+             what makes it read as a chip: a bare tint fill at this size has no
+             boundary and just looks like the text is sitting on a smudge. -->
         <Style x:Key="LicenseBadgeBackground" TargetType="Border">
             <Setter Property="Background" Value="#14FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#26FFFFFF" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding LicenseTier}" Value="Rookie">
-                    <Setter Property="Background" Value="#33FF5C6C" />
+                    <Setter Property="Background" Value="#3DFF5C6C" />
+                    <Setter Property="BorderBrush" Value="#8AFF5C6C" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding LicenseTier}" Value="D">
-                    <Setter Property="Background" Value="#33FF9640" />
+                    <Setter Property="Background" Value="#3DFF9640" />
+                    <Setter Property="BorderBrush" Value="#8AFF9640" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding LicenseTier}" Value="C">
-                    <Setter Property="Background" Value="#33FFD84D" />
+                    <Setter Property="Background" Value="#3DFFD84D" />
+                    <Setter Property="BorderBrush" Value="#8AFFD84D" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding LicenseTier}" Value="B">
-                    <Setter Property="Background" Value="#3333D689" />
+                    <Setter Property="Background" Value="#3D33D689" />
+                    <Setter Property="BorderBrush" Value="#8A33D689" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding LicenseTier}" Value="A">
-                    <Setter Property="Background" Value="#3339A7FF" />
+                    <Setter Property="Background" Value="#3D39A7FF" />
+                    <Setter Property="BorderBrush" Value="#8A39A7FF" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding LicenseTier}" Value="Pro">
-                    <Setter Property="Background" Value="#33E8B84D" />
+                    <Setter Property="Background" Value="#3DE8B84D" />
+                    <Setter Property="BorderBrush" Value="#8AE8B84D" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
         <Style x:Key="LicenseBadgeText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource FontSmall}" />
             <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding LicenseTier}" Value="Rookie">
@@ -133,21 +178,28 @@
         <!-- iRating badge chip: same pattern, driven by IRatingTier -->
         <Style x:Key="IRatingBadgeBackground" TargetType="Border">
             <Setter Property="Background" Value="#14FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#26FFFFFF" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IRatingTier}" Value="Mid">
-                    <Setter Property="Background" Value="#333FC7C0" />
+                    <Setter Property="Background" Value="#3D3FC7C0" />
+                    <Setter Property="BorderBrush" Value="#8A3FC7C0" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IRatingTier}" Value="High">
-                    <Setter Property="Background" Value="#339B7BFA" />
+                    <Setter Property="Background" Value="#3D9B7BFA" />
+                    <Setter Property="BorderBrush" Value="#8A9B7BFA" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IRatingTier}" Value="Elite">
-                    <Setter Property="Background" Value="#33E8579E" />
+                    <Setter Property="Background" Value="#3DE8579E" />
+                    <Setter Property="BorderBrush" Value="#8AE8579E" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
         <Style x:Key="IRatingBadgeText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource FontSmall}" />
             <Setter Property="Foreground" Value="{StaticResource IRatingLow}" />
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IRatingTier}" Value="Mid">
                     <Setter Property="Foreground" Value="{StaticResource IRatingMid}" />

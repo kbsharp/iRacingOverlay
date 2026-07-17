@@ -12,7 +12,7 @@
         WindowStartupLocation="Manual"
         Left="1000"
         Top="24"
-        FontFamily="Segoe UI Variable Display, Segoe UI"
+        FontFamily="{StaticResource FontText}"
         MouseLeftButtonDown="OnDragWindow">
 
     <Window.ContextMenu>

@@ -12,7 +12,7 @@
         WindowStartupLocation="Manual"
         Left="24"
         Top="24"
-        FontFamily="Segoe UI Variable Display, Segoe UI"
+        FontFamily="{StaticResource FontText}"
         MouseLeftButtonDown="OnDragWindow">
 
     <Window.ContextMenu>
@@ -58,6 +58,7 @@
                                VerticalAlignment="Center"
                                FontSize="13"
                                FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextPrimary}" />
                     <TextBlock Text="{Binding CarCountText}"
                                Margin="12,0,0,0"
@@ -65,27 +66,34 @@
                                Style="{StaticResource Caption}" />
                 </DockPanel>
 
-                <!-- column captions -->
-                <Grid Margin="0,0,0,3">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="5" />
-                        <ColumnDefinition Width="24" />
-                        <ColumnDefinition Width="40" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="46" />
-                        <ColumnDefinition Width="44" />
-                        <ColumnDefinition Width="54" />
-                        <ColumnDefinition Width="54" />
-                        <ColumnDefinition Width="66" />
-                        <ColumnDefinition Width="52" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="1" Text="P" Style="{StaticResource Caption}" Margin="3,0,0,0" />
-                    <TextBlock Grid.Column="3" Text="DRIVER" Style="{StaticResource Caption}" />
-                    <TextBlock Grid.Column="6" Text="INT" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                    <TextBlock Grid.Column="7" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                    <TextBlock Grid.Column="8" Text="FASTEST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                    <TextBlock Grid.Column="9" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
-                </Grid>
+                <!-- column captions, on a full-bleed header band so the table has a
+                     visible head rather than a floating row of grey labels -->
+                <Border Margin="-14,0,-14,3"
+                        Padding="14,3,14,3"
+                        Background="{StaticResource HeaderBand}"
+                        BorderBrush="{StaticResource Separator}"
+                        BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="5" />
+                            <ColumnDefinition Width="24" />
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="46" />
+                            <ColumnDefinition Width="44" />
+                            <ColumnDefinition Width="54" />
+                            <ColumnDefinition Width="54" />
+                            <ColumnDefinition Width="66" />
+                            <ColumnDefinition Width="52" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="1" Text="P" Style="{StaticResource Caption}" Margin="3,0,0,0" />
+                        <TextBlock Grid.Column="3" Text="DRIVER" Style="{StaticResource Caption}" />
+                        <TextBlock Grid.Column="6" Text="INT" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                        <TextBlock Grid.Column="7" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                        <TextBlock Grid.Column="8" Text="FASTEST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                        <TextBlock Grid.Column="9" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
+                    </Grid>
+                </Border>
 
                 <ItemsControl ItemsSource="{Binding Items}">
                     <ItemsControl.ItemTemplate>
@@ -96,13 +104,13 @@
                                 <Grid Height="22"
                                       Margin="0,5,0,1"
                                       Visibility="{Binding IsHeader, Converter={StaticResource BoolToVis}}">
-                                    <Border Background="{Binding HeaderColorBrush}" Opacity="0.16" Margin="-14,0,-14,0" />
+                                    <Border Background="{Binding HeaderColorBrush}" Opacity="0.22" Margin="-14,0,-14,0" />
                                     <Border Background="{Binding HeaderColorBrush}" Width="5" HorizontalAlignment="Left" Margin="-14,0,0,0" />
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,0,0">
                                         <TextBlock Text="{Binding ClassName}"
                                                    FontSize="12"
                                                    FontWeight="Bold"
-                                                   Foreground="{Binding HeaderColorBrush}" />
+                                                   Foreground="{StaticResource TextPrimary}" />
                                         <TextBlock Text="{Binding ClassSofText}"
                                                    Margin="10,0,0,0"
                                                    VerticalAlignment="Center"
@@ -154,13 +162,17 @@
                                                    VerticalAlignment="Center"
                                                    Margin="3,0,0,0"
                                                    FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextSecondary}" />
+                                                   FontWeight="Bold"
+                                                   Typography.NumeralAlignment="Tabular"
+                                                   Foreground="{StaticResource TextPrimary}" />
 
                                         <TextBlock Grid.Column="2"
                                                    Text="{Binding CarNumberText}"
                                                    VerticalAlignment="Center"
+                                                   FontFamily="{StaticResource FontSmall}"
                                                    FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Typography.NumeralAlignment="Tabular"
                                                    Foreground="{StaticResource TextMuted}" />
 
                                         <TextBlock Grid.Column="3"
@@ -168,7 +180,7 @@
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,6,0"
                                                    FontSize="13"
-                                                   FontWeight="SemiBold"
+                                                   FontWeight="Bold"
                                                    TextTrimming="CharacterEllipsis">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
@@ -191,7 +203,7 @@
                                                 Style="{StaticResource LicenseBadgeBackground}">
                                             <TextBlock Text="{Binding License}"
                                                        FontSize="10"
-                                                       FontWeight="SemiBold"
+                                                       FontWeight="Bold"
                                                        Style="{StaticResource LicenseBadgeText}" />
                                         </Border>
 
@@ -204,25 +216,24 @@
                                                 Style="{StaticResource IRatingBadgeBackground}">
                                             <TextBlock Text="{Binding IRatingText}"
                                                        FontSize="10"
-                                                       FontWeight="SemiBold"
+                                                       FontWeight="Bold"
                                                        Style="{StaticResource IRatingBadgeText}" />
                                         </Border>
 
                                         <TextBlock Grid.Column="6"
                                                    Text="{Binding IntervalText}"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Right"
+                                                   Style="{StaticResource Timing}"
                                                    Margin="0,0,6,0"
-                                                   FontSize="11"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextMuted}" />
 
                                         <TextBlock Grid.Column="7"
                                                    Text="{Binding GapText}"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Right"
+                                                   Style="{StaticResource Timing}"
                                                    Margin="0,0,6,0"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
+                                                   FontSize="12"
+                                                   FontWeight="Bold"
                                                    Foreground="{StaticResource TextSecondary}" />
 
                                         <TextBlock Grid.Column="8"
@@ -230,7 +241,9 @@
                                                    VerticalAlignment="Center"
                                                    HorizontalAlignment="Right"
                                                    Margin="0,0,6,0"
-                                                   FontSize="12">
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Typography.NumeralAlignment="Tabular">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
@@ -245,11 +258,10 @@
 
                                         <TextBlock Grid.Column="9"
                                                    Text="{Binding LastDeltaText}"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Right"
-                                                   FontSize="11">
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold">
                                             <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource Timing}">
                                                     <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding LastDeltaIsSlower}" Value="True">

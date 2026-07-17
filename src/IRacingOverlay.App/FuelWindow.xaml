@@ -12,7 +12,7 @@
         WindowStartupLocation="Manual"
         Left="600"
         Top="24"
-        FontFamily="Segoe UI Variable Display, Segoe UI"
+        FontFamily="{StaticResource FontText}"
         MouseLeftButtonDown="OnDragWindow">
 
     <Window.ContextMenu>
@@ -65,8 +65,10 @@
             <DockPanel Margin="0,0,0,10">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Bottom">
                     <TextBlock Text="{Binding FuelLevelText}"
+                               FontFamily="{StaticResource FontDisplay}"
                                FontSize="34"
                                FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextPrimary}" />
                     <TextBlock Text="L"
                                Margin="6,0,0,6"
@@ -79,7 +81,8 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,1,0,0">
                         <TextBlock Text="{Binding FuelLapsText}"
                                    FontSize="19"
-                                   FontWeight="SemiBold"
+                                   FontWeight="Bold"
+                                   Typography.NumeralAlignment="Tabular"
                                    Foreground="{StaticResource TextSecondary}" />
                         <TextBlock Text="laps"
                                    Margin="5,0,0,2"
@@ -121,6 +124,7 @@
                         <TextBlock Text="{Binding ToFinishText}"
                                    FontSize="20"
                                    FontWeight="Bold"
+                                   Typography.NumeralAlignment="Tabular"
                                    Foreground="{StaticResource TextPrimary}" />
                         <TextBlock Text="L needed"
                                    Margin="6,0,0,2"
@@ -131,15 +135,18 @@
 
                 <Border HorizontalAlignment="Right"
                         VerticalAlignment="Center"
-                        CornerRadius="8"
+                        CornerRadius="3"
                         Padding="10,4"
+                        BorderThickness="1"
                         Visibility="{Binding HasStrategy, Converter={StaticResource BoolToVis}}">
                     <Border.Style>
                         <Style TargetType="Border">
-                            <Setter Property="Background" Value="#264ADE9A" />
+                            <Setter Property="Background" Value="#3D33D689" />
+                            <Setter Property="BorderBrush" Value="#8A33D689" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding WillFinish}" Value="False">
-                                    <Setter Property="Background" Value="#26FF6B6B" />
+                                    <Setter Property="Background" Value="#3DFF5C6C" />
+                                    <Setter Property="BorderBrush" Value="#8AFF5C6C" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -148,7 +155,8 @@
                         <TextBlock Text="{Binding MarginText}"
                                    HorizontalAlignment="Center"
                                    FontSize="17"
-                                   FontWeight="Bold">
+                                   FontWeight="Bold"
+                                   Typography.NumeralAlignment="Tabular">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="{StaticResource Positive}" />
@@ -162,8 +170,9 @@
                         </TextBlock>
                         <TextBlock Text="{Binding MarginLabel}"
                                    HorizontalAlignment="Center"
-                                   FontSize="8"
-                                   FontWeight="SemiBold"
+                                   FontFamily="{StaticResource FontSmall}"
+                                   FontSize="9"
+                                   FontWeight="Bold"
                                    Foreground="{StaticResource TextSecondary}" />
                     </StackPanel>
                 </Border>
@@ -180,7 +189,8 @@
                     <TextBlock Text="ADD" VerticalAlignment="Bottom" Margin="0,0,6,2" Style="{StaticResource Caption}" />
                     <TextBlock Text="{Binding AddFuelText}"
                                FontSize="15"
-                               FontWeight="SemiBold"
+                               FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource Accent}" />
                     <TextBlock Text="L" Margin="3,0,0,2" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
                 </StackPanel>
@@ -189,7 +199,8 @@
                     <TextBlock Text="SAVE TO" VerticalAlignment="Bottom" Margin="0,0,6,2" Style="{StaticResource Caption}" />
                     <TextBlock Text="{Binding SaveTargetText}"
                                FontSize="15"
-                               FontWeight="SemiBold"
+                               FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextSecondary}" />
                     <TextBlock Text="/lap" Margin="3,0,0,2" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
                 </StackPanel>
