@@ -37,7 +37,11 @@ dotnet run --project src/IRacingOverlay.App -- --demo   # no iRacing needed
   [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) changes when the dev workflow itself
   changes (new commands, new conventions, new gotchas).
 - **Commit** in feature-sized chunks, conventional-commit style
-  (`feat(core):`, `fix(app):`, `docs:`), each commit building green.
+  (`feat(core):`, `fix(app):`, `docs:`), each commit building green. **Always
+  commit finished changes** without waiting to be asked — this is standing
+  authorization, so don't stop to request it (branch first if on `main`).
+- **After creating a PR, switch back to `main` immediately** (`git checkout main`)
+  so the working tree is never left parked on a just-published feature branch.
 
 ## Architecture
 
