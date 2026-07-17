@@ -26,6 +26,14 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
+      # Never ship a red tree: build + test before doing any packaging work.
+      # CI already gates main, but a tag can be cut from any ref, and a release
+      # publishes straight to users - so gate it here independently too.
+      - name: Build and test
+        run: |
+          dotnet build -c Release
+          dotnet test -c Release --no-build
+
       # Pin the vpk CLI to the same version as the Velopack NuGet package
       # (src/IRacingOverlay.App) - a mismatch between the two is unsupported.
       - name: Install Velopack CLI
