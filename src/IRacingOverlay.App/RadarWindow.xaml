@@ -36,7 +36,7 @@
     <Grid Margin="14"
           Visibility="{Binding ShouldShow, Converter={StaticResource BoolToVis}}">
         <Border Padding="10"
-                CornerRadius="3"
+                CornerRadius="6"
                 Background="{StaticResource PanelBackground}"
                 BorderBrush="{StaticResource PanelBorder}"
                 BorderThickness="1">
