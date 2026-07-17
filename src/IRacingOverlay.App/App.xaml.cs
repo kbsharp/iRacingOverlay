@@ -4,6 +4,7 @@ using System.Windows.Media;
 using IRacingOverlay.App.Services;
 using IRacingOverlay.App.ViewModels;
 using IRacingOverlay.Core.Fuel;
+using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Telemetry;
 using IRacingOverlay.Infrastructure.Telemetry;
 using Velopack;
@@ -30,6 +31,7 @@ public partial class App : System.Windows.Application
     private ITelemetrySource? _telemetrySource;
     private TrayIconService? _trayIcon;
     private UpdateService? _updateService;
+    private SettingsService? _settingsService;
     private bool _isExiting;
 
     /// <summary>
@@ -58,6 +60,9 @@ public partial class App : System.Windows.Application
 
         var demoMode = e.Args.Contains("--demo", StringComparer.OrdinalIgnoreCase);
         var connectedLabel = demoMode ? "Demo" : "Live";
+
+        _settingsService = new SettingsService();
+        var settings = _settingsService.Current;
 
         var standingsViewModel = new StandingsViewModel(connectedLabel);
         var relativeViewModel = new RelativeViewModel(connectedLabel);
@@ -105,18 +110,6 @@ public partial class App : System.Windows.Application
         var fuelWindow = new FuelWindow { DataContext = fuelViewModel };
         var setupWindow = new SetupWindow { DataContext = setupViewModel };
         var radarWindow = new RadarWindow { DataContext = radarViewModel };
-        standingsWindow.Closing += HideInsteadOfClose;
-        relativeWindow.Closing += HideInsteadOfClose;
-        fuelWindow.Closing += HideInsteadOfClose;
-        setupWindow.Closing += HideInsteadOfClose;
-        radarWindow.Closing += HideInsteadOfClose;
-
-        MainWindow = relativeWindow;
-        standingsWindow.Show();
-        relativeWindow.Show();
-        fuelWindow.Show();
-        setupWindow.Show();
-        radarWindow.Show();
         _scalableWindows.AddRange([standingsWindow, relativeWindow, fuelWindow, setupWindow, radarWindow]);
 
         DevControlWindow? devControlWindow = null;
@@ -124,15 +117,34 @@ public partial class App : System.Windows.Application
         {
             var devControlViewModel = new DevControlViewModel(demoControls);
             devControlWindow = new DevControlWindow { DataContext = devControlViewModel };
-            devControlWindow.Closing += HideInsteadOfClose;
-            devControlWindow.Show();
             _scalableWindows.Add(devControlWindow);
+        }
+
+        MainWindow = relativeWindow;
+
+        // Restore each widget to its saved position (falling back to the XAML
+        // default when there's no entry or it's off-screen), then show it.
+        // Closing is intercepted to hide-not-exit; see HideInsteadOfClose.
+        foreach (var window in _scalableWindows)
+        {
+            window.Closing += HideInsteadOfClose;
+            RestorePosition(window);
+            window.Show();
+        }
+
+        // Apply the saved UI scale to every window (SizeToContent then refits),
+        // then start tracking moves - wired after the scale-driven resize so it
+        // doesn't record a spurious position on launch.
+        SetScale(settings.Scale);
+        foreach (var window in _scalableWindows)
+        {
+            TrackPosition(window);
         }
 
         _updateService = new UpdateService();
         _trayIcon = new TrayIconService(
             standingsWindow, relativeWindow, fuelWindow, setupWindow, radarWindow, devControlWindow,
-            SetScale, RequestExit, () => _ = CheckForUpdatesAsync(manual: true));
+            SetScaleAndSave, RequestExit, () => _ = CheckForUpdatesAsync(manual: true), settings.Scale);
 
         _telemetrySource.Start();
 
@@ -184,8 +196,9 @@ public partial class App : System.Windows.Application
     /// process, so it's only ever invoked from the user's tray click.</summary>
     private void ApplyUpdate(UpdateInfo update)
     {
-        _isExiting = true;      // let shutdown proceed past HideInsteadOfClose
-        _trayIcon?.Dispose();   // pull the tray icon before the process restarts
+        _isExiting = true;              // let shutdown proceed past HideInsteadOfClose
+        _settingsService?.SaveNow();    // flush layout before the process restarts
+        _trayIcon?.Dispose();           // pull the tray icon before the restart
         _updateService!.ApplyAndRestart(update);
     }
 
@@ -209,6 +222,50 @@ public partial class App : System.Windows.Application
         }
     }
 
+    /// <summary>Applies a UI scale and persists it, so the tray's scale choice
+    /// survives a restart. (Startup applies the saved scale via
+    /// <see cref="SetScale"/> directly - no need to re-save what was just loaded.)</summary>
+    private void SetScaleAndSave(double scale)
+    {
+        SetScale(scale);
+        _settingsService?.SetScale(scale);
+    }
+
+    /// <summary>Moves a window to its saved position if there is one and it still
+    /// lands on a connected display; otherwise leaves the XAML default so a layout
+    /// saved on since-removed hardware can't strand a widget off-screen.</summary>
+    private void RestorePosition(Window window)
+    {
+        if (_settingsService is null
+            || !_settingsService.Current.Windows.TryGetValue(WindowKey(window), out var position))
+        {
+            return;
+        }
+
+        var virtualScreen = new LayoutBounds(
+            SystemParameters.VirtualScreenLeft,
+            SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth,
+            SystemParameters.VirtualScreenHeight);
+
+        if (LayoutGuard.IsOnScreen(position, virtualScreen))
+        {
+            window.Left = position.Left;
+            window.Top = position.Top;
+        }
+    }
+
+    /// <summary>Persists a window's position whenever the user drags it (debounced
+    /// inside the settings service).</summary>
+    private void TrackPosition(Window window)
+    {
+        var key = WindowKey(window);
+        window.LocationChanged += (_, _) => _settingsService?.SetWindowPosition(key, window.Left, window.Top);
+    }
+
+    // Stable per-widget settings key: a window's type name is fixed across runs.
+    private static string WindowKey(Window window) => window.GetType().Name;
+
     private void HideInsteadOfClose(object? sender, CancelEventArgs e)
     {
         if (_isExiting)
@@ -222,6 +279,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _settingsService?.SaveNow();
         _trayIcon?.Dispose();
         _telemetrySource?.Dispose();
         base.OnExit(e);

@@ -93,9 +93,11 @@ Usage notes:
   player into the pits, cycle Practice/Qualify/Race (retriggers the setup-reminder flash),
   cycle the radar through all six proximity states — all live, no rebuild. See
   [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.
-- Drag each widget anywhere with the left mouse button. Default positions (standings
-  top-left, relative bottom-left, the rest in a right column) aren't remembered between
-  runs yet — that's on the roadmap.
+- Drag each widget anywhere with the left mouse button. **Positions and the UI scale
+  are remembered between runs** (saved to `%LocalAppData%\IRacingOverlay\settings.json`);
+  the first launch uses sensible defaults — standings top-left, relative bottom-left, the
+  rest in a right column. A layout saved on a monitor you've since unplugged falls back to
+  the default rather than opening off-screen.
 - Panels are near-opaque and flat/sharp-cornered (RaceLab/LMU-style); the track shows only
   faintly through.
 - iRacing must run in **windowed or borderless** mode — overlays are not visible over exclusive fullscreen.
@@ -121,7 +123,7 @@ the pattern for adding a new widget, and debugging notes; see
 
 - Delta bar (lap delta to session/all-time best)
 - Car manufacturer badges on the relative (needs custom art assets)
-- Drag-to-resize widgets and remembered window positions/scale
+- Drag-to-resize widgets (positions and scale are already remembered)
 - Click-through mode
 - Pin the tray icon and/or run at Windows startup
 - Settings: units (L/gal, km/h / mph), refresh rate, widget scale

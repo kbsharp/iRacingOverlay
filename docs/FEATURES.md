@@ -18,8 +18,8 @@ times and gaps.
 
 **Layout:** 560px wide, borderless, always-on-top, draggable, right-click →
 Exit. Flat, sharp-cornered, near-opaque — styled after RaceLab/iOverlay/LMU
-standings. Manual position, top-left (`Left=24, Top=24`); not persisted
-between runs. No widget-name label — the class banners and columns identify
+standings. Default position top-left (`Left=24, Top=24`), then restored from
+saved settings. No widget-name label — the class banners and columns identify
 it; the top strip carries session type + time/laps remaining + car count.
 Under that strip, the column captions sit on a full-bleed **header band**
 (`HeaderBand` fill, `Separator` underline) so the table reads as having a head
@@ -87,8 +87,8 @@ duplicating it.
 
 **Layout:** 470px wide, 24px zebra-striped rows, flat and sharp-cornered to
 match the standings, borderless, always-on-top, draggable, right-click →
-Exit. Manual position, lower-left (`Left=24, Top=760`) so it sits at the
-bottom opposite the top-left standings; not persisted between runs. No
+Exit. Default position lower-left (`Left=24, Top=760`) so it sits at the
+bottom opposite the top-left standings, then restored from saved settings. No
 widget-name label — the session strip heads it.
 
 **Session strip (top):**
@@ -177,8 +177,8 @@ A strategy calculator, not just a burn-rate readout — the numbers shown are
 the ones a driver acts on mid-race.
 
 **Layout:** 330px wide, same borderless/transparent/topmost/draggable
-behaviour as the relative. Fixed position on first launch (`Left=80, Top=140`
-— manual, not persisted). Deliberately compact vertically — every field from
+behaviour as the relative. Default position on first launch (`Left=80, Top=140`),
+then restored from saved settings. Deliberately compact vertically — every field from
 the original layout is still present, just with tighter margins/padding and a
 smaller headline number, so it takes noticeably less screen height without
 losing any of the strategy numbers.
@@ -473,7 +473,8 @@ stop the app was closing the terminal that launched it.
   downloaded (see Auto-update below). Double-click the icon = Show Relative.
   **UI Scale** applies a `ScaleTransform` to every overlay window's content root
   (`App.SetScale`); `SizeToContent` then resizes each window to fit, so the whole
-  set scales together. Not persisted between runs.
+  set scales together. The active scale is ticked in the submenu and **persisted**
+  between runs (see Layout persistence below).
 - The app runs under `ShutdownMode="OnExplicitShutdown"`: closing a widget
   window hides it (`App.HideInsteadOfClose`) rather than destroying it, so
   the tray's Show items always work. The tray's **Exit** (or any window's
@@ -503,6 +504,28 @@ access token.
   and logged to `%LocalAppData%\IRacingOverlay\update.log`. No automated tests —
   it's SDK glue (see Test coverage); the GitHub feed read was verified against
   the live release during development.
+
+### Layout persistence — `SettingsService` / `Core.Settings`
+
+The UI scale and every widget's window position are remembered between runs, so
+the app comes back the way it was left instead of resetting to the default
+corners.
+
+- Saved to `%LocalAppData%\IRacingOverlay\settings.json` as `OverlaySettings`
+  (a `Scale` plus a `WindowPosition` per widget, keyed by window type name).
+  That path is in the Velopack install root, above the versioned `current\`
+  folder, so it **survives auto-updates** and is removed on uninstall.
+- Positions are captured on each window's `LocationChanged` and **debounced**
+  (750 ms) so a drag doesn't hammer the disk; a final flush runs on exit and
+  before an update-restart. Scale is saved when picked from the tray.
+- On launch, `App.RestorePosition` reapplies each saved position **only if it's
+  still on a connected display** (`LayoutGuard.IsOnScreen` against the virtual
+  desktop), so a layout saved on a since-unplugged monitor falls back to the
+  default rather than opening off-screen. The saved scale is applied via
+  `App.SetScale` and reflected as a tick in the tray's UI Scale submenu.
+- The pure model, serializer (forgiving of a missing/corrupt file), scale
+  sanitizing, and on-screen check live in `Core.Settings` and are unit-tested;
+  the file I/O + WPF wiring is untested glue (see Test coverage).
 
 ### Dev control panel — `DevControlWindow` / `DevControlViewModel` / `IDemoControls`
 
@@ -683,15 +706,16 @@ it directly.
 
 All windows share: `DropShadowEffect` for panel lift, a tiny `CornerRadius`,
 `BooleanToVisibilityConverter` (`BoolToVis`) for conditional badges, and the
-drag-to-move + right-click-exit interaction pattern. Default positions (all
-draggable, none persisted yet) are laid out non-overlapping: standings
-top-left, relative bottom-left, fuel/setup/radar in a right column, dev
-controls far right. UI scale is applied per-window via a `ScaleTransform` on
-the content root (see the tray icon section).
+drag-to-move + right-click-exit interaction pattern. Default (first-run)
+positions are laid out non-overlapping: standings top-left, relative
+bottom-left, fuel/setup/radar in a right column, dev controls far right — but
+after that each widget's position is **restored from saved settings** (see
+Layout persistence below). UI scale is applied per-window via a `ScaleTransform`
+on the content root (see the tray icon section).
 
 ## Test coverage
 
-182 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+219 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -710,11 +734,12 @@ the content root (see the tray icon section).
 | `Formatting/SetupFormatTests.cs` | Setup file name display formatting |
 | `Formatting/RadarFormatTests.cs` | CarLeftRight classification into the four proximity booleans |
 | `Formatting/StandingsFormatTests.cs` | Lap-time (m:ss.fff) and gap ("+n.n"/"+nL"/blank) formatting |
+| `Settings/OverlaySettingsSerializerTests.cs` | JSON round-trip, missing/corrupt file → defaults, out-of-range scale sanitizing, unknown-field tolerance |
+| `Settings/LayoutGuardTests.cs` | Scale sanitizing (band + non-finite), on-screen validation across a multi-monitor virtual desktop |
 
 ## Not yet implemented
 
 Tracked in the [README roadmap](../README.md#roadmap):
 delta bar, car manufacturer badges (needs custom art assets), drag-to-resize
-+ persisted window layout, click-through mode, pinning/auto-showing the tray
-icon, running at Windows startup, and a settings surface (units, refresh rate,
-widget scale).
+widgets, click-through mode, pinning/auto-showing the tray icon, running at
+Windows startup, and a settings surface (units, refresh rate).

@@ -30,7 +30,8 @@ public sealed class TrayIconService : IDisposable
         System.Windows.Window? devControlWindow,
         Action<double> setScale,
         Action requestExit,
-        Action checkForUpdates)
+        Action checkForUpdates,
+        double initialScale)
     {
         var menu = new ContextMenuStrip();
 
@@ -52,7 +53,20 @@ public sealed class TrayIconService : IDisposable
         var scaleMenu = new ToolStripMenuItem("UI Scale");
         foreach (var (label, value) in new[] { ("100%", 1.0), ("125%", 1.25), ("150%", 1.5), ("175%", 1.75) })
         {
-            scaleMenu.DropDownItems.Add(label, null, (_, _) => setScale(value));
+            // Radio-style: the current scale is ticked, and picking a new one moves
+            // the tick. initialScale reflects the persisted choice restored at launch.
+            var item = new ToolStripMenuItem(label) { Checked = Math.Abs(value - initialScale) < 0.001 };
+            item.Click += (_, _) =>
+            {
+                foreach (ToolStripMenuItem other in scaleMenu.DropDownItems)
+                {
+                    other.Checked = false;
+                }
+
+                item.Checked = true;
+                setScale(value);
+            };
+            scaleMenu.DropDownItems.Add(item);
         }
 
         menu.Items.Add(scaleMenu);

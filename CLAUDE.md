@@ -118,6 +118,14 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   public feed — background check/download, tray-driven restart, and it no-ops unless
   `UpdateManager.IsInstalled` (so `dotnet run`/demo is unaffected). See
   [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releasing).
+- **Persisted settings** (window positions + UI scale) follow the same split:
+  the pure model/serializer/validation (`Core.Settings` — `OverlaySettings`,
+  `OverlaySettingsSerializer`, `LayoutGuard`) is tested; the file I/O + WPF wiring
+  (`Services/SettingsService`, saved to `%LocalAppData%\IRacingOverlay\settings.json`
+  so it survives updates) is untested glue. Restore is guarded by
+  `LayoutGuard.IsOnScreen` so a layout saved on an unplugged monitor doesn't strand
+  a widget off-screen; saves are debounced. Anything else worth remembering across
+  runs belongs in `OverlaySettings`, not a new file.
 
 ## Behaviour
 
