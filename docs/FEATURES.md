@@ -21,6 +21,9 @@ Exit. Flat, sharp-cornered, near-opaque — styled after RaceLab/iOverlay/LMU
 standings. Manual position, top-left (`Left=24, Top=24`); not persisted
 between runs. No widget-name label — the class banners and columns identify
 it; the top strip carries session type + time/laps remaining + car count.
+Under that strip, the column captions sit on a full-bleed **header band**
+(`HeaderBand` fill, `Separator` underline) so the table reads as having a head
+rather than a floating row of grey labels.
 
 **Rows** are grouped by class. Each class shows a colour-tinted **banner** (a
 translucent wash of the sim's `CarClassColor`) with the class short name, its
@@ -127,6 +130,10 @@ badge specifically):
   (grey → teal → violet → magenta) so it's never confused with the license
   badge next to it, banded by `RatingFormat.ClassifyIRating`: Low `<1500`,
   Mid `<2500`, High `<4000`, Elite `4000+`.
+- Both badges are **tint fill + a 1px edge in the same hue**. The edge is what
+  makes them read as chips: at 16px tall a bare tint fill has no boundary and
+  just looks like the text is sitting on a smudge. Same treatment on the
+  relative's PIT badge and the fuel margin badge.
 - **Player row**: a warm amber background wash plus a matching amber border —
   intentionally not the blue accent colour, so "this is you" doesn't visually
   compete with the class/license/iRating colours now on every row.
@@ -186,7 +193,10 @@ losing any of the strategy numbers.
   (`avgLitersPerLap × raceLapsRemaining`).
 - **Margin badge**: laps of fuel spare (green) or short (red) at the finish,
   labelled "LAPS SPARE"/"LAPS SHORT". Hidden entirely (`HasStrategy = false`)
-  until both a burn average and a race length are known.
+  until both a burn average and a race length are known. Styled as the same
+  tint-plus-edge chip as the license/iRating badges, and sharp-cornered
+  (`CornerRadius="3"`) — it was the last rounded `8px` pill left over from the
+  pre-flat theme.
 - **Add**: litres to add at the next stop to finish with a half-lap safety
   buffer (0 when already enough).
 - **Save to**: the burn rate per lap that would still make it to the finish
@@ -593,14 +603,52 @@ lap status, "this is you").
   grey/teal/violet/magenta family for the iRating badge
   (`IRatingBadgeBackground`/`IRatingBadgeText`), so it's never confused with
   the license badge next to it.
-- `TextPrimary`/`TextSecondary`/`TextMuted` — text hierarchy.
+- `TextPrimary`/`TextSecondary`/`TextMuted` — text hierarchy, three clearly
+  separated steps. `TextMuted` is deliberately kept well clear of the panel
+  material: an earlier dimmer value (`#7C8CAB`) made captions read as grey
+  noise rather than as a quiet tier of a hierarchy.
 - `LapAheadText` (red-ish) / `LapBehindText` (blue-ish) — relative row
   colouring.
 - `FastestLap` (purple) — the standings' session-fastest best lap.
-- `Caption` and `Value` styles for the small-uppercase-label /
-  large-number pattern used throughout the widgets.
+- `FontSmall`/`FontText`/`FontDisplay` — the three Segoe UI Variable **optical
+  sizes**, and they are not interchangeable (see Typography below).
+- `Caption`, `Value` and `Timing` styles for the small-uppercase-label /
+  large-number / tabular-figure patterns used throughout the widgets.
 - `DevButton` — flat, rounded button style used by the dev control panel
   (accent-tinted on hover, dimmed when disabled).
+
+### Typography
+
+Segoe UI Variable ships **three optical sizes** and they are not
+interchangeable — each is drawn for a size band, so picking the wrong one is a
+rendering bug, not a taste call:
+
+| Resource      | Family                      | Use for                          |
+| ------------- | --------------------------- | -------------------------------- |
+| `FontSmall`   | Segoe UI Variable Small     | ≤11px — captions, badges, PIT    |
+| `FontText`    | Segoe UI Variable Text      | 12–28px — window default, rows   |
+| `FontDisplay` | Segoe UI Variable Display   | ≥29px — the big fuel readout     |
+
+Every window used to set `Display` as its default and then render 10–13px text
+in it. Display is drawn for headlines — thin stems, tight tracking — so at row
+size it rendered spindly and washed out ("terminal text"). All windows now
+default to `FontText`, with `FontSmall` on captions/badges.
+
+Two things compound this and are why weights here run one step heavier than
+they would in a normal window:
+
+- `AllowsTransparency="True"` **disables ClearType**. WPF falls back to
+  greyscale antialiasing on layered windows, which thins stems further. There
+  is no way to get ClearType back without giving up the transparent overlay.
+- Widget text is small and sits over moving scenery.
+
+So: driver names, positions, gaps and captions are `Bold`, not `SemiBold`;
+secondary figures are `SemiBold`, not `Normal`. (WPF maps both `SemiBold` and
+`DemiBold` to weight 600 — there is no step between 600 and `Bold` 700.)
+
+Numeric fields set `Typography.NumeralAlignment="Tabular"` (via the `Timing`
+and `Value` styles, or inline). Without it, proportional figures make ticking
+values jitter and right-aligned columns read ragged.
 
 A row's class-colour bar is the one colour that **isn't** a static resource —
 it comes from live sim data, so it can't be a fixed set of `DataTrigger`s. The

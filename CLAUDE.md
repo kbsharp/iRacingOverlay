@@ -95,6 +95,15 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   used the sim, which an invented scheme wouldn't. Check the SDK model
   (`IRacingSdkSessionInfo` via reflection, or the IRSDKSharper docs) before
   hardcoding a value that the sim might already provide.
+- **Match the font's optical size to the text size.** Segoe UI Variable ships as
+  three families - Small (<=11px), Text (12-28px), Display (>=29px) - exposed as the
+  `FontSmall`/`FontText`/`FontDisplay` resources. Display at row size renders spindly
+  and washed out; that (not the palette) was why the widgets read as "terminal text".
+  Also: `AllowsTransparency="True"` disables ClearType, so overlay text gets greyscale
+  AA and needs one weight step more than normal - `Bold` where you'd reach for
+  `SemiBold`. WPF maps `SemiBold` and `DemiBold` to the same 600, so there is nothing
+  between 600 and `Bold`. Numeric columns need `Typography.NumeralAlignment="Tabular"`
+  or the digits jitter as they tick. See docs/FEATURES.md § Typography.
 - Keep colour **purposeful, not decorative**: each hue should mean one thing
   (class, license tier, iRating tier, lap status, "this is you"). Don't reach
   for the same accent colour for everything — that's what made the first pass
@@ -104,5 +113,9 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
 
 - MVP scope: minimal but extensible. Proceed on reversible work without asking; stop for
   destructive or scope-changing decisions.
-- I can't see the rendered WPF UI from a headless session — call out layout/styling that
-  needs a human eye rather than claiming it looks right.
+- I can't see the rendered WPF UI from a headless session — but I *can* render a window
+  offscreen to a PNG and look at that, which beats guessing on any styling change. See
+  [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#debugging). Screen-capturing the running app
+  doesn't work: the widgets have no taskbar entry to target. Where a render still can't
+  settle it (motion, real track background, how it feels at racing speed), call it out
+  for a human eye rather than claiming it looks right.

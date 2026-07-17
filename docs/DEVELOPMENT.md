@@ -107,11 +107,28 @@ Get-Process IRacingOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
   Stop-Process -Id $p.Id -Force
   ```
 
-  To actually inspect the rendered UI without a human at the keyboard, take a
-  full-screen capture with .NET's `System.Drawing`/`System.Windows.Forms` while
-  the demo process is running, then crop to the widget region. This is how the
-  navy-palette and layout redesigns in this repo were verified — see the git log
-  around those commits for the exact script if you need it again.
+  To actually **see** the rendered UI without a human at the keyboard, render the
+  window offscreen to a PNG with a throwaway harness rather than screen-scraping.
+  Screen capture is unreliable here — the widgets are `ShowInTaskbar="False"` /
+  `WindowStyle="None"`, so they have no taskbar entry, they can sit behind other
+  windows, and screen-capture tooling generally can't resolve them by name.
+
+  The harness is a scratch WPF exe referencing `App`/`Core`/`Infrastructure` that:
+
+  1. news up `IRacingOverlay.App.App` and calls `InitializeComponent()` — this
+     loads the `App.xaml` resources **without** `Run()` starting the real app;
+  2. drives `SimulatedTelemetrySource` for a couple of seconds to capture one
+     real `TelemetrySnapshot` + `SessionMetadata`;
+  3. feeds those to the real view model, builds the real window, `Show()`s it
+     offscreen (`Left = -4000`), then `RenderTargetBitmap`s its `Content` — draw
+     it over an opaque rect first, or the near-opaque panel is judged against
+     undefined transparency. Render at 2× DPI (192) to read small text.
+
+  `RenderTargetBitmap` uses greyscale antialiasing exactly as the live
+  `AllowsTransparency` windows do, so text weight comes out faithful — which is
+  the whole point when the thing under review *is* the text. This is how the
+  typography pass was verified. Note the harness needs the same `Color` /
+  `Brush` alias workaround as `App` (see CLAUDE.md) once `UseWindowsForms` is on.
 - **Live iRacing not connecting:** confirm `irsdkEnableMem=1` in iRacing's
   `app.ini` (on by default) and that the sim is running in windowed or
   borderless mode — overlays don't draw over exclusive fullscreen.
