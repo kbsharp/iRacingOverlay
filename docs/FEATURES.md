@@ -133,7 +133,10 @@ badge specifically):
   Mid `<2500`, High `<4000`, Elite `4000+`.
 - Both badges are **tint fill + a 1px edge in the same hue**. The edge is what
   makes them read as chips: at 16px tall a bare tint fill has no boundary and
-  just looks like the text is sitting on a smudge. Same treatment on the
+  just looks like the text is sitting on a smudge. **On the player row** the
+  translucent tint is swapped for an opaque dark backing (an `IsPlayer`
+  `DataTrigger`): otherwise the warm amber wash bleeds up through the tint and
+  murders the contrast — the hue edge + text still carry the meaning. Same treatment on the
   relative's PIT badge and the fuel margin badge.
 - **Player row**: a warm amber background wash plus a warm amber **outer glow**
   (a zero-depth `DropShadowEffect` on the row) so your own line reads as lit, not

@@ -162,6 +162,14 @@
                     <Setter Property="Background" Value="#3DE8B84D" />
                     <Setter Property="BorderBrush" Value="#8AE8B84D" />
                 </DataTrigger>
+                <!-- On the warm amber "you" row the translucent tint lets the row
+                     colour bleed through and mud the chip; give player-row badges an
+                     opaque dark backing so the hue edge + text stay legible. Declared
+                     last so it wins the Background over the tier triggers above; the
+                     tier BorderBrush (set alongside) still carries the hue. -->
+                <DataTrigger Binding="{Binding IsPlayer}" Value="True">
+                    <Setter Property="Background" Value="#E61B1E25" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -207,6 +215,11 @@
                 <DataTrigger Binding="{Binding IRatingTier}" Value="Elite">
                     <Setter Property="Background" Value="#3DE8579E" />
                     <Setter Property="BorderBrush" Value="#8AE8579E" />
+                </DataTrigger>
+                <!-- See LicenseBadgeBackground: opaque dark backing on the "you" row
+                     so the amber wash doesn't bleed through and kill the contrast. -->
+                <DataTrigger Binding="{Binding IsPlayer}" Value="True">
+                    <Setter Property="Background" Value="#E61B1E25" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
