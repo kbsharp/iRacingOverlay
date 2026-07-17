@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Radar;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Telemetry;
 using IRSDKSharper;
@@ -95,9 +96,10 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
 
         var setupName = info.DriverInfo?.DriverSetupName ?? string.Empty;
         var setupIsModified = (info.DriverInfo?.DriverSetupIsModified ?? 0) != 0;
+        var trackLengthMeters = TrackLengthParser.ParseToMeters(info.WeekendInfo?.TrackLength);
 
         SessionMetadataReceived?.Invoke(
-            this, new SessionMetadata(drivers, sessionTypes, setupName, setupIsModified));
+            this, new SessionMetadata(drivers, sessionTypes, setupName, setupIsModified, trackLengthMeters));
     }
 
     private void HandleTelemetryData()
@@ -159,6 +161,7 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
             BrakeBiasPct = GetFloatOrDefault(data, "dcBrakeBias"),
             IncidentCount = GetIntOrDefault(data, "PlayerCarMyIncidentCount"),
             CarLeftRight = (CarLeftRight)GetIntOrDefault(data, "CarLeftRight"),
+            PlayerYawRad = GetFloatOrDefault(data, "Yaw"),
             Cars = cars,
         });
     }

@@ -21,6 +21,18 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     private const float BaseLitersPerLap = 2.4f;
     private const int MinCarCountValue = 3;
 
+    // The radar needs a real track length (to turn lap-fraction gaps into metres)
+    // and a track shape (the player's heading around the lap) to place cars. Give
+    // the demo a plausible short circuit that weaves through a few corners, so the
+    // radar populates with a believably angled pack rather than a dead-straight
+    // line. Track length is never shown as a number, only used for the geometry.
+    private const double DemoTrackLengthMeters = 3000.0;
+
+    // Lap-fraction spacing between adjacent cars in the pack around the player.
+    // ~0.006 of a 3000 m lap = ~18 m per grid slot, so the nearest few land
+    // inside the radar's range.
+    private const double PackGapLaps = 0.006;
+
     // The demo laps are deliberately short (~15 s) so estimates appear fast, but
     // that would make the standings show silly "0:15" lap times. This gives the
     // F2Time gaps a realistic scale without touching the sim cadence; per-class
@@ -346,9 +358,17 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             BrakeBiasPct = 54.2f,
             IncidentCount = _incidentCount,
             CarLeftRight = _carLeftRight,
+            PlayerYawRad = DemoHeading(playerPct),
             Cars = cars,
         };
     }
+
+    /// <summary>The demo track's heading (radians) at a point on the lap - a weaving
+    /// circuit with a few corners. The radar records this as the player laps and
+    /// reuses it to place the field, so cars visibly angle through the corners and
+    /// run parallel on the straights.</summary>
+    private static float DemoHeading(double lapDistPct) =>
+        (float)(1.5 * Math.Sin(2 * Math.PI * lapDistPct * 3));
 
     private bool IsInPits(SimDriver driver) => driver.CarIdx == PlayerIdx ? _playerInPits : driver.InPits;
 
@@ -379,17 +399,22 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             var jitter = 1.0 + 0.02 * ((carIdx % 5) - 2);
             var lapSeconds = PlayerLapSeconds * paceFactor * jitter;
 
-            // Spread the field along the track, then deliberately place a car a lap
-            // up, a car a lap down, and a car parked in the pits, so every
-            // relative-widget state is visible immediately.
-            var startProgress = 5.30 + (carIdx % 10) * 0.06;
+            // Seat the field in a tight pack straddling the player (car 0),
+            // alternating ahead/behind, so the relative and radar widgets show a
+            // believable battle. Cars 1 and 2 are then shoved a full lap ahead /
+            // behind to keep the relative widget's lap-up / lap-down states (a car
+            // a lap away correctly falls off the radar), and the last car parks in
+            // the pits below - the three showcase states every widget relies on.
+            var rank = (carIdx + 1) / 2;
+            var placeAhead = carIdx % 2 == 1;
+            var startProgress = 5.30 + (placeAhead ? 1 : -1) * rank * PackGapLaps;
             if (carIdx == 1)
             {
-                startProgress += 1.05;
+                startProgress += 1.0;
             }
             else if (carIdx == 2)
             {
-                startProgress = Math.Max(0.2, startProgress - 1.05);
+                startProgress = Math.Max(0.2, startProgress - 1.0);
             }
 
             var inPits = carIdx == carCount - 1 && carCount > MinCarCountValue;
@@ -441,7 +466,8 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             drivers,
             new Dictionary<int, string> { [sessionNum] = sessionType },
             setupFile,
-            setupModified);
+            setupModified,
+            DemoTrackLengthMeters);
     }
 
     private sealed record SimDriver(
