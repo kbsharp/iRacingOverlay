@@ -1,22 +1,29 @@
+using IRacingOverlay.App.Cars;
 using IRacingOverlay.Core.Cars;
+using Geometry = System.Windows.Media.Geometry;
 
 namespace IRacingOverlay.App.ViewModels;
 
 /// <summary>
 /// Presentation for a car's manufacturer badge in the standings.
 ///
-/// PLACEHOLDER STAGE: until the real monochrome manufacturer marks are sourced,
-/// the badge renders a short brand abbreviation in a tinted chip. That is enough
-/// to prove the column's layout, tinting and UI-scale behaviour. When the vector
-/// marks land, the badge's content switches from this abbreviation to an Image;
-/// this map stays useful as the accessible/tooltip label and as the fallback for
-/// any manufacturer without artwork yet.
+/// Most makes render as a monochrome vector mark (see <see cref="ManufacturerMarks"/>),
+/// tinted by the caller so it sits in the panel material rather than adding a
+/// colour. The handful with no CC0 artwork upstream (Dallara, Ligier, Mercedes,
+/// Radical, Ruf) fall back to the short brand abbreviation below, so those rows
+/// still identify the car instead of showing an empty cell.
 /// </summary>
 internal static class ManufacturerBadge
 {
     public static bool Has(Manufacturer make) => make != Manufacturer.Unknown;
 
-    /// <summary>Short, glanceable brand token (2-4 chars) for the placeholder chip.</summary>
+    /// <summary>The vector mark for a make, or null when it falls back to text.</summary>
+    public static Geometry? Mark(Manufacturer make) => ManufacturerMarks.For(make);
+
+    /// <summary>
+    /// Short brand token, shown when a make has no vector mark. Also the natural
+    /// accessible/tooltip label for the marks that do render.
+    /// </summary>
     public static string Abbrev(Manufacturer make) => make switch
     {
         Manufacturer.Acura => "ACU",

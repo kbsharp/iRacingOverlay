@@ -126,10 +126,15 @@ the pattern for adding a new widget, and debugging notes; see
 ## Roadmap
 
 - Delta bar (lap delta to session/all-time best)
-- Final manufacturer-badge art (the standings badge is live as a placeholder
-  abbreviation; the monochrome vector marks are being sourced) and extending the
-  badge to the relative
+- Extending the manufacturer badge to the relative, and vector marks for the five
+  makes Simple Icons doesn't cover (Dallara, Ligier, Mercedes, Radical, Ruf)
 - Drag-to-resize widgets (positions and scale are already remembered)
 - Click-through mode
 - Pin the tray icon and/or run at Windows startup
 - Settings: units (L/gal, km/h / mph), refresh rate, widget scale
+
+## Credits
+
+Manufacturer badge marks come from [Simple Icons](https://simpleicons.org),
+released under CC0. The logos themselves remain the respective manufacturers'
+trademarks and are used here only to identify the car a driver is in.

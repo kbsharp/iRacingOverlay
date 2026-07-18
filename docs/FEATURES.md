@@ -45,14 +45,24 @@ derived from the sim's roster. iRacing exposes no manufacturer field — only a
 `CarPath` folder token (`ferrari296gt3`) and `CarScreenName` — so
 `ManufacturerResolver` (Core) brand-matches those strings to a `Manufacturer`;
 an unrecognised car resolves to `Manufacturer.Unknown` and the badge is simply
-omitted (the column collapses for that row, never a placeholder). The badge is
-deliberately **neutral/monochrome**, not another coloured tier, so it reads as
-iconography in the panel material rather than competing with the class /
-license / iRating hues. *Placeholder stage:* it currently renders a short
-brand abbreviation (`POR`, `FER`, `DAL`); the real monochrome vector marks are
-being sourced (mostly CC0 from Simple Icons, a few traced) and will replace the
-abbreviation without changing the column. See `ManufacturerBadge` (App) for the
-abbreviation/asset map.
+omitted (the cell collapses for that row, never a placeholder glyph). The badge
+is deliberately **neutral/monochrome**, not another coloured tier, so it reads
+as iconography in the panel material rather than competing with the class /
+license / iRating hues — it takes its colour from the theme, not from the mark.
+
+Marks are the single-path 24×24 glyphs from [Simple Icons](https://simpleicons.org)
+(CC0), embedded as WPF path geometry in `ManufacturerMarks` (App) and parsed
+once at startup. Two details matter there: every path is prefixed `F1` to
+select the **nonzero** fill rule (SVG's default; WPF's mini-language defaults
+to even-odd, which renders any mark with a hole — the BMW roundel, the Audi
+rings — inverted), and the marks are drawn into a box **wider than it is tall**
+(22×14), because several are very wide and flat and collapse to a hairline when
+fitted into a square.
+
+Five makes iRacing fields have no CC0 mark upstream — **Dallara, Ligier,
+Mercedes, Radical and Ruf** — and fall back to a short brand abbreviation
+(`MER`, `DAL`) in the same chip, so those rows still identify the car. See
+`ManufacturerBadge` (App) for the mark/abbreviation split.
 
 **Lap times & the fastest-lap highlight:** best/last come from
 `CarIdxBestLapTime`/`CarIdxLastLapTime` (formatted `m:ss.fff` by
@@ -87,8 +97,9 @@ churn.
 - Up to 30 cars per class (`MaxPerClass`), plus the player if outside that.
   Verified rendering a 40-car three-class demo grid; a hypothetical single
   class of 40+ would truncate at 30 (plus player).
-- Manufacturer badges are in a **placeholder stage** (brand abbreviation, not
-  the final vector mark — see the Manufacturer badge note above).
+- Five makes (Dallara, Ligier, Mercedes, Radical, Ruf) have no CC0 vector mark
+  and show a brand abbreviation instead. McLaren's upstream mark is a wordmark,
+  so it reads denser than the others at row size.
 - No iRating ▲/▼ position-change arrows (shown in reference overlays) — needs
   per-driver start-position tracking. A roadmap item.
 - Demo-mode gaps are exaggerated (tens of seconds between adjacent positions)
@@ -811,8 +822,7 @@ on the content root (see the tray icon section).
 ## Not yet implemented
 
 Tracked in the [README roadmap](../README.md#roadmap):
-delta bar, final manufacturer-badge art (the standings badge is live in
-placeholder-abbreviation form; the vector marks are still being sourced) and
-extending the badge to the relative, drag-to-resize widgets, click-through
-mode, pinning/auto-showing the tray icon, running at Windows startup, and a
-settings surface (units, refresh rate).
+delta bar, extending the manufacturer badge to the relative, vector marks for
+the five makes Simple Icons doesn't cover, drag-to-resize widgets,
+click-through mode, pinning/auto-showing the tray icon, running at Windows
+startup, and a settings surface (units, refresh rate).

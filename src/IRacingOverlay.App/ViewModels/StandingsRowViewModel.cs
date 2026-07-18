@@ -4,6 +4,7 @@ using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Standings;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
+using Geometry = System.Windows.Media.Geometry;
 
 namespace IRacingOverlay.App.ViewModels;
 
@@ -37,6 +38,7 @@ public sealed class StandingsRowViewModel : ObservableObject
     private Brush _classColorBrush = Brushes.Gray;
     private bool _hasManufacturer;
     private string _manufacturerText = string.Empty;
+    private Geometry? _manufacturerMark;
     private string _bestText = string.Empty;
     private bool _isSessionBest;
     private string _lastDeltaText = string.Empty;
@@ -154,12 +156,24 @@ public sealed class StandingsRowViewModel : ObservableObject
         private set => SetProperty(ref _hasManufacturer, value);
     }
 
-    /// <summary>Placeholder brand token shown in the badge chip (see <see cref="ManufacturerBadge"/>).</summary>
+    /// <summary>
+    /// Brand token shown when the make has no vector mark (see <see cref="ManufacturerBadge"/>).
+    /// </summary>
     public string ManufacturerText
     {
         get => _manufacturerText;
         private set => SetProperty(ref _manufacturerText, value);
     }
+
+    /// <summary>The make's vector mark, or null when the row falls back to <see cref="ManufacturerText"/>.</summary>
+    public Geometry? ManufacturerMark
+    {
+        get => _manufacturerMark;
+        private set => SetProperty(ref _manufacturerMark, value);
+    }
+
+    /// <summary>True when this row shows the text fallback rather than a mark.</summary>
+    public bool UsesManufacturerText => _hasManufacturer && _manufacturerMark is null;
 
     public string BestText
     {
@@ -232,6 +246,9 @@ public sealed class StandingsRowViewModel : ObservableObject
         ClassColorBrush = ViewModels.ClassColorBrush.Resolve(row.ClassColorHex);
         HasManufacturer = ManufacturerBadge.Has(row.Manufacturer);
         ManufacturerText = ManufacturerBadge.Abbrev(row.Manufacturer);
+        ManufacturerMark = ManufacturerBadge.Mark(row.Manufacturer);
+        // Computed from the two above, so it needs its own notification.
+        OnPropertyChanged(nameof(UsesManufacturerText));
         BestText = StandingsFormat.LapTime(row.BestLapSeconds);
         IsSessionBest = row.IsSessionBestLap;
         LastDeltaText = row.LastDeltaSeconds is { } d ? SessionFormat.Delta(d) : TelemetryFormat.Placeholder;
