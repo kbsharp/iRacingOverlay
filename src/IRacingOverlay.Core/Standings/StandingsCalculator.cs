@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Cars;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Telemetry;
@@ -148,6 +149,7 @@ public static class StandingsCalculator
             IRatingTier: RatingFormat.ClassifyIRating(irating),
             ClassShortName: className,
             ClassColorHex: RatingFormat.NormalizeHexColor(driver?.ClassColorRaw),
+            Manufacturer: ManufacturerResolver.Resolve(driver?.CarPath),
             BestLapSeconds: best,
             LastLapSeconds: last,
             LastDeltaSeconds: lastDelta,

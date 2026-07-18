@@ -31,13 +31,28 @@ translucent wash of the sim's `CarClassColor`) with the class short name, its
 **Strength of Field** (`StrengthOfField.Compute`, iRacing's real SoF formula),
 and a car count. Under it, its cars ordered by position, each with a
 full-height class-colour bar flush to the panel's left edge, and alternating
-(zebra) row shading. Each car row: class position, car number, driver name, a
-license badge and iRating badge (the same tier-coloured chips as the
-relative), then **Int** (interval to the car ahead), **Gap** (to the class
+(zebra) row shading. Each car row: class position, car number, a
+**manufacturer badge**, driver name, a license badge and iRating badge (the
+same tier-coloured chips as the relative), then **Int** (interval to the car
+ahead), **Gap** (to the class
 leader), **Fastest** (best lap, purple when session-best), and **Last**
 (last-lap delta to that car's own best, red when slower). Up to 30 cars per
 class are shown (a full class in a typical multiclass split); if the player
 falls outside that window, their row is appended so it's always visible.
+
+**Manufacturer badge:** each car row carries a badge for the car's make,
+derived from the sim's roster. iRacing exposes no manufacturer field — only a
+`CarPath` folder token (`ferrari296gt3`) and `CarScreenName` — so
+`ManufacturerResolver` (Core) brand-matches those strings to a `Manufacturer`;
+an unrecognised car resolves to `Manufacturer.Unknown` and the badge is simply
+omitted (the column collapses for that row, never a placeholder). The badge is
+deliberately **neutral/monochrome**, not another coloured tier, so it reads as
+iconography in the panel material rather than competing with the class /
+license / iRating hues. *Placeholder stage:* it currently renders a short
+brand abbreviation (`POR`, `FER`, `DAL`); the real monochrome vector marks are
+being sourced (mostly CC0 from Simple Icons, a few traced) and will replace the
+abbreviation without changing the column. See `ManufacturerBadge` (App) for the
+abbreviation/asset map.
 
 **Lap times & the fastest-lap highlight:** best/last come from
 `CarIdxBestLapTime`/`CarIdxLastLapTime` (formatted `m:ss.fff` by
@@ -72,9 +87,10 @@ churn.
 - Up to 30 cars per class (`MaxPerClass`), plus the player if outside that.
   Verified rendering a 40-car three-class demo grid; a hypothetical single
   class of 40+ would truncate at 30 (plus player).
-- No car-manufacturer logos or iRating ▲/▼ position-change arrows (both shown
-  in reference overlays) — the first needs licensed art assets, the second
-  needs per-driver start-position tracking. Both are roadmap items.
+- Manufacturer badges are in a **placeholder stage** (brand abbreviation, not
+  the final vector mark — see the Manufacturer badge note above).
+- No iRating ▲/▼ position-change arrows (shown in reference overlays) — needs
+  per-driver start-position tracking. A roadmap item.
 - Demo-mode gaps are exaggerated (tens of seconds between adjacent positions)
   because the fake F2Time is scaled from the demo's track-position spread;
   real sessions show true sub-second gaps.
@@ -176,7 +192,8 @@ NotInWorld`, e.g. not yet spawned) are excluded per-frame.
   sessions), all rows are hidden rather than showing stale data.
 - Roster (names/numbers/iRating/license/class) only refreshes when the sim
   re-broadcasts session info; mid-session driver swaps may lag briefly.
-- No car manufacturer badge/logo (needs custom art assets) — on the roadmap.
+- No car manufacturer badge here yet — the standings has one (placeholder
+  stage); extending it to the relative is a roadmap item.
 
 ### Fuel — `FuelWindow` / `FuelViewModel` / `FuelCalculator` + `FuelStrategyCalculator` + `LapTimeTracker`
 
@@ -794,6 +811,8 @@ on the content root (see the tray icon section).
 ## Not yet implemented
 
 Tracked in the [README roadmap](../README.md#roadmap):
-delta bar, car manufacturer badges (needs custom art assets), drag-to-resize
-widgets, click-through mode, pinning/auto-showing the tray icon, running at
-Windows startup, and a settings surface (units, refresh rate).
+delta bar, final manufacturer-badge art (the standings badge is live in
+placeholder-abbreviation form; the vector marks are still being sourced) and
+extending the badge to the relative, drag-to-resize widgets, click-through
+mode, pinning/auto-showing the tray icon, running at Windows startup, and a
+settings surface (units, refresh rate).

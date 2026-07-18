@@ -22,7 +22,7 @@
     </Window.ContextMenu>
 
     <Grid Margin="14">
-        <Border Width="560"
+        <Border Width="590"
                 Padding="14,10,14,10"
                 CornerRadius="6"
                 Background="{StaticResource PanelBackground}"
@@ -78,6 +78,7 @@
                             <ColumnDefinition Width="5" />
                             <ColumnDefinition Width="24" />
                             <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="30" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="46" />
                             <ColumnDefinition Width="44" />
@@ -87,11 +88,12 @@
                             <ColumnDefinition Width="52" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="1" Text="P" Style="{StaticResource Caption}" Margin="3,0,0,0" />
-                        <TextBlock Grid.Column="3" Text="DRIVER" Style="{StaticResource Caption}" />
-                        <TextBlock Grid.Column="6" Text="INT" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                        <TextBlock Grid.Column="7" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                        <TextBlock Grid.Column="8" Text="FASTEST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                        <TextBlock Grid.Column="9" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
+                        <TextBlock Grid.Column="3" Text="CAR" Style="{StaticResource Caption}" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Text="DRIVER" Style="{StaticResource Caption}" />
+                        <TextBlock Grid.Column="7" Text="INT" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                        <TextBlock Grid.Column="8" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                        <TextBlock Grid.Column="9" Text="FASTEST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                        <TextBlock Grid.Column="10" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
                     </Grid>
                 </Border>
 
@@ -153,6 +155,7 @@
                                             <ColumnDefinition Width="5" />
                                             <ColumnDefinition Width="24" />
                                             <ColumnDefinition Width="40" />
+                                            <ColumnDefinition Width="30" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="46" />
                                             <ColumnDefinition Width="44" />
@@ -184,7 +187,22 @@
                                                    Typography.NumeralAlignment="Tabular"
                                                    Foreground="{StaticResource TextMuted}" />
 
-                                        <TextBlock Grid.Column="3"
+                                        <!-- Manufacturer badge (placeholder abbreviation until vector marks land) -->
+                                        <Border Grid.Column="3"
+                                                CornerRadius="2"
+                                                Padding="3,1"
+                                                Height="16"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Visibility="{Binding HasManufacturer, Converter={StaticResource BoolToVis}}"
+                                                Style="{StaticResource ManufacturerBadgeBackground}">
+                                            <TextBlock Text="{Binding ManufacturerText}"
+                                                       FontSize="9"
+                                                       FontWeight="Bold"
+                                                       Style="{StaticResource ManufacturerBadgeText}" />
+                                        </Border>
+
+                                        <TextBlock Grid.Column="4"
                                                    Text="{Binding Name}"
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,6,0"
@@ -203,7 +221,7 @@
                                             </TextBlock.Style>
                                         </TextBlock>
 
-                                        <Border Grid.Column="4"
+                                        <Border Grid.Column="5"
                                                 CornerRadius="2"
                                                 Padding="4,1"
                                                 Height="16"
@@ -216,7 +234,7 @@
                                                        Style="{StaticResource LicenseBadgeText}" />
                                         </Border>
 
-                                        <Border Grid.Column="5"
+                                        <Border Grid.Column="6"
                                                 CornerRadius="2"
                                                 Padding="4,1"
                                                 Height="16"
@@ -229,7 +247,7 @@
                                                        Style="{StaticResource IRatingBadgeText}" />
                                         </Border>
 
-                                        <TextBlock Grid.Column="6"
+                                        <TextBlock Grid.Column="7"
                                                    Text="{Binding IntervalText}"
                                                    Style="{StaticResource Timing}"
                                                    Margin="0,0,6,0"
@@ -237,7 +255,7 @@
                                                    FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextMuted}" />
 
-                                        <TextBlock Grid.Column="7"
+                                        <TextBlock Grid.Column="8"
                                                    Text="{Binding GapText}"
                                                    Style="{StaticResource Timing}"
                                                    Margin="0,0,6,0"
@@ -245,7 +263,7 @@
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource TextSecondary}" />
 
-                                        <TextBlock Grid.Column="8"
+                                        <TextBlock Grid.Column="9"
                                                    Text="{Binding BestText}"
                                                    VerticalAlignment="Center"
                                                    HorizontalAlignment="Right"
@@ -265,7 +283,7 @@
                                             </TextBlock.Style>
                                         </TextBlock>
 
-                                        <TextBlock Grid.Column="9"
+                                        <TextBlock Grid.Column="10"
                                                    Text="{Binding LastDeltaText}"
                                                    FontSize="12"
                                                    FontWeight="SemiBold">
