@@ -9,10 +9,15 @@ namespace IRacingOverlay.Core.Setup;
 /// </summary>
 public sealed class SetupReminderTracker
 {
-    private const double FlashDurationSeconds = 60;
+    public const double DefaultFlashDurationSeconds = 60;
 
     private int? _lastSessionNum;
     private double _sessionStartedAtSeconds;
+
+    /// <summary>How long the flash lasts, in seconds. Settable so the settings
+    /// surface can tune it; a change takes effect from the next frame, including
+    /// part-way through a flash window that's already running.</summary>
+    public double FlashDurationSeconds { get; set; } = DefaultFlashDurationSeconds;
 
     public SetupReminderState Update(
         int sessionNum,
@@ -29,7 +34,7 @@ public sealed class SetupReminderTracker
 
         var isRaceOrQualify = IsRaceOrQualifyType(sessionType);
         var elapsed = sessionTimeSeconds - _sessionStartedAtSeconds;
-        var shouldFlash = isRaceOrQualify && elapsed is >= 0 and < FlashDurationSeconds;
+        var shouldFlash = isRaceOrQualify && elapsed >= 0 && elapsed < FlashDurationSeconds;
 
         return new SetupReminderState(setupName, isModified, isRaceOrQualify, shouldFlash);
     }

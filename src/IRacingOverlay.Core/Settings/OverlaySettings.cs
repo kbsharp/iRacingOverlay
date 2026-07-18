@@ -5,19 +5,63 @@ namespace IRacingOverlay.Core.Settings;
 public sealed record WindowPosition(double Left, double Top);
 
 /// <summary>
-/// Persisted user layout for the overlay: the shared UI scale and each widget's
-/// on-screen position, so the app comes back the way it was left rather than
-/// resetting to the default corners every launch. Serialized to JSON by
+/// Persisted user preferences for the overlay: which widgets are on, where they
+/// sit, how big they are, display units, and the per-widget tuning numbers that
+/// used to be hardcoded constants. Serialized to JSON by
 /// <see cref="OverlaySettingsSerializer"/>; loaded/saved by the app's
 /// SettingsService.
+///
+/// Every per-widget map is keyed by <see cref="WidgetIds"/> and is
+/// <b>sparse</b>: a widget with no entry takes the default (enabled, global
+/// scale, not click-through). That keeps an existing settings file valid as
+/// widgets are added, and means a fresh install writes almost nothing.
 /// </summary>
 public sealed record OverlaySettings
 {
-    /// <summary>Shared UI scale applied to every widget (1.0 = 100%).</summary>
+    /// <summary>Shared UI scale applied to every widget without its own
+    /// override (1.0 = 100%).</summary>
     public double Scale { get; init; } = 1.0;
 
-    /// <summary>Window position by widget key (the window's type name). Widgets
-    /// with no saved entry fall back to their default XAML position.</summary>
+    /// <summary>Window position by widget key. Widgets with no saved entry fall
+    /// back to their default XAML position.</summary>
     public IReadOnlyDictionary<string, WindowPosition> Windows { get; init; }
         = new Dictionary<string, WindowPosition>();
+
+    /// <summary>Per-widget on/off. Absent key = enabled, so adding a widget
+    /// doesn't leave it invisible for existing users.</summary>
+    public IReadOnlyDictionary<string, bool> EnabledWidgets { get; init; }
+        = new Dictionary<string, bool>();
+
+    /// <summary>Per-widget scale override. Absent key = use <see cref="Scale"/>.
+    /// A standings table and a radar rarely want the same size.</summary>
+    public IReadOnlyDictionary<string, double> WidgetScales { get; init; }
+        = new Dictionary<string, double>();
+
+    /// <summary>Per-widget click-through (mouse events pass to the sim). Absent
+    /// key = interactive, since a click-through widget can't be dragged.</summary>
+    public IReadOnlyDictionary<string, bool> ClickThroughWidgets { get; init; }
+        = new Dictionary<string, bool>();
+
+    /// <summary>Display units. Conversion happens at format time only.</summary>
+    public UnitPreferences Units { get; init; } = new();
+
+    /// <summary>Per-widget tuning numbers fed to the Core calculators.</summary>
+    public WidgetTuning Tuning { get; init; } = new();
+
+    /// <summary>Whether the app registers itself to launch with Windows.</summary>
+    public bool RunAtStartup { get; init; }
+
+    /// <summary>True unless the user has explicitly switched this widget off.</summary>
+    public bool IsWidgetEnabled(string widgetId)
+        => !EnabledWidgets.TryGetValue(widgetId, out var enabled) || enabled;
+
+    /// <summary>The scale to apply to a widget: its own override if it has one,
+    /// otherwise the shared <see cref="Scale"/>.</summary>
+    public double ScaleFor(string widgetId)
+        => WidgetScales.TryGetValue(widgetId, out var scale) ? scale : Scale;
+
+    /// <summary>False unless the user has explicitly made this widget
+    /// click-through.</summary>
+    public bool IsClickThrough(string widgetId)
+        => ClickThroughWidgets.TryGetValue(widgetId, out var value) && value;
 }
