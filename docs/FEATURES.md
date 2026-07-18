@@ -644,11 +644,16 @@ makes these numbers choosable.
   an autostart entry that doesn't exist. Startup re-asserts the entry if it's meant
   to be on, in case an update moved the executable.
 
+**Controls are retemplated**, not stock. WPF's default CheckBox / RadioButton /
+Slider / ComboBox / ScrollBar render in the system's light chrome, which against
+this dark panel reads as a different application pasted into the window. The
+`ControlTemplate`s live in `SettingsWindow.xaml`'s own resources rather than
+`App.xaml` — the overlay widgets use none of these control types, so a set of
+implicit styles in the shared dictionary would be a trap for whoever adds the
+first one. Shared palette: `#262D38` fill, `#46525F` edge, `Accent` for the "on"
+state.
+
 **Known limitations:**
-- The sliders, checkboxes and combo boxes are **stock WPF controls**, so they
-  render in the default light chrome against the dark panel. Legible and
-  functional, but visibly not of a piece with the overlay — theming them needs
-  `ControlTemplate`s. A roadmap item.
 - Scale is a fixed set of four steps, not free resizing (drag-to-resize is a
   separate roadmap item).
 - The window has no automated tests — it's WPF glue (see Test coverage). The model
@@ -917,8 +922,8 @@ on the content root (see the tray icon section).
 ## Not yet implemented
 
 Tracked in the [README roadmap](../README.md#roadmap): delta bar, extending the
-manufacturer badge to the relative, drag-to-resize widgets, theming the settings window's stock WPF
-controls, a speed readout for the existing km/h / mph preference, a configurable
+manufacturer badge to the relative, drag-to-resize widgets,
+a speed readout for the existing km/h / mph preference, a configurable
 telemetry refresh rate, per-car/track settings profiles, and pinning the tray icon.
 
 (Click-through, running at Windows startup, and the settings surface itself have
