@@ -54,6 +54,10 @@ a **"Restart to install update"** item (and a notification) — it never restart
 mid-session on its own, so you install it between races on your own schedule. You
 can also trigger a check anytime from the tray's **Check for updates**.
 
+*Publishing* a new version is a tagged push — see
+[docs/DEVELOPMENT.md § Cutting a release](docs/DEVELOPMENT.md#cutting-a-release--step-by-step)
+for the checklist.
+
 ## Prerequisites
 
 - **To use it:** Windows 10/11 and iRacing — nothing else (see [Install](#install-for-the-team) above).

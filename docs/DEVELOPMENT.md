@@ -298,25 +298,82 @@ Releases are packaged with [Velopack](https://velopack.io) and published to
 it — no .NET runtime or SDK required, because the app is published
 **self-contained** (the runtime is bundled).
 
-**Cutting a release** — the version *is* the git tag:
+### Cutting a release — step by step
 
-```powershell
-git tag v0.1.0
-git push origin v0.1.0
-```
+**The version *is* the git tag.** Pushing a `v*` tag is the entire release
+action; everything else below is making sure the thing you're about to ship to
+real users is what you think it is. There is no draft or approval step — the
+workflow runs `vpk upload github --publish`, so the release goes **live the
+moment the tag lands**, and every installed copy picks it up on its next launch.
+Treat pushing the tag as the point of no return.
 
-Pushing a `v*` tag triggers [`.github/workflows/release.yml`](../.github/workflows/release.yml),
-which on a `windows-latest` runner publishes self-contained, runs `vpk pack` /
-`vpk upload github`, and creates the GitHub Release for that tag. It authenticates
-with the built-in `GITHUB_TOKEN` — there are no secrets to configure. Bump the
-tag (and, if you want the source tree to match, `<Version>` in
-`src/IRacingOverlay.App/IRacingOverlay.App.csproj`) for each release.
+1. **Be on `main`, up to date, and green.**
+
+   ```powershell
+   git checkout main
+   git pull
+   $env:PATH="$env:LOCALAPPDATA\Microsoft\dotnet;$env:PATH"
+   dotnet build     # TreatWarningsAsErrors is on - a warning is a failure
+   dotnet test
+   ```
+
+2. **Bump `<Version>` in [`src/IRacingOverlay.App/IRacingOverlay.App.csproj`](../src/IRacingOverlay.App/IRacingOverlay.App.csproj)**
+   to the version you're about to tag, minus the `v`. The tag is what CI actually
+   builds with (it passes `-p:Version=` from the tag), so the csproj value is the
+   source tree agreeing with the tag rather than the thing being released — but
+   letting them drift makes `--version` output from a dev build a lie. Semver:
+   breaking/major reworks bump minor while pre-1.0, new widgets or settings bump
+   minor, fixes bump patch.
+
+3. **Commit the bump and push it.** The tag should point at a commit that's
+   already on `main`:
+
+   ```powershell
+   git commit -am "chore: bump version to 0.6.0"
+   git push origin main
+   ```
+
+4. **Sanity-check the actual app once** — `dotnet run --project src/IRacingOverlay.App -- --demo`,
+   or better, a live session. Auto-update means a broken release reaches users
+   without them choosing to download anything, so a two-minute look at the
+   running app is worth more here than anywhere else in this repo.
+
+5. **Tag and push the tag:**
+
+   ```powershell
+   git tag v0.6.0
+   git push origin v0.6.0
+   ```
+
+6. **Watch the run**: <https://github.com/kbsharp/iRacingOverlay/actions> (or
+   `gh run watch`). It takes a few minutes.
+
+7. **Verify the release**: <https://github.com/kbsharp/iRacingOverlay/releases>
+   should show `iRacing Overlay 0.6.0` with `Setup.exe`, a `.nupkg`, and
+   `RELEASES` / `releases.win.json` attached. The last two *are* the update feed —
+   without them, installed copies won't see the release.
+
+**What the tag triggers:** [`.github/workflows/release.yml`](../.github/workflows/release.yml)
+on a `windows-latest` runner (WPF can't publish elsewhere). It re-runs
+`dotnet build`/`dotnet test` in Release first — CI already gates `main`, but a tag
+can be cut from any ref and this one publishes straight to users, so it gates
+itself independently — then derives the version from the tag (`refs/tags/v0.6.0`
+→ `0.6.0`), publishes self-contained win-x64, runs `vpk download github` (pulls
+prior releases so Velopack can build a delta — expected to warn and is allowed to
+fail on the first release), `vpk pack`, and `vpk upload github --publish`. It
+authenticates with the built-in `GITHUB_TOKEN`; there are no secrets to configure.
+
+**If a release goes wrong:** don't delete and re-push the same tag — installed
+copies may already have downloaded it, and Velopack's feed doesn't expect a
+version to change contents. Bump the patch version and cut a new tag
+(`v0.6.1`) instead. Deleting the GitHub *release* (not just the tag) does pull it
+from the update feed for anyone who hasn't checked yet, which is the emergency
+brake if you catch it fast.
 
 **One-time prerequisites:**
 
-- The repo must have a **GitHub remote** and be pushed there
-  (`git remote add origin <url>` — this clone may not have one yet), with
-  **Actions enabled** for the repo.
+- The repo must have a **GitHub remote** with **Actions enabled** — already the
+  case for `kbsharp/iRacingOverlay`; this only matters for a fresh fork or clone.
 - The **vpk CLI version is pinned to the `Velopack` NuGet version** (1.2.0) in the
   workflow. When you bump one, bump the other — a mismatch between the CLI and the
   library is unsupported.
