@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Dev-only harness: renders a widget window offscreen to a PNG so a
+       headless/CLI session can actually *look* at a styling change. Deliberately
+       NOT in IRacingOverlay.sln, so `dotnet build` and CI don't carry it.
+       See docs/DEVELOPMENT.md for how to run it. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- Must match App: it has UseWindowsForms on for the tray icon, which is
+         what makes Color/Brush/Size ambiguous and forces the aliases below. -->
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\IRacingOverlay.App\IRacingOverlay.App.csproj" />
+    <ProjectReference Include="..\..\src\IRacingOverlay.Core\IRacingOverlay.Core.csproj" />
+    <ProjectReference Include="..\..\src\IRacingOverlay.Infrastructure\IRacingOverlay.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

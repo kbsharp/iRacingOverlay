@@ -113,22 +113,36 @@ Get-Process IRacingOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
   `WindowStyle="None"`, so they have no taskbar entry, they can sit behind other
   windows, and screen-capture tooling generally can't resolve them by name.
 
-  The harness is a scratch WPF exe referencing `App`/`Core`/`Infrastructure` that:
+  That harness lives in the repo as [`tools/RenderWidget`](../tools/RenderWidget):
 
-  1. news up `IRacingOverlay.App.App` and calls `InitializeComponent()` — this
-     loads the `App.xaml` resources **without** `Run()` starting the real app;
-  2. drives `SimulatedTelemetrySource` for a couple of seconds to capture one
-     real `TelemetrySnapshot` + `SessionMetadata`;
-  3. feeds those to the real view model, builds the real window, `Show()`s it
-     offscreen (`Left = -4000`), then `RenderTargetBitmap`s its `Content` — draw
-     it over an opaque rect first, or the near-opaque panel is judged against
-     undefined transparency. Render at 2× DPI (192) to read small text.
+  ```powershell
+  dotnet run --project tools/RenderWidget                            # standings.png
+  dotnet run --project tools/RenderWidget -- relative out/rel.png    # pick widget + path
+  ```
+
+  It's deliberately **not** in `IRacingOverlay.sln`, so `dotnet build` and CI
+  don't carry it — run it explicitly by path. It news up the real `App` for its
+  `App.xaml` resources, drives `SimulatedTelemetrySource` for one frame, feeds
+  the real view model, and `RenderTargetBitmap`s the real window's `Content` at
+  2× DPI (192) over an opaque backdrop. Adding another widget is one `case` in
+  `BuildWindow`.
 
   `RenderTargetBitmap` uses greyscale antialiasing exactly as the live
   `AllowsTransparency` windows do, so text weight comes out faithful — which is
   the whole point when the thing under review *is* the text. This is how the
-  typography pass was verified. Note the harness needs the same `Color` /
-  `Brush` alias workaround as `App` (see CLAUDE.md) once `UseWindowsForms` is on.
+  typography pass was verified, and how the manufacturer badges were sized (the
+  first pass had McLaren's very wide mark collapsing to an invisible hairline
+  inside a square box — only visible by looking).
+
+  Two traps if you ever rewrite it:
+  - **Never pump the dispatcher** (no `Show()`, no `Dispatcher.Invoke`).
+    Constructing `App` queues `App.OnStartup` on the dispatcher; pumping runs the
+    real composition root, which builds `UpdateService` and dies with "No
+    VelopackLocator has been set". Drive `Measure`/`Arrange`/`UpdateLayout`
+    manually instead — `StaticResource` still resolves via
+    `Application.Current.Resources`.
+  - It needs the same `Color`/`Brush`/`Size` alias workaround as `App` (see
+    CLAUDE.md), because it also sets `UseWindowsForms`.
   - **Radar caveat:** the radar auto-hides until its `TrackMap` is learned
     (~one lap) *and* a car is in range, so a two-second demo warmup renders
     nothing. Either drive the sim a full lap, or feed `RadarViewModel` synthetic
