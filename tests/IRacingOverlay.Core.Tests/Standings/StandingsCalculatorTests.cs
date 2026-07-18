@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Cars;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Standings;
 using IRacingOverlay.Core.Telemetry;
@@ -229,6 +230,35 @@ public class StandingsCalculatorTests
         var snapshot = Snapshot(playerCarIdx: 0);
 
         Assert.Empty(StandingsCalculator.Compute(snapshot, MulticlassRoster()));
+    }
+
+    [Fact]
+    public void Compute_ResolvesManufacturerFromCarPath()
+    {
+        var snapshot = Snapshot(
+            playerCarIdx: 0,
+            Car(0, position: 1, classPosition: 1, lapsCompleted: 5, best: 90f, last: 90f, f2: 0f),
+            Car(1, position: 2, classPosition: 2, lapsCompleted: 5, best: 91f, last: 91f, f2: 3f));
+
+        var drivers = new Dictionary<int, RosterDriver>
+        {
+            [0] = new(0, "Driver 0", "0", IRating: 2000, License: "A 4.99",
+                ClassEstLapTimeSeconds: 90f, ClassShortName: "GT3", ClassColorRaw: "16750899",
+                CarPath: "ferrari296gt3"),
+            // No CarPath (older build / missing) must degrade to Unknown, not throw.
+            [1] = new(1, "Driver 1", "1", IRating: 2000, License: "A 4.99",
+                ClassEstLapTimeSeconds: 90f, ClassShortName: "GT3", ClassColorRaw: "16750899"),
+        };
+        var metadata = new SessionMetadata(
+            drivers,
+            new Dictionary<int, string> { [0] = "Race" },
+            PlayerSetupName: "race_setup.sto",
+            PlayerSetupIsModified: false);
+
+        var rows = StandingsCalculator.Compute(snapshot, metadata).SelectMany(g => g.Rows).ToList();
+
+        Assert.Equal(Manufacturer.Ferrari, rows.Single(r => r.CarIdx == 0).Manufacturer);
+        Assert.Equal(Manufacturer.Unknown, rows.Single(r => r.CarIdx == 1).Manufacturer);
     }
 
     private static CarTelemetry Car(

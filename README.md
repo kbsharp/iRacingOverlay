@@ -3,10 +3,11 @@
 A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
 
 - **Standings**: the full, class-grouped field (top-left by default) — colour-tinted class
-  banners with **Strength of Field**, then each car by class position with car number,
-  driver, colour-coded license and iRating badges, interval to the car ahead, gap to the
-  class leader, best lap (session-fastest in purple) and last-lap delta. Zebra rows, your
-  own row highlighted, up to a full 40-car multiclass grid — all from the sim's real timing.
+  banners with **Strength of Field**, then each car by class position with car number, a
+  manufacturer badge, driver, colour-coded license and iRating badges, interval to the car
+  ahead, gap to the class leader, best lap (session-fastest in purple) and last-lap delta.
+  Zebra rows, your own row highlighted, up to a full 40-car multiclass grid — all from the
+  sim's real timing.
 - **Relative** (the flagship glance): the three cars ahead of and behind you on track with
   live time deltas, race position and car number, kept **compact** (bottom by default) so
   it complements the standings rather than repeating it. Each row carries its class's
@@ -125,7 +126,9 @@ the pattern for adding a new widget, and debugging notes; see
 ## Roadmap
 
 - Delta bar (lap delta to session/all-time best)
-- Car manufacturer badges on the relative (needs custom art assets)
+- Final manufacturer-badge art (the standings badge is live as a placeholder
+  abbreviation; the monochrome vector marks are being sourced) and extending the
+  badge to the relative
 - Drag-to-resize widgets (positions and scale are already remembered)
 - Click-through mode
 - Pin the tray icon and/or run at Windows startup

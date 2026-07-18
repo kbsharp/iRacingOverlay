@@ -35,6 +35,8 @@ public sealed class StandingsRowViewModel : ObservableObject
     private string _iRatingText = string.Empty;
     private IRatingTier _iRatingTier;
     private Brush _classColorBrush = Brushes.Gray;
+    private bool _hasManufacturer;
+    private string _manufacturerText = string.Empty;
     private string _bestText = string.Empty;
     private bool _isSessionBest;
     private string _lastDeltaText = string.Empty;
@@ -145,6 +147,20 @@ public sealed class StandingsRowViewModel : ObservableObject
         private set => SetProperty(ref _classColorBrush, value);
     }
 
+    /// <summary>True when the car's manufacturer is known, so the badge shows.</summary>
+    public bool HasManufacturer
+    {
+        get => _hasManufacturer;
+        private set => SetProperty(ref _hasManufacturer, value);
+    }
+
+    /// <summary>Placeholder brand token shown in the badge chip (see <see cref="ManufacturerBadge"/>).</summary>
+    public string ManufacturerText
+    {
+        get => _manufacturerText;
+        private set => SetProperty(ref _manufacturerText, value);
+    }
+
     public string BestText
     {
         get => _bestText;
@@ -214,6 +230,8 @@ public sealed class StandingsRowViewModel : ObservableObject
         IRatingText = row.IRating > 0 ? SessionFormat.IRating(row.IRating) : string.Empty;
         IRatingTier = row.IRatingTier;
         ClassColorBrush = ViewModels.ClassColorBrush.Resolve(row.ClassColorHex);
+        HasManufacturer = ManufacturerBadge.Has(row.Manufacturer);
+        ManufacturerText = ManufacturerBadge.Abbrev(row.Manufacturer);
         BestText = StandingsFormat.LapTime(row.BestLapSeconds);
         IsSessionBest = row.IsSessionBestLap;
         LastDeltaText = row.LastDeltaSeconds is { } d ? SessionFormat.Delta(d) : TelemetryFormat.Placeholder;

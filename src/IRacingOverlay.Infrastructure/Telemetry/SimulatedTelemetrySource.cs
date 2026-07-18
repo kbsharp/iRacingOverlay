@@ -443,9 +443,12 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
                 d =>
                 {
                     var carClass = _preset.Classes[d.ClassIndex];
+                    var carPath = carClass.CarPaths.Count > 0
+                        ? carClass.CarPaths[d.CarIdx % carClass.CarPaths.Count]
+                        : string.Empty;
                     return new RosterDriver(
                         d.CarIdx, d.Name, d.Number, d.IRating, d.License, (float)d.LapSeconds,
-                        carClass.ShortName, carClass.ColorHex);
+                        carClass.ShortName, carClass.ColorHex, carPath);
                 });
         }
 

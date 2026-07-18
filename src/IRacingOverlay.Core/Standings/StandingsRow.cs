@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Cars;
 using IRacingOverlay.Core.Formatting;
 
 namespace IRacingOverlay.Core.Standings;
@@ -17,6 +18,7 @@ public sealed record StandingsRow(
     IRatingTier IRatingTier,
     string ClassShortName,
     string? ClassColorHex,
+    Manufacturer Manufacturer,
     double? BestLapSeconds,
     double? LastLapSeconds,
     double? LastDeltaSeconds,

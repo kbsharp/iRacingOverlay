@@ -241,6 +241,29 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Manufacturer badge chip. Deliberately neutral/monochrome, not another
+             coloured tier: the class bar, license and iRating chips already carry
+             hue-as-meaning, so the manufacturer mark reads as iconography sitting in
+             the panel material rather than yet another accent. PLACEHOLDER STAGE:
+             holds a short brand abbreviation until the real vector marks land. -->
+        <Style x:Key="ManufacturerBadgeBackground" TargetType="Border">
+            <Setter Property="Background" Value="#14FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#26FFFFFF" />
+            <Style.Triggers>
+                <!-- Opaque dark backing on the amber "you" row, matching the other
+                     chips, so the row wash doesn't bleed through. -->
+                <DataTrigger Binding="{Binding IsPlayer}" Value="True">
+                    <Setter Property="Background" Value="#E61B1E25" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ManufacturerBadgeText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource FontSmall}" />
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+        </Style>
+
         <!-- Flat button used by the dev control panel -->
         <Style x:Key="DevButton" TargetType="Button">
             <Setter Property="Background" Value="#1FFFFFFF" />
