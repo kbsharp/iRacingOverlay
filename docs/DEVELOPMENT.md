@@ -118,6 +118,7 @@ Get-Process IRacingOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
   ```powershell
   dotnet run --project tools/RenderWidget                            # standings.png
   dotnet run --project tools/RenderWidget -- relative out/rel.png    # pick widget + path
+  dotnet run --project tools/RenderWidget -- settings out/set.png    # standings, relative, settings
   ```
 
   It's deliberately **not** in `IRacingOverlay.sln`, so `dotnet build` and CI
@@ -170,10 +171,20 @@ default. This means:
   it'll bypass the flag and `HideInsteadOfClose` will (harmlessly, but
   confusingly) try to cancel a shutdown that's already in progress.
 - `TrayIconService` (`src/IRacingOverlay.App/Services/`) owns the
-  `System.Windows.Forms.NotifyIcon` and its context menu (Show Relative, Show
-  Fuel, Dev Controls if present, Exit). This exists because the widget windows
-  are borderless/topmost with no taskbar entry — they can get lost behind a
-  fullscreen game with no way back except the tray.
+  `System.Windows.Forms.NotifyIcon` and its context menu (a checkbox per widget,
+  UI Scale, Settings..., Dev Controls if present, Exit). This exists because the
+  widget windows are borderless/topmost with no taskbar entry — they can get lost
+  behind a fullscreen game with no way back except the tray.
+- **The settings window is the exception to all of the above.** It's a normal
+  chromed window with a taskbar entry, it isn't in `_widgets`, and it genuinely
+  closes rather than hiding (it's rebuilt on next open). Its view model subscribes
+  to `SettingsService.Changed`, so `SettingsWindow.OnClosed` must call
+  `SettingsViewModel.Detach()` — otherwise every open leaks a live handler onto a
+  service that outlives the window.
+- **Settings changes flow one way:** a control writes to `SettingsService`, which
+  raises `Changed`, which `App.ApplySettings` handles by pushing state at every
+  widget. Don't have a control apply its own effect *and* save — route everything
+  through the service so the tray and the settings window can't drift apart.
 - **Type ambiguity gotcha:** the `App` project has both `UseWPF` and
   `UseWindowsForms` on, which both contribute a global `using` for a type named
   `Application` (`System.Windows.Application` vs `System.Windows.Forms.
@@ -231,20 +242,36 @@ The pattern every widget so far follows (relative, fuel):
    on all sim builds) **and** `SimulatedTelemetrySource` (a plausible constant
    or a simple formula) so demo mode stays in sync with live mode.
 4. **View model.** `src/IRacingOverlay.App/ViewModels/`, inheriting
-   `OverlayViewModelBase` for the shared connection-state handling. Keep it a
-   thin translation from Core types to display strings/bools — no maths here.
+   `OverlayViewModelBase`. Override `ApplyTelemetry` (required), plus
+   `ApplySessionMetadata` and `ApplySettings` if the widget needs roster data or
+   reacts to a user setting. Keep it a thin translation from Core types to display
+   strings/bools — no maths here.
 5. **Window.** A borderless, transparent, topmost `Window` XAML file styled from
    the shared brushes/styles in `App.xaml` (see [FEATURES.md](FEATURES.md) for
    the current palette). Reuse the drag-to-move and right-click-to-exit pattern
    from `RelativeWindow.xaml.cs` / `FuelWindow.xaml.cs`.
-6. **Wire it up** in `App.xaml.cs` (the composition root): construct the view
-   model, subscribe it to the telemetry source's events (marshalled onto
-   `Dispatcher`), construct the window with the view model as `DataContext`,
-   subscribe `window.Closing += HideInsteadOfClose;` (see "Window lifecycle"
-   above — skipping this means Alt+F4 on the new window kills the whole app),
-   call `.Show()`, and add it to the `TrayIconService` constructor call so it
-   gets a "Show <Widget>" menu item.
-7. **Update the docs:** add the widget to [FEATURES.md](FEATURES.md) and, if the
+6. **Register it.** Add a constant to `WidgetIds` (`Core/Settings`) and one
+   `OverlayWidget` entry to the `_widgets` list in `App.xaml.cs`. That single
+   entry is all the wiring there is: the composition root loops over the list for
+   telemetry fan-out, `Closing += HideInsteadOfClose`, position restore/tracking,
+   scale, visibility and click-through, and `TrayIconService` and the settings
+   window both build their per-widget rows from it.
+
+   This is why the registry exists — the same job used to mean editing five
+   places, none of which the compiler would flag. Don't reintroduce a
+   widget-specific branch in the composition root; if a widget needs something
+   the registry can't express, extend `OverlayWidget`.
+
+   **Keep the `WidgetIds` value equal to the window's type name.** Those values
+   are the settings-file keys, and the original layout code used type names —
+   changing one silently resets every user's saved position for that widget.
+7. **Settings, if the widget has tunable numbers.** Put them on `WidgetTuning`
+   (`Core/Settings`) with the default equal to the constant the calculator already
+   uses, extend `Sanitized()` with a sensible band, add a row to
+   `SettingsWindow.xaml`, and read it in the view model's `ApplySettings`. A new
+   field must be *additive* — an existing `settings.json` predates it, so absent
+   must mean "previous behaviour".
+8. **Update the docs:** add the widget to [FEATURES.md](FEATURES.md) and, if the
    headline feature list changed, the [README](../README.md).
 
 ## Testing conventions

@@ -84,11 +84,20 @@ dotnet test
 
 Usage notes:
 
-- **Control the app from the system tray icon**, not the terminal: show/hide any
-  widget, set the **UI scale** (100/125/150/175% — scales every widget together), open the
-  dev control panel (demo mode), or Exit. New tray icons are hidden by Windows behind the
+- **Control the app from the system tray icon**, not the terminal: **tick or untick
+  each widget** to show or hide it (the choice is remembered), set the **UI scale**
+  (100/125/150/175% — every widget together), open **Settings...**, open the dev control
+  panel (demo mode), or Exit. New tray icons are hidden by Windows behind the
   **`^`** overflow arrow the first time — click it to find the icon, and drag it out onto
   the taskbar to pin it permanently.
+- **Settings...** opens a normal window with everything that doesn't fit in a menu:
+  per-widget scale and click-through, units (litres/gallons, °C/°F), the tuning
+  numbers (fuel safety margin, setup flash duration, radar range, how many cars the
+  relative and standings show), start-with-Windows, and a **Reset widget positions**
+  button. There's no OK/Apply — changes apply as you make them.
+- **Click-through** makes a widget ignore the mouse so clicks reach the sim. A
+  click-through widget can't be dragged, so switch it back off in Settings if you
+  need to move it.
 - Closing a widget window (Alt+F4, etc.) just hides it — it's not gone, use the tray icon
   to bring it back. The tray's **Exit** (or a widget's right-click **Exit**) is what actually
   quits the app.
@@ -125,13 +134,27 @@ the pattern for adding a new widget, and debugging notes; see
 
 ## Roadmap
 
+Recently landed: a **settings window** (tray → Settings...) covering per-widget
+on/off, per-widget scale, click-through, display units, the tuning numbers that
+used to be hardcoded, run-at-startup, and a layout reset. See
+[docs/FEATURES.md](docs/FEATURES.md#settings).
+
+Still open:
+
 - Delta bar (lap delta to session/all-time best)
 - Extending the manufacturer badge to the relative, and vector marks for the five
   makes Simple Icons doesn't cover (Dallara, Ligier, Mercedes, Radical, Ruf)
-- Drag-to-resize widgets (positions and scale are already remembered)
-- Click-through mode
-- Pin the tray icon and/or run at Windows startup
-- Settings: units (L/gal, km/h / mph), refresh rate, widget scale
+- Drag-to-resize widgets — the settings window offers a fixed set of scale steps;
+  resizing a widget by its corner is the natural next step
+- **Theme the settings window's controls.** The sliders, checkboxes and combo
+  boxes are stock WPF, so they render in the default light chrome against the
+  dark panel. Functional and legible, but visibly not of a piece with the
+  overlay — it needs `ControlTemplate`s to match
+- A speed readout somewhere, so the (already implemented) km/h / mph preference
+  has something to act on
+- Configurable telemetry refresh rate (currently fixed at ~15Hz)
+- Settings profiles per car/track, so a wet oval layout differs from a road one
+- Pin the tray icon
 
 ## Credits
 

@@ -36,9 +36,7 @@ full-height class-colour bar flush to the panel's left edge, and alternating
 same tier-coloured chips as the relative), then **Int** (interval to the car
 ahead), **Gap** (to the class
 leader), **Fastest** (best lap, purple when session-best), and **Last**
-(last-lap delta to that car's own best, red when slower). Up to 30 cars per
-class are shown (a full class in a typical multiclass split); if the player
-falls outside that window, their row is appended so it's always visible.
+(last-lap delta to that car's own best, red when slower).
 
 **Manufacturer badge:** each car row carries a badge for the car's make,
 derived from the sim's roster. iRacing exposes no manufacturer field — only a
@@ -63,6 +61,10 @@ Five makes iRacing fields have no CC0 mark upstream — **Dallara, Ligier,
 Mercedes, Radical and Ruf** — and fall back to a short brand abbreviation
 (`MER`, `DAL`) in the same chip, so those rows still identify the car. See
 `ManufacturerBadge` (App) for the mark/abbreviation split.
+
+The per-class cap is **12 cars by default** (`WidgetTuning.StandingsMaxPerClass`,
+adjustable 5–60 in Settings); if the player falls outside that window, their row
+is appended so it's always visible.
 
 **Lap times & the fastest-lap highlight:** best/last come from
 `CarIdxBestLapTime`/`CarIdxLastLapTime` (formatted `m:ss.fff` by
@@ -94,9 +96,9 @@ churn.
 - Gaps/interval are a transform of `CarIdxF2Time`. In practice and qualifying,
   iRacing reports a best lap time in F2Time rather than a race gap, so those
   columns are only meaningful in race sessions.
-- Up to 30 cars per class (`MaxPerClass`), plus the player if outside that.
-  Verified rendering a 40-car three-class demo grid; a hypothetical single
-  class of 40+ would truncate at 30 (plus player).
+- 12 cars per class by default, plus the player if outside that. Verified
+  rendering a 40-car three-class demo grid; a single class larger than the
+  configured cap truncates (plus player). Adjustable 5–60 in Settings.
 - Five makes (Dallara, Ligier, Mercedes, Radical, Ruf) have no CC0 vector mark
   and show a brand abbreviation instead. McLaren's upstream mark is a wordmark,
   so it reads denser than the others at row size.
@@ -270,7 +272,7 @@ EstimateRaceLapsRemaining` for timed races.
 **Known limitations:**
 - No fuel-per-stop split for multi-stop strategies — "Add" assumes one more
   stop covers the rest of the race.
-- Safety margin (0.5 laps) is a fixed constant, not user-configurable yet.
+- Safety margin defaults to 0.5 laps; configurable 0–5 in Settings.
 - Demo mode always simulates a short (~4 minute) timed race so the margin
   reads comfortably positive; the red "short" state is real code but isn't
   exercised by the demo without editing `SimulatedTelemetrySource`.
@@ -318,7 +320,7 @@ changed, since a single static screenshot can't prove an animation is
 running.
 
 **Known limitations:**
-- The 60-second window is a fixed constant, not configurable.
+- The flash window defaults to 60 seconds; configurable 5–300 in Settings.
 - No acknowledge/dismiss action — the flash simply times out. (Deliberate:
   the request was for a passive visual reminder, not an interactive one.)
 - Demo mode starts already in "Race" (matching the existing fuel-strategy
@@ -532,15 +534,23 @@ stop the app was closing the terminal that launched it.
   tray icon type).
 - Icon is drawn at runtime (a navy circle with an azure dot, matching the
   app palette) rather than shipped as an asset file.
-- Context menu: **Show Standings**, **Show Relative**, **Show Fuel**, **Show
-  Setup**, **Show Radar**, a **UI Scale** submenu (100/125/150/175%), **Dev
-  Controls** (demo mode only), **Check for updates**, **Exit** — plus a
+- Context menu: a **checkbox per widget** (Standings, Relative, Fuel, Setup,
+  Radar), **Dev Controls** (demo mode only), a **UI Scale** submenu
+  (100/125/150/175%), **Settings...**, **Check for updates**, **Exit** — plus a
   **Restart to install update** item that stays hidden until an update has been
-  downloaded (see Auto-update below). Double-click the icon = Show Relative.
-  **UI Scale** applies a `ScaleTransform` to every overlay window's content root
-  (`App.SetScale`); `SizeToContent` then resizes each window to fit, so the whole
-  set scales together. The active scale is ticked in the submenu and **persisted**
-  between runs (see Layout persistence below).
+  downloaded (see Auto-update below). Double-click the icon = show the Relative.
+- The widget items are **checkboxes, not "Show" commands**. A menu that can only
+  reveal a widget has no answer to "I don't want the radar"; ticking and unticking
+  shows/hides it, and the choice is persisted (`OverlaySettings.EnabledWidgets`),
+  so a widget switched off stays off across restarts. The demo-only dev panel keeps
+  a plain "show" command — it's scaffolding, not a preference.
+- **UI Scale** applies a `ScaleTransform` to every overlay window's content root;
+  `SizeToContent` then resizes each window to fit, so the whole set scales
+  together. It's the *shared* scale — a widget with its own override (set in the
+  settings window) ignores it. The active scale is ticked and **persisted**.
+- The menu's checkmarks are re-synced from `SettingsService.Changed`, so toggling
+  a widget in the settings window moves the tick here too rather than leaving the
+  two surfaces disagreeing.
 - The app runs under `ShutdownMode="OnExplicitShutdown"`: closing a widget
   window hides it (`App.HideInsteadOfClose`) rather than destroying it, so
   the tray's Show items always work. The tray's **Exit** (or any window's
@@ -571,14 +581,89 @@ access token.
   it's SDK glue (see Test coverage); the GitHub feed read was verified against
   the live release during development.
 
+### Settings — `SettingsWindow` / `SettingsViewModel` / `Core.Settings`
+
+The user-facing control surface for everything that doesn't fit in a tray menu.
+Opened from the tray's **Settings...**; created lazily, since most sessions never
+open it.
+
+**It is deliberately a normal window** — standard chrome, a taskbar entry, and no
+`AllowsTransparency`. Every other window here is a borderless transparent overlay
+because it sits over the sim, but that also costs it ClearType (see Typography).
+The settings window is used alt-tabbed, in the pits, so it gets proper subpixel
+text rendering and a title bar you can close. Reusing the overlay panel material
+here would inherit the greyscale-AA problem for no benefit.
+
+**There is no OK/Apply.** Every control writes straight through to
+`SettingsService`, which raises `Changed`, which makes `App.ApplySettings` push
+the new state at every widget. The point is watching the overlay react while you
+adjust it — a form you fill in and submit would hide exactly the feedback that
+makes these numbers choosable.
+
+| Section | Controls |
+|---|---|
+| **Widgets** | Per widget: on/off, a scale override (100/125/150/175%), and click-through. |
+| **Units** | Fuel litres/gallons, temperature °C/°F, speed km/h / mph. |
+| **Tuning** | Fuel safety margin (0–5 laps), setup flash (5–300 s), radar range (15–200 m), relative cars each side (1–8), standings cars per class (5–60). |
+| **General** | Start with Windows; **Reset widget positions**. |
+
+- **Per-widget scale** overrides the shared tray scale for that widget only — a
+  standings table and a radar rarely want the same size. Absent override = follow
+  the shared scale.
+- **Click-through** (`WindowInterop.SetClickThrough`, `WS_EX_TRANSPARENT`) makes a
+  widget ignore the mouse so clicks reach the sim. It's **per widget, not global**,
+  because a click-through widget can't be dragged — the settings window is the only
+  way back, so making it all-or-nothing would risk stranding the whole layout.
+- **Units convert at format time only** (`Core.Formatting.UnitFormat`). Telemetry
+  is normalised to metric on the way in and every calculation stays metric, so the
+  unit can be flipped mid-session without invalidating a rolling fuel average or a
+  lap-time window. Fuel keeps 2dp and temperature whole degrees in both systems so
+  a column doesn't change width when the unit changes. No widget renders a speed
+  yet — that preference is here ahead of a readout that uses it.
+- **Tuning** feeds the Core calculators, each of which already took the value as a
+  parameter. `WidgetTuning`'s defaults are the literal constants those calculators
+  used before, so an untouched settings file reproduces the previous behaviour
+  exactly. `SetupReminderTracker.FlashDurationSeconds` was the one held as a
+  `const` and became a settable property; changing it mid-flash ends the flash on
+  the next frame rather than finishing the old window.
+- **Reset widget positions** forgets every saved position so each widget returns
+  to its default corner next launch — the recovery path for a layout dragged
+  somewhere unusable, which previously meant deleting `settings.json` by hand.
+- **Start with Windows** writes a per-user `HKCU\...\Run` entry
+  (`StartupService`). No elevation needed, and it matches where Velopack installs
+  the app. The registered path is `Environment.ProcessPath` — under Velopack the
+  stub launcher above `current\`, so the entry survives auto-updates. It persists
+  **the state the registry write actually achieved**, not the one requested: a
+  locked-down machine can refuse the write, and the checkbox shouldn't then claim
+  an autostart entry that doesn't exist. Startup re-asserts the entry if it's meant
+  to be on, in case an update moved the executable.
+
+**Known limitations:**
+- The sliders, checkboxes and combo boxes are **stock WPF controls**, so they
+  render in the default light chrome against the dark panel. Legible and
+  functional, but visibly not of a piece with the overlay — theming them needs
+  `ControlTemplate`s. A roadmap item.
+- Scale is a fixed set of four steps, not free resizing (drag-to-resize is a
+  separate roadmap item).
+- The window has no automated tests — it's WPF glue (see Test coverage). The model
+  underneath it (`OverlaySettings`, `WidgetTuning`, `UnitPreferences`,
+  `UnitFormat`) is fully covered. It was reviewed by rendering it offscreen via
+  `tools/RenderWidget settings`.
+
 ### Layout persistence — `SettingsService` / `Core.Settings`
 
 The UI scale and every widget's window position are remembered between runs, so
 the app comes back the way it was left instead of resetting to the default
 corners.
 
-- Saved to `%LocalAppData%\IRacingOverlay\settings.json` as `OverlaySettings`
-  (a `Scale` plus a `WindowPosition` per widget, keyed by window type name).
+- Saved to `%LocalAppData%\IRacingOverlay\settings.json` as `OverlaySettings` —
+  the shared `Scale`, a `WindowPosition` per widget, the per-widget
+  enabled/scale/click-through maps, `Units`, `Tuning` and `RunAtStartup`. Every
+  per-widget map is keyed by `WidgetIds` (whose values are the window type names
+  the original layout code used, kept verbatim so existing files still restore)
+  and is **sparse**: an absent key means the default, so adding a widget can't
+  leave it switched off for existing users and a fresh install writes almost
+  nothing.
   That path is in the Velopack install root, above the versioned `current\`
   folder, so it **survives auto-updates** and is removed on uninstall.
 - Positions are captured on each window's `LocationChanged` and **debounced**
@@ -793,7 +878,7 @@ on the content root (see the tray icon section).
 
 ## Test coverage
 
-219 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+321 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -816,13 +901,20 @@ on the content root (see the tray icon section).
 | `Radar/RadarCalculatorTests.cs` | Blip building: map-not-ready/zero-length guards, range gating, pit/pace-car exclusion, roster colour+number |
 | `Radar/TrackLengthParserTests.cs` | `WeekendInfo:TrackLength` km/mi parsing, missing/invalid → 0 |
 | `Formatting/StandingsFormatTests.cs` | Lap-time (m:ss.fff) and gap ("+n.n"/"+nL"/blank) formatting |
-| `Settings/OverlaySettingsSerializerTests.cs` | JSON round-trip, missing/corrupt file → defaults, out-of-range scale sanitizing, unknown-field tolerance |
+| `Settings/OverlaySettingsSerializerTests.cs` | JSON round-trip (incl. the widget/unit/tuning fields), missing/corrupt file → defaults, out-of-range scale sanitizing, unknown-field tolerance, pre-settings-window file shape still loading with every widget enabled, null maps/records → empty defaults, per-widget scale and tuning clamping |
+| `Settings/OverlaySettingsTests.cs` | Sparse-map defaults: absent key = enabled / shared scale / interactive; overrides win; widget ids distinct |
+| `Settings/WidgetTuningTests.cs` | Defaults match the previously hardcoded constants, in-band values untouched, out-of-band clamped, non-finite → default not band edge |
+| `Settings/UnitPreferencesTests.cs` | Metric defaults, valid choices preserved, undefined enum value → metric |
+| `Formatting/UnitFormatTests.cs` | Fuel L/gal, temperature °C/°F, speed kph/mph conversion; placeholders; equal precision across units; agreement with `TelemetryFormat.ToKph` |
 | `Settings/LayoutGuardTests.cs` | Scale sanitizing (band + non-finite), on-screen validation across a multi-monitor virtual desktop |
 
 ## Not yet implemented
 
-Tracked in the [README roadmap](../README.md#roadmap):
-delta bar, extending the manufacturer badge to the relative, vector marks for
-the five makes Simple Icons doesn't cover, drag-to-resize widgets,
-click-through mode, pinning/auto-showing the tray icon, running at Windows
-startup, and a settings surface (units, refresh rate).
+Tracked in the [README roadmap](../README.md#roadmap): delta bar, extending the
+manufacturer badge to the relative, vector marks for the five makes Simple Icons
+doesn't cover, drag-to-resize widgets, theming the settings window's stock WPF
+controls, a speed readout for the existing km/h / mph preference, a configurable
+telemetry refresh rate, per-car/track settings profiles, and pinning the tray icon.
+
+(Click-through, running at Windows startup, and the settings surface itself have
+since landed — see [Settings](#settings--settingswindow--settingsviewmodel--coresettings).)
