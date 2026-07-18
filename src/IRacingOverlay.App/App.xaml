@@ -244,8 +244,9 @@
         <!-- Manufacturer badge chip. Deliberately neutral/monochrome, not another
              coloured tier: the class bar, license and iRating chips already carry
              hue-as-meaning, so the manufacturer mark reads as iconography sitting in
-             the panel material rather than yet another accent. PLACEHOLDER STAGE:
-             holds a short brand abbreviation until the real vector marks land. -->
+             the panel material rather than yet another accent. This chip is the
+             fallback for the makes with no vector mark; it holds a short brand
+             abbreviation. -->
         <Style x:Key="ManufacturerBadgeBackground" TargetType="Border">
             <Setter Property="Background" Value="#14FFFFFF" />
             <Setter Property="BorderThickness" Value="1" />

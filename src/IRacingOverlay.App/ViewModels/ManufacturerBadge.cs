@@ -9,9 +9,11 @@ namespace IRacingOverlay.App.ViewModels;
 ///
 /// Most makes render as a monochrome vector mark (see <see cref="ManufacturerMarks"/>),
 /// tinted by the caller so it sits in the panel material rather than adding a
-/// colour. The handful with no CC0 artwork upstream (Dallara, Ligier, Mercedes,
-/// Radical, Ruf) fall back to the short brand abbreviation below, so those rows
-/// still identify the car instead of showing an empty cell.
+/// colour. The four whose logos are wordmarks with no CC0 artwork upstream
+/// (Dallara, Ligier, Radical, Ruf) fall back to the short brand abbreviation
+/// below, so those rows still identify the car instead of showing an empty
+/// cell - a wordmark squeezed into the 22x14 badge box is unreadable at row
+/// size, so the abbreviation is the better rendering, not a stopgap.
 /// </summary>
 internal static class ManufacturerBadge
 {
