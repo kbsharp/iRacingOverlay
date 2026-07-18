@@ -59,10 +59,15 @@ rings — inverted), and the marks are drawn into a box **wider than it is tall*
 (22×14), because several are very wide and flat and collapse to a hairline when
 fitted into a square.
 
-Five makes iRacing fields have no CC0 mark upstream — **Dallara, Ligier,
-Mercedes, Radical and Ruf** — and fall back to a short brand abbreviation
-(`MER`, `DAL`) in the same chip, so those rows still identify the car. See
-`ManufacturerBadge` (App) for the mark/abbreviation split.
+Four makes iRacing fields have no CC0 mark upstream — **Dallara, Ligier,
+Radical and Ruf** — and fall back to a short brand abbreviation (`DAL`, `LIG`)
+in the same chip, so those rows still identify the car. All four are *wordmark*
+logos, and a wordmark fitted to the 22×14 badge box gives roughly 3px per
+letter — illegible at row size — so the abbreviation is the intended final
+rendering rather than a stopgap. **Mercedes** was in this group until its star
+was hand-authored: unlike the wordmarks it's pure geometry (a ring plus a
+six-vertex star polygon), so it needed no upstream artwork and reads cleanly at
+14px. See `ManufacturerBadge` (App) for the mark/abbreviation split.
 
 **Lap times & the fastest-lap highlight:** best/last come from
 `CarIdxBestLapTime`/`CarIdxLastLapTime` (formatted `m:ss.fff` by
