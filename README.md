@@ -142,8 +142,9 @@ used to be hardcoded, run-at-startup, and a layout reset. See
 Still open:
 
 - Delta bar (lap delta to session/all-time best)
-- Extending the manufacturer badge to the relative, and vector marks for the five
-  makes Simple Icons doesn't cover (Dallara, Ligier, Mercedes, Radical, Ruf)
+- Extending the manufacturer badge to the relative (the four makes without a CC0
+  mark — Dallara, Ligier, Radical, Ruf — are wordmarks, so their abbreviation
+  chip is the intended rendering rather than something to replace)
 - Drag-to-resize widgets — the settings window offers a fixed set of scale steps;
   resizing a widget by its corner is the natural next step
 - **Theme the settings window's controls.** The sliders, checkboxes and combo

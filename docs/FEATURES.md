@@ -104,9 +104,10 @@ churn.
 - 12 cars per class by default, plus the player if outside that. Verified
   rendering a 40-car three-class demo grid; a single class larger than the
   configured cap truncates (plus player). Adjustable 5–60 in Settings.
-- Five makes (Dallara, Ligier, Mercedes, Radical, Ruf) have no CC0 vector mark
-  and show a brand abbreviation instead. McLaren's upstream mark is a wordmark,
-  so it reads denser than the others at row size.
+- Four makes (Dallara, Ligier, Radical, Ruf) have no CC0 vector mark and show a
+  brand abbreviation instead. All four are wordmarks, so the abbreviation is the
+  intended rendering, not a stopgap (see the badge section above). McLaren's
+  upstream mark is a wordmark too, so it reads denser than the others at row size.
 - No iRating ▲/▼ position-change arrows (shown in reference overlays) — needs
   per-driver start-position tracking. A roadmap item.
 - Demo-mode gaps are exaggerated (tens of seconds between adjacent positions)
@@ -916,8 +917,7 @@ on the content root (see the tray icon section).
 ## Not yet implemented
 
 Tracked in the [README roadmap](../README.md#roadmap): delta bar, extending the
-manufacturer badge to the relative, vector marks for the five makes Simple Icons
-doesn't cover, drag-to-resize widgets, theming the settings window's stock WPF
+manufacturer badge to the relative, drag-to-resize widgets, theming the settings window's stock WPF
 controls, a speed readout for the existing km/h / mph preference, a configurable
 telemetry refresh rate, per-car/track settings profiles, and pinning the tray icon.
 
