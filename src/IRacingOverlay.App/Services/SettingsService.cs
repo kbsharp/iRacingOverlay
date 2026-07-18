@@ -40,22 +40,74 @@ public sealed class SettingsService
         _saveTimer.Tick += (_, _) => SaveNow();
     }
 
-    /// <summary>The settings as loaded at startup - read once to seed the initial
-    /// scale and window positions.</summary>
+    /// <summary>Raised after any change, with the new settings, so the app can
+    /// re-apply scale/visibility/units without each caller having to.</summary>
+    public event EventHandler<OverlaySettings>? Changed;
+
+    /// <summary>The current settings - seeded from disk at startup and updated
+    /// in place by every setter here.</summary>
     public OverlaySettings Current => _current;
 
-    /// <summary>Records a widget's new position and schedules a debounced save.</summary>
+    /// <summary>Records a widget's new position and schedules a debounced save.
+    /// Unlike the other setters this does <b>not</b> raise <see cref="Changed"/>:
+    /// it fires continuously while a window is dragged, and nothing needs to
+    /// react to a position but the disk.</summary>
     public void SetWindowPosition(string key, double left, double top)
     {
         _windows[key] = new WindowPosition(left, top);
         ScheduleSave();
     }
 
-    /// <summary>Records a new UI scale and schedules a debounced save.</summary>
+    /// <summary>Records a new shared UI scale and schedules a debounced save.</summary>
     public void SetScale(double scale)
+        => Update(_current with { Scale = scale });
+
+    /// <summary>Turns a widget on or off.</summary>
+    public void SetWidgetEnabled(string widgetId, bool enabled)
+        => Update(_current with { EnabledWidgets = With(_current.EnabledWidgets, widgetId, enabled) });
+
+    /// <summary>Overrides one widget's scale, or clears the override (null) so it
+    /// follows the shared scale again.</summary>
+    public void SetWidgetScale(string widgetId, double? scale)
     {
-        _current = _current with { Scale = scale };
-        ScheduleSave();
+        var scales = new Dictionary<string, double>(_current.WidgetScales);
+        if (scale is { } value)
+        {
+            scales[widgetId] = value;
+        }
+        else
+        {
+            scales.Remove(widgetId);
+        }
+
+        Update(_current with { WidgetScales = scales });
+    }
+
+    /// <summary>Makes a widget transparent to the mouse, or interactive again.</summary>
+    public void SetClickThrough(string widgetId, bool clickThrough)
+        => Update(_current with { ClickThroughWidgets = With(_current.ClickThroughWidgets, widgetId, clickThrough) });
+
+    /// <summary>Replaces the display units.</summary>
+    public void SetUnits(UnitPreferences units)
+        => Update(_current with { Units = units.Sanitized() });
+
+    /// <summary>Replaces the per-widget tuning numbers.</summary>
+    public void SetTuning(WidgetTuning tuning)
+        => Update(_current with { Tuning = tuning.Sanitized() });
+
+    /// <summary>Records whether the app launches with Windows. Store the value the
+    /// registry write actually achieved, not the one requested.</summary>
+    public void SetRunAtStartup(bool runAtStartup)
+        => Update(_current with { RunAtStartup = runAtStartup });
+
+    /// <summary>Forgets every saved window position, so the next launch puts each
+    /// widget back at its default corner. The recovery path for a layout that's
+    /// been dragged somewhere unusable - previously this meant deleting
+    /// settings.json by hand.</summary>
+    public void ResetLayout()
+    {
+        _windows.Clear();
+        Update(_current with { Windows = new Dictionary<string, WindowPosition>() });
     }
 
     /// <summary>Flushes any pending change to disk immediately (e.g. on exit).</summary>
@@ -95,4 +147,17 @@ public sealed class SettingsService
         _saveTimer.Stop();
         _saveTimer.Start();
     }
+
+    // Every non-position setter funnels through here so there is one place that
+    // both schedules the save and announces the change.
+    private void Update(OverlaySettings settings)
+    {
+        _current = settings;
+        ScheduleSave();
+        Changed?.Invoke(this, _current);
+    }
+
+    private static Dictionary<string, T> With<T>(
+        IReadOnlyDictionary<string, T> source, string key, T value)
+        => new(source) { [key] = value };
 }

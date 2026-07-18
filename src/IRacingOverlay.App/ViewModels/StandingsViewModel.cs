@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Standings;
@@ -15,7 +16,7 @@ namespace IRacingOverlay.App.ViewModels;
 /// </summary>
 public sealed class StandingsViewModel : OverlayViewModelBase
 {
-    private const int MaxPerClass = 12;
+    private int _maxPerClass = new WidgetTuning().StandingsMaxPerClass;
 
     private SessionMetadata? _metadata;
     private string _sessionText = "SESSION";
@@ -40,11 +41,14 @@ public sealed class StandingsViewModel : OverlayViewModelBase
         private set => SetProperty(ref _carCountText, value);
     }
 
-    public void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
+    public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
 
-    public void ApplyTelemetry(TelemetrySnapshot snapshot)
+    public override void ApplySettings(OverlaySettings settings)
+        => _maxPerClass = settings.Tuning.StandingsMaxPerClass;
+
+    public override void ApplyTelemetry(TelemetrySnapshot snapshot)
     {
-        var groups = StandingsCalculator.Compute(snapshot, _metadata, MaxPerClass);
+        var groups = StandingsCalculator.Compute(snapshot, _metadata, _maxPerClass);
 
         UpdateHeader(snapshot);
 

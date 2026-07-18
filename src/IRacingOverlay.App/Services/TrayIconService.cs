@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Windows.Forms;
+using IRacingOverlay.Core.Settings;
 
 namespace IRacingOverlay.App.Services;
 
@@ -8,31 +9,38 @@ namespace IRacingOverlay.App.Services;
 /// windows are borderless, topmost, and have no taskbar entry, so they can
 /// end up hidden behind a fullscreen game or dragged off-screen with no
 /// obvious way back - and closing the launching terminal was previously the
-/// only way to stop the app. This gives Show/Hide for each window and the
-/// one real Exit path, independent of how the app was launched.
+/// only way to stop the app. This gives a toggle for each widget, the shared
+/// scale, the settings window, and the one real Exit path.
+///
+/// The widget items are <b>checkboxes, not "Show" commands</b>: a menu that can
+/// only reveal a widget has no answer for "I don't want the radar", and the
+/// choice is persisted, so switching one off sticks across restarts.
 /// </summary>
 public sealed class TrayIconService : IDisposable
 {
     private readonly NotifyIcon _icon;
+    private readonly SettingsService _settings;
+
+    // Kept so the menu can be re-synced when settings change somewhere else -
+    // the settings window drives the same values, and a stale checkmark here
+    // would be worse than no checkmark at all.
+    private readonly Dictionary<string, ToolStripMenuItem> _widgetItems = [];
+    private readonly List<(ToolStripMenuItem Item, double Scale)> _scaleItems = [];
 
     // Revealed only once an update has been downloaded and is ready to install.
-    // Kept as fields so the composition root can flip it on from the UI thread.
     private readonly ToolStripMenuItem _updateItem;
     private readonly ToolStripSeparator _updateSeparator;
     private Action? _applyUpdate;
 
     public TrayIconService(
-        System.Windows.Window standingsWindow,
-        System.Windows.Window relativeWindow,
-        System.Windows.Window fuelWindow,
-        System.Windows.Window setupWindow,
-        System.Windows.Window radarWindow,
-        System.Windows.Window? devControlWindow,
-        Action<double> setScale,
+        IReadOnlyList<OverlayWidget> widgets,
+        SettingsService settings,
+        Action showSettings,
         Action requestExit,
-        Action checkForUpdates,
-        double initialScale)
+        Action checkForUpdates)
     {
+        _settings = settings;
+
         var menu = new ContextMenuStrip();
 
         // Update controls live at the very top so a ready update is the first
@@ -43,39 +51,32 @@ public sealed class TrayIconService : IDisposable
         menu.Items.Add(_updateItem);
         menu.Items.Add(_updateSeparator);
 
-        menu.Items.Add("Show Standings", null, (_, _) => Reveal(standingsWindow));
-        menu.Items.Add("Show Relative", null, (_, _) => Reveal(relativeWindow));
-        menu.Items.Add("Show Fuel", null, (_, _) => Reveal(fuelWindow));
-        menu.Items.Add("Show Setup", null, (_, _) => Reveal(setupWindow));
-        menu.Items.Add("Show Radar", null, (_, _) => Reveal(radarWindow));
-
-        menu.Items.Add(new ToolStripSeparator());
-        var scaleMenu = new ToolStripMenuItem("UI Scale");
-        foreach (var (label, value) in new[] { ("100%", 1.0), ("125%", 1.25), ("150%", 1.5), ("175%", 1.75) })
+        foreach (var widget in widgets.Where(w => w.IsConfigurable))
         {
-            // Radio-style: the current scale is ticked, and picking a new one moves
-            // the tick. initialScale reflects the persisted choice restored at launch.
-            var item = new ToolStripMenuItem(label) { Checked = Math.Abs(value - initialScale) < 0.001 };
-            item.Click += (_, _) =>
+            var item = new ToolStripMenuItem(widget.DisplayName)
             {
-                foreach (ToolStripMenuItem other in scaleMenu.DropDownItems)
-                {
-                    other.Checked = false;
-                }
-
-                item.Checked = true;
-                setScale(value);
+                CheckOnClick = true,
+                Checked = settings.Current.IsWidgetEnabled(widget.Id),
             };
-            scaleMenu.DropDownItems.Add(item);
+
+            var id = widget.Id;
+            item.Click += (_, _) => _settings.SetWidgetEnabled(id, item.Checked);
+            _widgetItems[id] = item;
+            menu.Items.Add(item);
         }
 
-        menu.Items.Add(scaleMenu);
-
-        if (devControlWindow is not null)
+        // The demo-only dev panel keeps a plain "show" command - it isn't a
+        // persisted preference, just scaffolding to reveal.
+        foreach (var widget in widgets.Where(w => !w.IsConfigurable))
         {
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Dev Controls", null, (_, _) => Reveal(devControlWindow));
+            var window = widget.Window;
+            menu.Items.Add(widget.DisplayName, null, (_, _) => Reveal(window));
         }
+
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(BuildScaleMenu(settings.Current.Scale));
+        menu.Items.Add("Settings...", null, (_, _) => showSettings());
 
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Check for updates", null, (_, _) => checkForUpdates());
@@ -89,7 +90,19 @@ public sealed class TrayIconService : IDisposable
             ContextMenuStrip = menu,
         };
 
-        _icon.DoubleClick += (_, _) => Reveal(relativeWindow);
+        // Double-click reveals the relative - the glance widget, and the most
+        // likely one to be hunting for.
+        var relative = widgets.FirstOrDefault(w => w.Id == WidgetIds.Relative);
+        if (relative is not null)
+        {
+            _icon.DoubleClick += (_, _) =>
+            {
+                _settings.SetWidgetEnabled(relative.Id, true);
+                Reveal(relative.Window);
+            };
+        }
+
+        settings.Changed += (_, updated) => Sync(updated);
     }
 
     /// <summary>
@@ -120,6 +133,39 @@ public sealed class TrayIconService : IDisposable
         _icon.Visible = false;
         _icon.Dispose();
     }
+
+    private ToolStripMenuItem BuildScaleMenu(double initialScale)
+    {
+        var scaleMenu = new ToolStripMenuItem("UI Scale");
+        foreach (var (label, value) in new[] { ("100%", 1.0), ("125%", 1.25), ("150%", 1.5), ("175%", 1.75) })
+        {
+            // Radio-style: the current scale is ticked, and picking a new one moves
+            // the tick. initialScale reflects the persisted choice restored at launch.
+            var item = new ToolStripMenuItem(label) { Checked = IsSameScale(value, initialScale) };
+            var scale = value;
+            item.Click += (_, _) => _settings.SetScale(scale);
+            _scaleItems.Add((item, scale));
+            scaleMenu.DropDownItems.Add(item);
+        }
+
+        return scaleMenu;
+    }
+
+    // Re-point every checkmark at the settings, wherever the change came from.
+    private void Sync(OverlaySettings settings)
+    {
+        foreach (var (id, item) in _widgetItems)
+        {
+            item.Checked = settings.IsWidgetEnabled(id);
+        }
+
+        foreach (var (item, scale) in _scaleItems)
+        {
+            item.Checked = IsSameScale(scale, settings.Scale);
+        }
+    }
+
+    private static bool IsSameScale(double a, double b) => Math.Abs(a - b) < 0.001;
 
     private static void Reveal(System.Windows.Window window)
     {

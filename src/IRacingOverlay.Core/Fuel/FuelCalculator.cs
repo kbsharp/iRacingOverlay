@@ -60,6 +60,16 @@ public sealed class FuelCalculator
         return BuildEstimate(fuelLevelLiters);
     }
 
+    /// <summary>
+    /// The estimate as of the last <see cref="Update"/>, recomputed from the
+    /// existing history without advancing any lap-detection state.
+    ///
+    /// Exists so a caller can re-render (after a units change, say) without
+    /// feeding the same frame through <see cref="Update"/> twice - which would
+    /// look harmless but re-enters the refuel and lap-step detection.
+    /// </summary>
+    public FuelEstimate Current => BuildEstimate(_lastFuelLevel);
+
     public void Reset()
     {
         _lapUsages.Clear();

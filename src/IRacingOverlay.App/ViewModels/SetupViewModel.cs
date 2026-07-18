@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Setup;
@@ -59,9 +60,12 @@ public sealed class SetupViewModel : OverlayViewModelBase
         private set => SetProperty(ref _shouldFlash, value);
     }
 
-    public void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
+    public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
 
-    public void ApplyTelemetry(TelemetrySnapshot snapshot)
+    public override void ApplySettings(OverlaySettings settings)
+        => _tracker.FlashDurationSeconds = settings.Tuning.SetupFlashSeconds;
+
+    public override void ApplyTelemetry(TelemetrySnapshot snapshot)
     {
         var sessionType = SessionFormat.ResolveSessionType(_metadata?.SessionTypesByNum, snapshot.SessionNum);
         var setupName = _metadata?.PlayerSetupName ?? string.Empty;

@@ -39,6 +39,13 @@ public static class OverlaySettingsSerializer
             {
                 Scale = LayoutGuard.SanitizeScale(parsed.Scale),
                 Windows = parsed.Windows ?? new Dictionary<string, WindowPosition>(),
+                EnabledWidgets = parsed.EnabledWidgets ?? new Dictionary<string, bool>(),
+                ClickThroughWidgets = parsed.ClickThroughWidgets ?? new Dictionary<string, bool>(),
+                // Per-widget scales go through the same band as the global one, so
+                // a hand-edited 0.01 can't shrink one widget out of existence.
+                WidgetScales = SanitizeScales(parsed.WidgetScales),
+                Units = (parsed.Units ?? new UnitPreferences()).Sanitized(),
+                Tuning = (parsed.Tuning ?? new WidgetTuning()).Sanitized(),
             };
         }
         catch (JsonException)
@@ -46,5 +53,16 @@ public static class OverlaySettingsSerializer
             // Corrupt/hand-mangled file - fall back to defaults rather than fail.
             return new OverlaySettings();
         }
+    }
+
+    private static IReadOnlyDictionary<string, double> SanitizeScales(
+        IReadOnlyDictionary<string, double>? scales)
+    {
+        if (scales is null || scales.Count == 0)
+        {
+            return new Dictionary<string, double>();
+        }
+
+        return scales.ToDictionary(pair => pair.Key, pair => LayoutGuard.SanitizeScale(pair.Value));
     }
 }

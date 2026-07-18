@@ -101,4 +101,33 @@ public class SetupReminderTrackerTests
 
         Assert.True(state.ShouldFlash);
     }
+
+    [Fact]
+    public void FlashDurationSeconds_DefaultsToSixty()
+        => Assert.Equal(60, new SetupReminderTracker().FlashDurationSeconds);
+
+    [Fact]
+    public void Update_WithACustomFlashDuration_UsesItForTheWindow()
+    {
+        var tracker = new SetupReminderTracker { FlashDurationSeconds = 20 };
+
+        tracker.Update(1, "Race", "race_setup.sto", isModified: false, sessionTimeSeconds: 0);
+
+        Assert.True(tracker.Update(1, "Race", "s.sto", false, 19.9).ShouldFlash);
+        Assert.False(tracker.Update(1, "Race", "s.sto", false, 20.0).ShouldFlash);
+    }
+
+    [Fact]
+    public void Update_ShorteningTheDurationMidFlash_EndsItImmediately()
+    {
+        // The settings surface can change this while a flash is running; the next
+        // frame must honour the new value rather than finish the old window.
+        var tracker = new SetupReminderTracker();
+        tracker.Update(1, "Race", "race_setup.sto", isModified: false, sessionTimeSeconds: 0);
+        Assert.True(tracker.Update(1, "Race", "s.sto", false, 30).ShouldFlash);
+
+        tracker.FlashDurationSeconds = 10;
+
+        Assert.False(tracker.Update(1, "Race", "s.sto", false, 30).ShouldFlash);
+    }
 }

@@ -68,4 +68,90 @@ public class OverlaySettingsSerializerTests
 
         Assert.Equal(1.5, settings.Scale);
     }
+
+    [Fact]
+    public void RoundTrip_PreservesTheWidgetPreferences()
+    {
+        var original = new OverlaySettings
+        {
+            EnabledWidgets = new Dictionary<string, bool> { [WidgetIds.Radar] = false },
+            WidgetScales = new Dictionary<string, double> { [WidgetIds.Standings] = 1.5 },
+            ClickThroughWidgets = new Dictionary<string, bool> { [WidgetIds.Relative] = true },
+            Units = new UnitPreferences { Fuel = FuelUnit.Gallons, Temperature = TemperatureUnit.Fahrenheit },
+            Tuning = new WidgetTuning { RadarRangeMeters = 80, RelativeSlotsPerSide = 4 },
+            RunAtStartup = true,
+        };
+
+        var restored = OverlaySettingsSerializer.Deserialize(OverlaySettingsSerializer.Serialize(original));
+
+        Assert.False(restored.IsWidgetEnabled(WidgetIds.Radar));
+        Assert.Equal(1.5, restored.ScaleFor(WidgetIds.Standings));
+        Assert.True(restored.IsClickThrough(WidgetIds.Relative));
+        Assert.Equal(FuelUnit.Gallons, restored.Units.Fuel);
+        Assert.Equal(TemperatureUnit.Fahrenheit, restored.Units.Temperature);
+        Assert.Equal(80, restored.Tuning.RadarRangeMeters);
+        Assert.Equal(4, restored.Tuning.RelativeSlotsPerSide);
+        Assert.True(restored.RunAtStartup);
+    }
+
+    [Fact]
+    public void Deserialize_SettingsFileFromBeforeTheseFieldsExisted_GetsDefaults()
+    {
+        // The shape the app shipped with. It must still load, and every widget
+        // must still be on - a silently disabled overlay after an update would be
+        // indistinguishable from a broken one.
+        var json = """{ "scale": 1.25, "windows": { "FuelWindow": { "left": 80, "top": 140 } } }""";
+
+        var settings = OverlaySettingsSerializer.Deserialize(json);
+
+        Assert.Equal(1.25, settings.Scale);
+        Assert.Equal(new WindowPosition(80, 140), settings.Windows["FuelWindow"]);
+        Assert.All(WidgetIds.All, id => Assert.True(settings.IsWidgetEnabled(id)));
+        Assert.All(WidgetIds.All, id => Assert.False(settings.IsClickThrough(id)));
+        Assert.Equal(new UnitPreferences(), settings.Units);
+        Assert.Equal(new WidgetTuning(), settings.Tuning);
+        Assert.False(settings.RunAtStartup);
+    }
+
+    [Fact]
+    public void Deserialize_NullMapsAndNestedRecords_BecomeEmptyDefaults()
+    {
+        var json = """
+            {
+              "windows": null, "enabledWidgets": null, "widgetScales": null,
+              "clickThroughWidgets": null, "units": null, "tuning": null
+            }
+            """;
+
+        var settings = OverlaySettingsSerializer.Deserialize(json);
+
+        Assert.Empty(settings.Windows);
+        Assert.Empty(settings.EnabledWidgets);
+        Assert.Empty(settings.WidgetScales);
+        Assert.Empty(settings.ClickThroughWidgets);
+        Assert.Equal(new UnitPreferences(), settings.Units);
+        Assert.Equal(new WidgetTuning(), settings.Tuning);
+    }
+
+    [Fact]
+    public void Deserialize_OutOfRangePerWidgetScale_IsSanitizedLikeTheGlobalOne()
+    {
+        var json = """{ "widgetScales": { "RadarWindow": 0.01, "FuelWindow": 1.5 } }""";
+
+        var settings = OverlaySettingsSerializer.Deserialize(json);
+
+        Assert.Equal(1.0, settings.ScaleFor(WidgetIds.Radar));
+        Assert.Equal(1.5, settings.ScaleFor(WidgetIds.Fuel));
+    }
+
+    [Fact]
+    public void Deserialize_OutOfRangeTuning_IsClamped()
+    {
+        var json = """{ "tuning": { "radarRangeMeters": 99999, "relativeSlotsPerSide": 0 } }""";
+
+        var settings = OverlaySettingsSerializer.Deserialize(json);
+
+        Assert.Equal(200, settings.Tuning.RadarRangeMeters);
+        Assert.Equal(1, settings.Tuning.RelativeSlotsPerSide);
+    }
 }
