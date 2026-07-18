@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Radar;
 using IRacingOverlay.Core.Session;
@@ -20,6 +21,8 @@ public sealed class RadarViewModel : OverlayViewModelBase
     // Don't learn the track while parked, spun or crawling - a stationary heading
     // would poison a bucket. Any real racing speed clears this easily.
     private const double MinMappingSpeedMps = 3.0;
+
+    private double _rangeMeters = new WidgetTuning().RadarRangeMeters;
 
     private readonly TrackMap _trackMap = new();
     private SessionMetadata? _metadata;
@@ -106,9 +109,12 @@ public sealed class RadarViewModel : OverlayViewModelBase
         }
     }
 
-    public void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
+    public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
 
-    public void ApplyTelemetry(TelemetrySnapshot snapshot)
+    public override void ApplySettings(OverlaySettings settings)
+        => _rangeMeters = settings.Tuning.RadarRangeMeters;
+
+    public override void ApplyTelemetry(TelemetrySnapshot snapshot)
     {
         var state = snapshot.CarLeftRight;
         IsActive = RadarFormat.IsActive(state);
@@ -124,7 +130,7 @@ public sealed class RadarViewModel : OverlayViewModelBase
         }
 
         var trackLength = _metadata?.TrackLengthMeters ?? 0;
-        var result = RadarCalculator.Compute(snapshot, _metadata, _trackMap, trackLength);
+        var result = RadarCalculator.Compute(snapshot, _metadata, _trackMap, trackLength, _rangeMeters);
 
         MapReady = result.MapReady;
         UpdateBlips(result.Blips);

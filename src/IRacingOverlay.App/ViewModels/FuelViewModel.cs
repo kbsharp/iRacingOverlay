@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Fuel;
 using IRacingOverlay.Core.Telemetry;
@@ -26,6 +27,11 @@ public sealed class FuelViewModel : OverlayViewModelBase
     private bool _willFinish = true;
     private string _addFuelText = TelemetryFormat.Placeholder;
     private string _saveTargetText = TelemetryFormat.Placeholder;
+    private string _fuelUnitLabel = UnitFormat.FuelLabel(FuelUnit.Liters);
+
+    private FuelUnit _fuelUnit = FuelUnit.Liters;
+    private double _safetyMarginLaps = new WidgetTuning().FuelSafetyMarginLaps;
+    private TelemetrySnapshot? _lastSnapshot;
 
     public FuelViewModel(
         FuelCalculator fuelCalculator,
@@ -113,32 +119,63 @@ public sealed class FuelViewModel : OverlayViewModelBase
         private set => SetProperty(ref _saveTargetText, value);
     }
 
-    public void ApplyTelemetry(TelemetrySnapshot snapshot)
+    /// <summary>"L" or "gal" - bound by the window so the unit shown next to every
+    /// figure follows the setting.</summary>
+    public string FuelUnitLabel
     {
-        var fuel = snapshot.FuelLevelLiters;
+        get => _fuelUnitLabel;
+        private set => SetProperty(ref _fuelUnitLabel, value);
+    }
+
+    public override void ApplySettings(OverlaySettings settings)
+    {
+        _fuelUnit = settings.Units.Fuel;
+        _safetyMarginLaps = settings.Tuning.FuelSafetyMarginLaps;
+        FuelUnitLabel = UnitFormat.FuelLabel(_fuelUnit);
+
+        // Re-render the last frame rather than waiting up to ~66ms for the next
+        // one, so the numbers change the instant the setting does. This must not
+        // touch the trackers - they're stateful lap detectors, and feeding them
+        // the same frame twice is exactly the sort of thing that corrupts a
+        // rolling average. Only the formatting and the (pure) strategy are redone.
+        if (_lastSnapshot is { } snapshot)
+        {
+            Render(snapshot, _fuelCalculator.Current);
+        }
+    }
+
+    public override void ApplyTelemetry(TelemetrySnapshot snapshot)
+    {
+        _lastSnapshot = snapshot;
 
         _lapTimeTracker.Update(snapshot.Lap, snapshot.SessionTimeSeconds);
-        var estimate = _fuelCalculator.Update(snapshot.Lap, fuel);
+        Render(snapshot, _fuelCalculator.Update(snapshot.Lap, snapshot.FuelLevelLiters));
+    }
+
+    private void Render(TelemetrySnapshot snapshot, FuelEstimate estimate)
+    {
+        var fuel = snapshot.FuelLevelLiters;
 
         var raceLaps = FuelStrategyCalculator.EstimateRaceLapsRemaining(
             snapshot.SessionLapsRemain,
             snapshot.SessionTimeRemainSeconds,
             _lapTimeTracker.AverageLapTimeSeconds);
-        var strategy = FuelStrategyCalculator.Compute(fuel, estimate.AverageLitersPerLap, raceLaps);
+        var strategy = FuelStrategyCalculator.Compute(
+            fuel, estimate.AverageLitersPerLap, raceLaps, _safetyMarginLaps);
 
-        FuelLevelText = TelemetryFormat.Liters(fuel);
+        FuelLevelText = UnitFormat.Fuel(fuel, _fuelUnit);
         FuelLapsText = TelemetryFormat.Laps(estimate.EstimatedLapsRemaining);
-        AveragePerLapText = TelemetryFormat.Liters(estimate.AverageLitersPerLap);
-        LastLapText = TelemetryFormat.Liters(estimate.LastLapLiters);
+        AveragePerLapText = UnitFormat.Fuel(estimate.AverageLitersPerLap, _fuelUnit);
+        LastLapText = UnitFormat.Fuel(estimate.LastLapLiters, _fuelUnit);
 
         RaceLapsText = strategy.RaceLapsRemaining is { } laps
             ? ((int)laps).ToString(System.Globalization.CultureInfo.InvariantCulture)
             : TelemetryFormat.Placeholder;
 
         HasStrategy = strategy.FuelToFinishLiters is not null;
-        ToFinishText = TelemetryFormat.Liters(strategy.FuelToFinishLiters);
-        AddFuelText = TelemetryFormat.Liters(strategy.FuelToAddLiters);
-        SaveTargetText = TelemetryFormat.Liters(strategy.SaveTargetLitersPerLap);
+        ToFinishText = UnitFormat.Fuel(strategy.FuelToFinishLiters, _fuelUnit);
+        AddFuelText = UnitFormat.Fuel(strategy.FuelToAddLiters, _fuelUnit);
+        SaveTargetText = UnitFormat.Fuel(strategy.SaveTargetLitersPerLap, _fuelUnit);
         WillFinish = strategy.WillFinish;
         MarginText = strategy.MarginLaps is { } margin ? SessionFormat.Delta(margin) : TelemetryFormat.Placeholder;
         MarginLabel = strategy.WillFinish ? "LAPS SPARE" : "LAPS SHORT";

@@ -15,7 +15,10 @@ public class WidgetTuningTests
         Assert.Equal(60, tuning.SetupFlashSeconds);
         Assert.Equal(60, tuning.RadarRangeMeters);
         Assert.Equal(3, tuning.RelativeSlotsPerSide);
-        Assert.Equal(30, tuning.StandingsMaxPerClass);
+
+        // 12, not the calculator's own 30 default: 12 is what StandingsViewModel
+        // has always passed, so it's the behaviour an untouched file must keep.
+        Assert.Equal(12, tuning.StandingsMaxPerClass);
     }
 
     [Fact]

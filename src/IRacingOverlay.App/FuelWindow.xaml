@@ -70,7 +70,7 @@
                                FontWeight="Bold"
                                Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextPrimary}" />
-                    <TextBlock Text="L"
+                    <TextBlock Text="{Binding FuelUnitLabel}"
                                Margin="6,0,0,6"
                                VerticalAlignment="Bottom"
                                FontSize="14"
@@ -126,7 +126,7 @@
                                    FontWeight="Bold"
                                    Typography.NumeralAlignment="Tabular"
                                    Foreground="{StaticResource TextPrimary}" />
-                        <TextBlock Text="L needed"
+                        <TextBlock Text="{Binding FuelUnitLabel, StringFormat={}{0} needed}"
                                    Margin="6,0,0,2"
                                    VerticalAlignment="Bottom"
                                    Style="{StaticResource Caption}" />
@@ -192,7 +192,7 @@
                                FontWeight="Bold"
                                Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource Accent}" />
-                    <TextBlock Text="L" Margin="3,0,0,2" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
+                    <TextBlock Text="{Binding FuelUnitLabel}" Margin="3,0,0,2" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">

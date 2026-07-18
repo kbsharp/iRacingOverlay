@@ -27,11 +27,12 @@ namespace IRacingOverlay.App;
 /// </summary>
 public partial class App : System.Windows.Application
 {
-    private readonly List<Window> _scalableWindows = [];
+    private readonly List<OverlayWidget> _widgets = [];
     private ITelemetrySource? _telemetrySource;
     private TrayIconService? _trayIcon;
     private UpdateService? _updateService;
     private SettingsService? _settingsService;
+    private SettingsWindow? _settingsWindow;
     private bool _isExiting;
 
     /// <summary>
@@ -74,78 +75,107 @@ public partial class App : System.Windows.Application
             ? new SimulatedTelemetrySource()
             : new IrsdkTelemetrySource();
 
+        // The widget registry: one entry per window, replacing what used to be
+        // five view models named individually across four event handlers, a
+        // window list, and the tray service's parameter list.
+        _widgets.AddRange(
+        [
+            new OverlayWidget(WidgetIds.Standings, "Standings",
+                new StandingsWindow { DataContext = standingsViewModel }, standingsViewModel),
+            new OverlayWidget(WidgetIds.Relative, "Relative",
+                new RelativeWindow { DataContext = relativeViewModel }, relativeViewModel),
+            new OverlayWidget(WidgetIds.Fuel, "Fuel",
+                new FuelWindow { DataContext = fuelViewModel }, fuelViewModel),
+            new OverlayWidget(WidgetIds.Setup, "Setup",
+                new SetupWindow { DataContext = setupViewModel }, setupViewModel),
+            new OverlayWidget(WidgetIds.Radar, "Radar",
+                new RadarWindow { DataContext = radarViewModel }, radarViewModel),
+        ]);
+
+        if (_telemetrySource is IDemoControls demoControls)
+        {
+            // Demo-only scaffolding: scaled and positioned like a widget, but not
+            // offered as a toggle, so it doesn't clutter the settings surface.
+            var devControlViewModel = new DevControlViewModel(demoControls);
+            _widgets.Add(new OverlayWidget(
+                "DevControlWindow", "Dev Controls",
+                new DevControlWindow { DataContext = devControlViewModel },
+                ViewModel: null,
+                IsConfigurable: false));
+        }
+
+        var viewModels = _widgets.Select(w => w.ViewModel).OfType<OverlayViewModelBase>().ToList();
+
         _telemetrySource.TelemetryReceived += (_, snapshot) => Dispatcher.BeginInvoke(() =>
         {
-            standingsViewModel.ApplyTelemetry(snapshot);
-            relativeViewModel.ApplyTelemetry(snapshot);
-            fuelViewModel.ApplyTelemetry(snapshot);
-            setupViewModel.ApplyTelemetry(snapshot);
-            radarViewModel.ApplyTelemetry(snapshot);
+            foreach (var viewModel in viewModels)
+            {
+                viewModel.ApplyTelemetry(snapshot);
+            }
         });
         _telemetrySource.SessionMetadataReceived += (_, metadata) => Dispatcher.BeginInvoke(() =>
         {
-            standingsViewModel.ApplySessionMetadata(metadata);
-            relativeViewModel.ApplySessionMetadata(metadata);
-            setupViewModel.ApplySessionMetadata(metadata);
-            radarViewModel.ApplySessionMetadata(metadata);
+            foreach (var viewModel in viewModels)
+            {
+                viewModel.ApplySessionMetadata(metadata);
+            }
         });
         _telemetrySource.ConnectionChanged += (_, connected) => Dispatcher.BeginInvoke(() =>
         {
-            standingsViewModel.SetConnectionState(connected);
-            relativeViewModel.SetConnectionState(connected);
-            fuelViewModel.SetConnectionState(connected);
-            setupViewModel.SetConnectionState(connected);
-            radarViewModel.SetConnectionState(connected);
+            foreach (var viewModel in viewModels)
+            {
+                viewModel.SetConnectionState(connected);
+            }
         });
         _telemetrySource.ErrorOccurred += (_, exception) => Dispatcher.BeginInvoke(() =>
         {
-            standingsViewModel.ReportError(exception);
-            relativeViewModel.ReportError(exception);
-            fuelViewModel.ReportError(exception);
-            setupViewModel.ReportError(exception);
-            radarViewModel.ReportError(exception);
+            foreach (var viewModel in viewModels)
+            {
+                viewModel.ReportError(exception);
+            }
         });
 
-        var standingsWindow = new StandingsWindow { DataContext = standingsViewModel };
-        var relativeWindow = new RelativeWindow { DataContext = relativeViewModel };
-        var fuelWindow = new FuelWindow { DataContext = fuelViewModel };
-        var setupWindow = new SetupWindow { DataContext = setupViewModel };
-        var radarWindow = new RadarWindow { DataContext = radarViewModel };
-        _scalableWindows.AddRange([standingsWindow, relativeWindow, fuelWindow, setupWindow, radarWindow]);
-
-        DevControlWindow? devControlWindow = null;
-        if (_telemetrySource is IDemoControls demoControls)
-        {
-            var devControlViewModel = new DevControlViewModel(demoControls);
-            devControlWindow = new DevControlWindow { DataContext = devControlViewModel };
-            _scalableWindows.Add(devControlWindow);
-        }
-
-        MainWindow = relativeWindow;
+        MainWindow = _widgets.First(w => w.Id == WidgetIds.Relative).Window;
 
         // Restore each widget to its saved position (falling back to the XAML
-        // default when there's no entry or it's off-screen), then show it.
-        // Closing is intercepted to hide-not-exit; see HideInsteadOfClose.
-        foreach (var window in _scalableWindows)
+        // default when there's no entry or it's off-screen), then show it unless
+        // the user has switched it off. Closing is intercepted to hide-not-exit.
+        foreach (var widget in _widgets)
         {
-            window.Closing += HideInsteadOfClose;
-            RestorePosition(window);
-            window.Show();
+            widget.Window.Closing += HideInsteadOfClose;
+            RestorePosition(widget.Window);
+
+            if (settings.IsWidgetEnabled(widget.Id))
+            {
+                widget.Window.Show();
+            }
         }
 
-        // Apply the saved UI scale to every window (SizeToContent then refits),
-        // then start tracking moves - wired after the scale-driven resize so it
-        // doesn't record a spurious position on launch.
-        SetScale(settings.Scale);
-        foreach (var window in _scalableWindows)
+        // Push the saved settings through every widget (scale, click-through) and
+        // view model (units, tuning), then start tracking moves - wired after the
+        // scale-driven resize so it doesn't record a spurious position on launch.
+        ApplySettings(settings);
+        foreach (var widget in _widgets)
         {
-            TrackPosition(window);
+            TrackPosition(widget.Window);
         }
+
+        _settingsService.Changed += (_, updated) => ApplySettings(updated);
 
         _updateService = new UpdateService();
         _trayIcon = new TrayIconService(
-            standingsWindow, relativeWindow, fuelWindow, setupWindow, radarWindow, devControlWindow,
-            SetScaleAndSave, RequestExit, () => _ = CheckForUpdatesAsync(manual: true), settings.Scale);
+            _widgets,
+            _settingsService,
+            ShowSettingsWindow,
+            RequestExit,
+            () => _ = CheckForUpdatesAsync(manual: true));
+
+        // Re-assert the startup entry if it's meant to be on: an auto-update can
+        // move the executable, and the stored path would otherwise go stale.
+        if (settings.RunAtStartup)
+        {
+            StartupService.SetEnabled(true);
+        }
 
         _telemetrySource.Start();
 
@@ -210,26 +240,71 @@ public partial class App : System.Windows.Application
         Shutdown();
     }
 
-    /// <summary>Scales every overlay window by applying a layout transform to its
-    /// content root; SizeToContent then resizes the window to fit.</summary>
-    public void SetScale(double scale)
+    /// <summary>
+    /// Pushes the current settings at every widget: scale, visibility,
+    /// click-through, and the units/tuning each view model reads. Called once at
+    /// startup and again on every settings change, so there is a single code path
+    /// for "make the UI match the settings" rather than one per control.
+    /// </summary>
+    private void ApplySettings(OverlaySettings settings)
     {
-        foreach (var window in _scalableWindows)
+        foreach (var widget in _widgets)
         {
-            if (window.Content is FrameworkElement root)
+            if (widget.Window.Content is FrameworkElement root)
             {
+                // SizeToContent then refits the window around the scaled content.
+                var scale = settings.ScaleFor(widget.Id);
                 root.LayoutTransform = new ScaleTransform(scale, scale);
             }
+
+            // The dev panel isn't user-configurable, so it's never hidden or made
+            // click-through by a settings change.
+            if (widget.IsConfigurable)
+            {
+                var enabled = settings.IsWidgetEnabled(widget.Id);
+                if (enabled && !widget.Window.IsVisible)
+                {
+                    widget.Window.Show();
+                }
+                else if (!enabled && widget.Window.IsVisible)
+                {
+                    widget.Window.Hide();
+                }
+
+                WindowInterop.SetClickThrough(widget.Window, settings.IsClickThrough(widget.Id));
+            }
+
+            widget.ViewModel?.ApplySettings(settings);
         }
     }
 
-    /// <summary>Applies a UI scale and persists it, so the tray's scale choice
-    /// survives a restart. (Startup applies the saved scale via
-    /// <see cref="SetScale"/> directly - no need to re-save what was just loaded.)</summary>
-    private void SetScaleAndSave(double scale)
+    /// <summary>Opens (or re-focuses) the settings window. Created lazily - most
+    /// sessions never open it, and it's the one window that isn't an overlay.</summary>
+    private void ShowSettingsWindow()
     {
-        SetScale(scale);
-        _settingsService?.SetScale(scale);
+        if (_settingsService is null)
+        {
+            return;
+        }
+
+        if (_settingsWindow is null)
+        {
+            _settingsWindow = new SettingsWindow
+            {
+                DataContext = new SettingsViewModel(
+                    _settingsService,
+                    _widgets.Where(w => w.IsConfigurable).Select(w => (w.Id, w.DisplayName)).ToList()),
+            };
+
+            // A normal window, so closing it should just close it - it isn't an
+            // overlay that needs the hide-not-exit treatment, it just needs to be
+            // rebuilt next time it's opened.
+            _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        }
+
+        _settingsWindow.Show();
+        _settingsWindow.WindowState = WindowState.Normal;
+        _settingsWindow.Activate();
     }
 
     /// <summary>Moves a window to its saved position if there is one and it still

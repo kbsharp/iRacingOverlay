@@ -1,4 +1,5 @@
 using System.Globalization;
+using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Relative;
 using IRacingOverlay.Core.Session;
@@ -12,9 +13,11 @@ namespace IRacingOverlay.App.ViewModels;
 /// </summary>
 public sealed class RelativeViewModel : OverlayViewModelBase
 {
-    private const int SlotsPerSide = 3;
-
     private SessionMetadata? _metadata;
+    private IReadOnlyList<RelativeRowViewModel> _rows = [];
+    private int _slotsPerSide = new WidgetTuning().RelativeSlotsPerSide;
+    private TemperatureUnit _temperatureUnit = TemperatureUnit.Celsius;
+    private TelemetrySnapshot? _lastSnapshot;
 
     private string _sessionText = "SESSION";
     private string _trackTempText = string.Empty;
@@ -28,17 +31,19 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     public RelativeViewModel(string connectedLabel = "Live")
         : base(connectedLabel)
     {
-        var rows = new RelativeRowViewModel[SlotsPerSide * 2 + 1];
-        for (var i = 0; i < rows.Length; i++)
-        {
-            rows[i] = new RelativeRowViewModel { IsAltRow = i % 2 == 1 };
-        }
-
-        Rows = rows;
+        BuildRows();
     }
 
-    /// <summary>Fixed slots: 3 ahead, the player in the middle, 3 behind.</summary>
-    public IReadOnlyList<RelativeRowViewModel> Rows { get; }
+    /// <summary>
+    /// Fixed slots: N ahead, the player in the middle, N behind. Updated in place
+    /// every frame so ordering swaps don't flicker; the collection itself is only
+    /// replaced when the slot count changes, which only a settings change can do.
+    /// </summary>
+    public IReadOnlyList<RelativeRowViewModel> Rows
+    {
+        get => _rows;
+        private set => SetProperty(ref _rows, value);
+    }
 
     public string SessionText
     {
@@ -88,12 +93,45 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         private set => SetProperty(ref _incidentsText, value);
     }
 
-    public void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
+    public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
 
-    public void ApplyTelemetry(TelemetrySnapshot snapshot)
+    public override void ApplySettings(OverlaySettings settings)
     {
+        _temperatureUnit = settings.Units.Temperature;
+
+        if (_slotsPerSide != settings.Tuning.RelativeSlotsPerSide)
+        {
+            _slotsPerSide = settings.Tuning.RelativeSlotsPerSide;
+            BuildRows();
+        }
+
+        // Re-render the last frame so the temps and the new slot count appear
+        // immediately rather than on the next telemetry tick.
+        if (_lastSnapshot is { } snapshot)
+        {
+            UpdateHeader(snapshot);
+            UpdateRows(snapshot);
+        }
+    }
+
+    public override void ApplyTelemetry(TelemetrySnapshot snapshot)
+    {
+        _lastSnapshot = snapshot;
         UpdateHeader(snapshot);
         UpdateRows(snapshot);
+    }
+
+    // Zebra striping is fixed per slot rather than per car, so it stays stable as
+    // rows update in place - which means the pattern is baked in at build time.
+    private void BuildRows()
+    {
+        var rows = new RelativeRowViewModel[_slotsPerSide * 2 + 1];
+        for (var i = 0; i < rows.Length; i++)
+        {
+            rows[i] = new RelativeRowViewModel { IsAltRow = i % 2 == 1 };
+        }
+
+        Rows = rows;
     }
 
     private void UpdateHeader(TelemetrySnapshot snapshot)
@@ -107,8 +145,8 @@ public sealed class RelativeViewModel : OverlayViewModelBase
                 ? $"{sessionType} · {snapshot.SessionLapsRemain} LAPS"
                 : sessionType;
 
-        TrackTempText = "TRK " + SessionFormat.Temperature(snapshot.TrackTempC);
-        AirTempText = "AIR " + SessionFormat.Temperature(snapshot.AirTempC);
+        TrackTempText = "TRK " + UnitFormat.Temperature(snapshot.TrackTempC, _temperatureUnit);
+        AirTempText = "AIR " + UnitFormat.Temperature(snapshot.AirTempC, _temperatureUnit);
 
         HasBrakeBias = snapshot.BrakeBiasPct > 0;
         BrakeBiasText = "BB " + snapshot.BrakeBiasPct.ToString("0.0", CultureInfo.InvariantCulture);
@@ -121,7 +159,7 @@ public sealed class RelativeViewModel : OverlayViewModelBase
 
     private void UpdateRows(TelemetrySnapshot snapshot)
     {
-        var computed = RelativeCalculator.Compute(snapshot, _metadata, SlotsPerSide);
+        var computed = RelativeCalculator.Compute(snapshot, _metadata, _slotsPerSide);
 
         var playerIndex = -1;
         for (var i = 0; i < computed.Count; i++)
@@ -146,7 +184,7 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         // Keep the player pinned to the middle slot; pad missing neighbours.
         for (var slot = 0; slot < Rows.Count; slot++)
         {
-            var sourceIndex = playerIndex + slot - SlotsPerSide;
+            var sourceIndex = playerIndex + slot - _slotsPerSide;
 
             if (sourceIndex >= 0 && sourceIndex < computed.Count)
             {

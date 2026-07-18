@@ -4,6 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using IRacingOverlay.App.ViewModels;
 using IRacingOverlay.Core.Session;
+using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Telemetry;
 using IRacingOverlay.Infrastructure.Telemetry;
 // App has UseWindowsForms on, so these names are ambiguous across the two SDKs'
@@ -53,7 +54,7 @@ internal static class Program
         var window = BuildWindow(widget, snapshot!, metadata!);
         if (window is null)
         {
-            Console.Error.WriteLine($"Unknown widget '{widget}'. Known: standings, relative.");
+            Console.Error.WriteLine($"Unknown widget '{widget}'. Known: standings, relative, settings.");
             return 1;
         }
 
@@ -106,6 +107,23 @@ internal static class Program
                 vm.SetConnectionState(true);
                 vm.ApplyTelemetry(snapshot);
                 return new IRacingOverlay.App.RelativeWindow { DataContext = vm };
+            }
+
+            case "settings":
+            {
+                // The settings window isn't telemetry-driven, but it does need a
+                // real SettingsService - which reads the user's actual
+                // settings.json. That's read-only here: nothing in this harness
+                // calls a setter, so no save is ever scheduled.
+                var settings = new IRacingOverlay.App.Services.SettingsService();
+                var widgets = WidgetIds.All
+                    .Select(id => (id, DisplayName: id.Replace("Window", string.Empty)))
+                    .ToList();
+
+                return new IRacingOverlay.App.SettingsWindow
+                {
+                    DataContext = new SettingsViewModel(settings, widgets),
+                };
             }
 
             default:
