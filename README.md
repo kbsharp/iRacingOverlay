@@ -147,10 +147,6 @@ Still open:
   chip is the intended rendering rather than something to replace)
 - Drag-to-resize widgets — the settings window offers a fixed set of scale steps;
   resizing a widget by its corner is the natural next step
-- **Theme the settings window's controls.** The sliders, checkboxes and combo
-  boxes are stock WPF, so they render in the default light chrome against the
-  dark panel. Functional and legible, but visibly not of a piece with the
-  overlay — it needs `ControlTemplate`s to match
 - A speed readout somewhere, so the (already implemented) km/h / mph preference
   has something to act on
 - Configurable telemetry refresh rate (currently fixed at ~15Hz)
