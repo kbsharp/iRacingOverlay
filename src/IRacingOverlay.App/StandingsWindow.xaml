@@ -187,20 +187,33 @@
                                                    Typography.NumeralAlignment="Tabular"
                                                    Foreground="{StaticResource TextMuted}" />
 
-                                        <!-- Manufacturer badge (placeholder abbreviation until vector marks land) -->
-                                        <Border Grid.Column="3"
-                                                CornerRadius="2"
-                                                Padding="3,1"
-                                                Height="16"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Visibility="{Binding HasManufacturer, Converter={StaticResource BoolToVis}}"
-                                                Style="{StaticResource ManufacturerBadgeBackground}">
-                                            <TextBlock Text="{Binding ManufacturerText}"
-                                                       FontSize="9"
-                                                       FontWeight="Bold"
-                                                       Style="{StaticResource ManufacturerBadgeText}" />
-                                        </Border>
+                                        <!-- Manufacturer badge: the vector mark where we have CC0 artwork,
+                                             otherwise a short brand abbreviation in the same chip. -->
+                                        <Grid Grid.Column="3"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Visibility="{Binding HasManufacturer, Converter={StaticResource BoolToVis}}">
+                                            <!-- Wider than tall: several marks (McLaren's speedmark, the
+                                                 Ford oval, the Cadillac crest) are very wide and flat, and
+                                                 collapse to a hairline if fitted into a square box. -->
+                                            <Path Data="{Binding ManufacturerMark}"
+                                                  Fill="{StaticResource TextSecondary}"
+                                                  Stretch="Uniform"
+                                                  Width="22"
+                                                  Height="14"
+                                                  VerticalAlignment="Center" />
+                                            <Border CornerRadius="2"
+                                                    Padding="3,1"
+                                                    Height="16"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding UsesManufacturerText, Converter={StaticResource BoolToVis}}"
+                                                    Style="{StaticResource ManufacturerBadgeBackground}">
+                                                <TextBlock Text="{Binding ManufacturerText}"
+                                                           FontSize="9"
+                                                           FontWeight="Bold"
+                                                           Style="{StaticResource ManufacturerBadgeText}" />
+                                            </Border>
+                                        </Grid>
 
                                         <TextBlock Grid.Column="4"
                                                    Text="{Binding Name}"
