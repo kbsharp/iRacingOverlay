@@ -100,6 +100,10 @@ public sealed class SettingsService
     public void SetRunAtStartup(bool runAtStartup)
         => Update(_current with { RunAtStartup = runAtStartup });
 
+    /// <summary>Records whether widgets hide while iRacing isn't running.</summary>
+    public void SetHideWhenSimClosed(bool hideWhenSimClosed)
+        => Update(_current with { HideWhenSimClosed = hideWhenSimClosed });
+
     /// <summary>Forgets every saved window position, so the next launch puts each
     /// widget back at its default corner. The recovery path for a layout that's
     /// been dragged somewhere unusable - previously this meant deleting

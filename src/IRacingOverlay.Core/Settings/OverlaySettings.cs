@@ -51,6 +51,13 @@ public sealed record OverlaySettings
     /// <summary>Whether the app registers itself to launch with Windows.</summary>
     public bool RunAtStartup { get; init; }
 
+    /// <summary>Whether widgets stay hidden while iRacing isn't running. On by
+    /// default: with <see cref="RunAtStartup"/> set, the alternative is a set of
+    /// always-on-top panels sitting over the desktop all day. Turn it off to
+    /// position widgets without the sim open. See
+    /// <see cref="WidgetVisibility.ShouldShow"/>.</summary>
+    public bool HideWhenSimClosed { get; init; } = true;
+
     /// <summary>True unless the user has explicitly switched this widget off.</summary>
     public bool IsWidgetEnabled(string widgetId)
         => !EnabledWidgets.TryGetValue(widgetId, out var enabled) || enabled;

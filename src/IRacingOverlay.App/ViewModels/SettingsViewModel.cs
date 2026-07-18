@@ -213,6 +213,19 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>Whether widgets stay hidden until iRacing is running. Reads
+    /// straight through to the settings service - unlike <see cref="RunAtStartup"/>
+    /// there's no external system that can refuse the change.</summary>
+    public bool HideWhenSimClosed
+    {
+        get => _settings.Current.HideWhenSimClosed;
+        set
+        {
+            _settings.SetHideWhenSimClosed(value);
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>Unsubscribes from the settings service. The window is rebuilt each
     /// time it's opened, so without this every open would leave a live handler on
     /// a service that outlives it.</summary>

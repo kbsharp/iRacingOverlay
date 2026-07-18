@@ -136,7 +136,9 @@ the pattern for adding a new widget, and debugging notes; see
 
 Recently landed: a **settings window** (tray → Settings...) covering per-widget
 on/off, per-widget scale, click-through, display units, the tuning numbers that
-used to be hardcoded, run-at-startup, and a layout reset. See
+used to be hardcoded, run-at-startup, and a layout reset. Widgets also stay hidden
+until iRacing is running (and hide again when it closes), so **Start with Windows**
+no longer leaves panels sitting over the desktop all day. See
 [docs/FEATURES.md](docs/FEATURES.md#settings).
 
 Still open:

@@ -476,6 +476,11 @@
                     <TextBlock Style="{StaticResource Hint}"
                                Text="Adds a per-user startup entry. Has no effect for a portable or 'dotnet run' build." />
 
+                    <CheckBox Content="Only show widgets while iRacing is running"
+                              IsChecked="{Binding HideWhenSimClosed}" Margin="0,8,0,0" />
+                    <TextBlock Style="{StaticResource Hint}"
+                               Text="Widgets stay hidden until the sim connects and disappear again when it closes. Switch off to position them with iRacing shut." />
+
                     <Button Content="Reset widget positions"
                             Command="{Binding ResetLayoutCommand}"
                             Style="{StaticResource DevButton}"

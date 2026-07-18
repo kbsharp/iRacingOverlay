@@ -36,6 +36,15 @@ public partial class App : System.Windows.Application
     private bool _isExiting;
 
     /// <summary>
+    /// Whether telemetry is currently connected, which (with the per-widget
+    /// toggle) decides what's on screen - see <see cref="WidgetVisibility"/>.
+    /// Starts false so a launch with iRacing closed shows nothing but the tray
+    /// icon; demo mode sets it true up front, since the simulated source never
+    /// raises a connection event.
+    /// </summary>
+    private bool _isSimConnected;
+
+    /// <summary>
     /// Explicit process entry point (WPF would otherwise generate one from
     /// App.xaml - see the csproj for why we opt out). Velopack must run first:
     /// on install/update/uninstall the app is relaunched with hook arguments,
@@ -61,6 +70,10 @@ public partial class App : System.Windows.Application
 
         var demoMode = e.Args.Contains("--demo", StringComparer.OrdinalIgnoreCase);
         var connectedLabel = demoMode ? "Demo" : "Live";
+
+        // The simulated source is "connected" by definition; the live one only
+        // becomes so when iRacing is actually running.
+        _isSimConnected = demoMode;
 
         _settingsService = new SettingsService();
         var settings = _settingsService.Current;
@@ -122,10 +135,15 @@ public partial class App : System.Windows.Application
         });
         _telemetrySource.ConnectionChanged += (_, connected) => Dispatcher.BeginInvoke(() =>
         {
+            _isSimConnected = connected;
+
             foreach (var viewModel in viewModels)
             {
                 viewModel.SetConnectionState(connected);
             }
+
+            // Sim opened or closed: bring the widgets back or take them away.
+            ApplySettings(_settingsService!.Current);
         });
         _telemetrySource.ErrorOccurred += (_, exception) => Dispatcher.BeginInvoke(() =>
         {
@@ -145,7 +163,7 @@ public partial class App : System.Windows.Application
             widget.Window.Closing += HideInsteadOfClose;
             RestorePosition(widget.Window);
 
-            if (settings.IsWidgetEnabled(widget.Id))
+            if (ShouldShow(widget, settings))
             {
                 widget.Window.Show();
             }
@@ -261,12 +279,12 @@ public partial class App : System.Windows.Application
             // click-through by a settings change.
             if (widget.IsConfigurable)
             {
-                var enabled = settings.IsWidgetEnabled(widget.Id);
-                if (enabled && !widget.Window.IsVisible)
+                var show = ShouldShow(widget, settings);
+                if (show && !widget.Window.IsVisible)
                 {
                     widget.Window.Show();
                 }
-                else if (!enabled && widget.Window.IsVisible)
+                else if (!show && widget.Window.IsVisible)
                 {
                     widget.Window.Hide();
                 }
@@ -277,6 +295,15 @@ public partial class App : System.Windows.Application
             widget.ViewModel?.ApplySettings(settings);
         }
     }
+
+    /// <summary>Whether a widget belongs on screen right now: the user's toggle
+    /// plus, unless they've opted out, iRacing actually being open. The dev
+    /// control panel isn't user-configurable and only exists in demo mode, so it
+    /// bypasses the rule entirely.</summary>
+    private bool ShouldShow(OverlayWidget widget, OverlaySettings settings)
+        => !widget.IsConfigurable
+           || WidgetVisibility.ShouldShow(
+               settings.IsWidgetEnabled(widget.Id), _isSimConnected, settings.HideWhenSimClosed);
 
     /// <summary>Opens (or re-focuses) the settings window. Created lazily - most
     /// sessions never open it, and it's the one window that isn't an overlay.</summary>

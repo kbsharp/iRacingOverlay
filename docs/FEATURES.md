@@ -611,7 +611,7 @@ makes these numbers choosable.
 | **Widgets** | Per widget: on/off, a scale override (100/125/150/175%), and click-through. |
 | **Units** | Fuel litres/gallons, temperature °C/°F, speed km/h / mph. |
 | **Tuning** | Fuel safety margin (0–5 laps), setup flash (5–300 s), radar range (15–200 m), relative cars each side (1–8), standings cars per class (5–60). |
-| **General** | Start with Windows; **Reset widget positions**. |
+| **General** | Start with Windows; only show widgets while iRacing is running; **Reset widget positions**. |
 
 - **Per-widget scale** overrides the shared tray scale for that widget only — a
   standings table and a radar rarely want the same size. Absent override = follow
@@ -643,6 +643,18 @@ makes these numbers choosable.
   locked-down machine can refuse the write, and the checkbox shouldn't then claim
   an autostart entry that doesn't exist. Startup re-asserts the entry if it's meant
   to be on, in case an update moved the executable.
+- **Only show widgets while iRacing is running** (on by default,
+  `OverlaySettings.HideWhenSimClosed`) keeps every widget hidden until telemetry
+  connects, and hides them again when the sim closes. This is what makes *Start
+  with Windows* usable: without it, switching autostart on leaves a set of
+  always-on-top panels sitting over the desktop for the rest of the day. The rule
+  is one pure function — `Core.Settings.WidgetVisibility.ShouldShow(isEnabled,
+  isSimConnected, hideWhenSimClosed)` — and it's the single decision point:
+  startup, a settings change, and a connect/disconnect all route through
+  `App.ShouldShow`, so there's no second path that can put a widget on screen. The
+  tray icon stays visible throughout, so the app is never lost. Switch the option
+  off to position widgets with iRacing shut; demo mode counts as connected, so
+  `--demo` is unaffected.
 
 **Controls are retemplated**, not stock. WPF's default CheckBox / RadioButton /
 Slider / ComboBox / ScrollBar render in the system's light chrome, which against
@@ -669,7 +681,8 @@ corners.
 
 - Saved to `%LocalAppData%\IRacingOverlay\settings.json` as `OverlaySettings` —
   the shared `Scale`, a `WindowPosition` per widget, the per-widget
-  enabled/scale/click-through maps, `Units`, `Tuning` and `RunAtStartup`. Every
+  enabled/scale/click-through maps, `Units`, `Tuning`, `RunAtStartup` and
+  `HideWhenSimClosed`. Every
   per-widget map is keyed by `WidgetIds` (whose values are the window type names
   the original layout code used, kept verbatim so existing files still restore)
   and is **sparse**: an absent key means the default, so adding a widget can't
