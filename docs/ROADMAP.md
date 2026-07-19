@@ -62,6 +62,16 @@ extends an existing widget rather than adding a new one.
   the decision. Removed rather than kept as a curiosity; the incident count it
   sat beside is the part that was always doing the work. **If it returns**, it
   needs a unit the driver already has — not a new one to teach.
+
+  It was deleted rather than parked behind an off-by-default toggle on purpose.
+  The manufacturer badge is off by default for a *fixable* reason (the mark set
+  is incomplete), so its toggle is a staging area; this has no such path, so the
+  toggle would have been permanent — the hedge this roadmap's own "the default
+  *is* the product" rule exists to avoid. Nothing is lost: the whole
+  implementation (`CpiHistory`, `SafetyTracker`, `SafetyChipViewModel`, the two
+  chip styles, both strips' markup, and 28 tests) is intact at commit `7abef1b`
+  and comes back with a cherry-pick if a better unit ever turns up. That is what
+  git is for, and it costs nothing to maintain in the meantime.
 - ~~**Delta bar**~~ — **done**, though narrower than written. It was scoped as
   "lap delta to session/all-time best"; the sim has no cross-session personal
   best and the app keeps no lap store, so an all-time reference would have had
