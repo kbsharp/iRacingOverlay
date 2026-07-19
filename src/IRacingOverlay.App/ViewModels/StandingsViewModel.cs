@@ -29,15 +29,20 @@ public sealed class StandingsViewModel : OverlayViewModelBase
     private string _carCountText = string.Empty;
     private string _lapCounterText = string.Empty;
 
-    public StandingsViewModel(string connectedLabel = "Live")
+    public StandingsViewModel(string connectedLabel = "Live", SafetyChipViewModel? safety = null)
         : base(connectedLabel)
     {
+        Safety = safety ?? new SafetyChipViewModel();
     }
 
     public ObservableCollection<StandingsRowViewModel> Items { get; } = [];
 
     /// <summary>Projected iRating change; hides itself outside a race.</summary>
     public IRatingChipViewModel IRating { get; } = new();
+
+    /// <summary>Corners per incident, and whether it beats the driver's baseline.
+    /// Shared with the relative - see <see cref="SafetyChipViewModel"/>.</summary>
+    public SafetyChipViewModel Safety { get; }
 
     /// <summary>The session label ("RACE") - the quiet half of the strip.</summary>
     public string SessionTypeText
@@ -154,6 +159,7 @@ public sealed class StandingsViewModel : OverlayViewModelBase
         LapCounterText = SessionFormat.LapCounter(snapshot.Lap, _metadata?.LapsForSession(snapshot.SessionNum));
 
         IRating.Update(snapshot, _metadata);
+        Safety.Update(snapshot, _metadata);
 
         var carCount = 0;
         foreach (var car in snapshot.Cars)

@@ -51,13 +51,17 @@ extends an existing widget rather than adding a new one.
   it does (`3L`). Colour reports what it means for you — green a place you take,
   amber a place you lose — and a catch that misses the flag stays grey, because
   it isn't a decision.
-- **Session strip: projected Safety Rating chip** *(unique)*. The companion
-  to the projected-iRating chip: live SR delta for this race from corners
-  driven versus incident points (`WeekendInfo:TrackNumTurns` × laps vs
-  `PlayerCarMyIncidentCount`). Both competitors show a raw incident count;
-  neither answers "is this race helping or hurting my licence?" — which is
-  precisely the drive-carefully-or-push decision. Same chip pattern, same
-  Core-calculator shape, cheap to build.
+- ~~**Session strip: projected Safety Rating chip**~~ — **done**, as a
+  *safety/CPI chip* rather than an SR delta *(unique)*. Building it turned up
+  the reason nobody ships this: iRacing has never published the CPI-to-SR
+  conversion, so a decimal SR delta would have been invented. What **is**
+  documented is the direction — beat your running average CPI and SR rises,
+  fall short and it drops — so that is what the chip reports. The standings
+  shows `▲ 49 CPI`, the relative shows the arrow alone beside its incident
+  count, and the rolling baseline is the app's own (iRacing's is server-side),
+  persisted as a 2000-corner window. Still answers the
+  drive-carefully-or-push question; still unique; just doesn't lie about a
+  number it can't know. See [FEATURES.md](FEATURES.md#safety--cpi--safetychipviewmodel--corerating).
 - **Delta bar** (lap delta to session/all-time best) — the one *new* widget
   in this bucket, and it earns it: self-pacing against your own best is a
   core in-car decision tool, present in every serious overlay, and was
@@ -156,7 +160,7 @@ Revisit only once the core above is strong:
 | Track map | ✅ | ✅ (2 forms) | ❌ → mid-term (no track DB needed) |
 | Delta bar | ✅ | via columns | ❌ → core pass |
 | Projected iRating | gain shown | gain shown | ✅ full zero-sum model |
-| Projected Safety Rating | ❌ | ❌ | → core pass **(unique)** |
+| Safety direction (CPI vs your baseline) | ❌ | ❌ | ✅ **(unique)** |
 | Battle catch/defend forecast | ❌ | ❌ | ✅ rate + laps-to-contact **(unique)** |
 | Pit-exit position projection | ❌ | ❌ | → bet **(unique)** |
 | Traffic meeting-point forecast | ❌ | behind-only warning | → bet **(unique)** |

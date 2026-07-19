@@ -4,6 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using IRacingOverlay.App.ViewModels;
 using IRacingOverlay.Core.Fuel;
+using IRacingOverlay.Core.Rating;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Telemetry;
@@ -174,14 +175,21 @@ internal static class Program
         FuelViewModel? fuel = null;
         RadarViewModel? radar = null;
 
+        // The safety chip draws no arrow until the driver has a baseline to be
+        // measured against, so a fresh one renders the no-history state and
+        // nothing else. Seed a plausible record - roughly a CPI of 40, a bit
+        // worse than the demo session runs at - so the render actually exercises
+        // the arrow and its colour. Both strips share one, as the app does.
+        var safety = new SafetyChipViewModel(new CpiHistory(1600, 40));
+
         if (targets.Contains("standings"))
         {
-            standings = new StandingsViewModel("Demo");
+            standings = new StandingsViewModel("Demo", safety);
         }
 
         if (targets.Contains("relative"))
         {
-            relative = new RelativeViewModel("Demo");
+            relative = new RelativeViewModel("Demo", safety);
         }
 
         if (targets.Contains("fuel"))

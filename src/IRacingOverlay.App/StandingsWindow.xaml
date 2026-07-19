@@ -67,6 +67,7 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                             <!-- trailing spacer: keeps the tokens packed left. -->
                             <ColumnDefinition Width="*" MinWidth="0" />
                         </Grid.ColumnDefinitions>
@@ -137,7 +138,32 @@
                                            Foreground="{StaticResource TextSecondary}" />
                             </StackPanel>
                         </Border>
-                        <TextBlock Grid.Column="6"
+                        <!-- Safety: corners per incident this session, arrowed against
+                             the driver's own rolling baseline. Deliberately not a
+                             projected SR figure - iRacing has never published the
+                             CPI-to-SR conversion, so the direction is the most this
+                             can honestly claim. The "CPI" label stays because the
+                             number is meaningless unlabelled, unlike a lap time. -->
+                        <Border Grid.Column="6"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                DataContext="{Binding Safety}"
+                                Style="{StaticResource SafetyChipBackground}"
+                                Visibility="{Binding HasValue, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Arrow}"
+                                           Margin="0,0,3,0"
+                                           Style="{StaticResource SafetyChipText}"
+                                           Visibility="{Binding HasTrend, Converter={StaticResource BoolToVis}}" />
+                                <TextBlock Text="{Binding CpiText}" Style="{StaticResource SafetyChipText}" />
+                                <TextBlock Text="CPI"
+                                           Margin="5,0,0,0"
+                                           Style="{StaticResource ChipText}"
+                                           Foreground="{StaticResource TextMuted}"
+                                           Visibility="{Binding ShowCpiLabel, Converter={StaticResource BoolToVis}}" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Grid.Column="7"
                                    Text="{Binding CarCountText}"
                                    Margin="12,0,0,0"
                                    VerticalAlignment="Center"

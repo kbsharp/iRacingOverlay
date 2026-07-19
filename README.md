@@ -9,7 +9,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   manufacturer badge, interval to the car
   ahead, gap to the class leader, best lap (session-fastest in purple) and last-lap delta.
   Zebra rows, your own row highlighted, up to a full 40-car multiclass grid — all from the
-  sim's real timing.
+  sim's real timing. The session strip on top adds a **safety chip** (`▲ 49 CPI`) —
+  corners cleared per incident this session, arrowed against your own rolling
+  average, so you can see whether you're building your licence or spending it.
 - **Relative** (the flagship glance): the three cars ahead of and behind you on track with
   live time deltas, race position and car number, kept **compact** (bottom by default) so
   it complements the standings rather than repeating it. Each row carries its class's
@@ -17,7 +19,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   your own row highlighted in amber. A session strip on top shows session type + time
   remaining, the lap counter (`L8/25`), a flag chip when one is flying, brake bias,
   track/air temps, a wetness badge, and your incidents against the session's limit
-  (`2x/17x`, warming to amber then red as you approach it).
+  (`2x/17x`, warming to amber then red as you approach it) with a **safety arrow**
+  beside them for whether the session is running cleaner or dirtier than your own
+  average.
 - **Fuel**: a strategy calculator — fuel level and laps in tank, average/last-lap burn,
   and the numbers you act on: fuel to finish, the margin you'll finish with (green spare
   / red short), fuel to add at the next stop, and a save-per-lap target. A strip along
@@ -160,10 +164,8 @@ one test — *does it change a decision the driver makes in the car?* — with a
 July 2026 market snapshot against RaceLab and iOverlay and the judgement
 behind each call. The short version:
 
-- **Core pass:** finish the widgets we have — a projected **Safety Rating**
-  chip and **catch/defend pace forecasts** on the relative (neither
-  competitor has either), pit status in the
-  standings, a delta bar, and the carried-over polish list (radar density
+- **Core pass:** finish the widgets we have — a delta bar, and the
+  carried-over polish list (radar density
   pass, manufacturer badge on the relative, drag-to-resize, a speed readout,
   configurable refresh rate, tray-icon pinning).
 - **The strategy layer** (nobody has these): **pit-exit position
