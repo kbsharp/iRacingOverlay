@@ -51,7 +51,7 @@ public class RadarCalculatorTests
     [Fact]
     public void Compute_CarBeyondRange_IsExcluded()
     {
-        // 100 m ahead > 60 m default range.
+        // 100 m ahead > 40 m default range.
         var snapshot = Snapshot(Car(PlayerIdx, 0.5f), Car(1, 0.6f));
 
         var result = RadarCalculator.Compute(snapshot, Roster(), StraightMap(), TrackLength);

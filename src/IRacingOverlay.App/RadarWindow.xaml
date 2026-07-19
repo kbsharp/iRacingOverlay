@@ -39,7 +39,8 @@
          the mirrors are already busy; only the glow is meant to catch the eye. -->
     <Grid Margin="14"
           Visibility="{Binding ShouldShow, Converter={StaticResource BoolToVis}}">
-        <Grid Width="230" Height="{x:Static vm:RadarLayout.CanvasHeight}">
+        <Grid Width="{x:Static vm:RadarLayout.CanvasWidth}"
+              Height="{x:Static vm:RadarLayout.CanvasHeight}">
 
             <!-- Proximity glows: tight blobs sitting just off each door, not a wash
                  over the whole widget - they have to read in peripheral vision without
@@ -58,15 +59,21 @@
                      Opacity="{Binding RightDanger}" />
 
             <!-- ================= Positional radar (track learned) ================= -->
+            <!-- ClipToBounds is insurance, not a crop: RadarLayout.CanvasWidth is
+                 sized so nothing can land outside. It's here so a rounding edge case
+                 can't paint a car over the glows, which are furniture, not track. -->
             <Grid Width="{x:Static vm:RadarLayout.CanvasWidth}"
                   Height="{x:Static vm:RadarLayout.CanvasHeight}"
+                  ClipToBounds="True"
                   Visibility="{Binding ShowRadar, Converter={StaticResource BoolToVis}}">
 
                 <!-- The one piece of furniture: a dashed line level with your axles,
-                     so overlap is judged against something instead of guessed. -->
-                <Path Stroke="#59FFFFFF" StrokeThickness="1" StrokeDashArray="3 4"
-                      VerticalAlignment="Center" HorizontalAlignment="Stretch"
-                      Data="M0,0 L150,0" />
+                     so overlap is judged against something instead of guessed. A
+                     Rectangle rather than a Path so it spans whatever the canvas
+                     width is, instead of restating it as a magic number. -->
+                <Rectangle Height="1"
+                           Stroke="#59FFFFFF" StrokeThickness="1" StrokeDashArray="3 4"
+                           VerticalAlignment="Center" HorizontalAlignment="Stretch" />
 
                 <!-- Other cars, absolutely positioned on a Canvas by the view model -->
                 <ItemsControl ItemsSource="{Binding Blips}"

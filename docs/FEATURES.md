@@ -675,16 +675,28 @@ reuses it to place everyone else. Pure, tested logic lives in `Core.Radar`:
   directly ahead/behind, parallel); through a corner it bends, so the car ends up
   off to the side and rotated.
 - **`RadarCalculator`** builds the `RadarBlip` list for every rostered car within
-  range (`DefaultRangeMeters` = 60 m along the track), excluding pit and
-  pace/spectator cars, then grading each side's danger (see below).
+  range (`DefaultRangeMeters` = 40 m along the track, configurable 15–200 m via
+  `WidgetTuning.RadarRangeMeters`), excluding pit and pace/spectator cars, then
+  grading each side's danger (see below).
 - **`TrackLengthParser`** turns iRacing's `WeekendInfo:TrackLength` (`"3.70 km"`,
   occasionally miles) into the metres the geometry needs.
 
 `RadarViewModel` owns the `TrackMap`, feeds it the player's heading each frame
 (only while on track and moving >3 m/s), runs the calculator, and maps metres to
-canvas pixels in `RadarBlipViewModel` (fixed-size icons, positions scaled at
-`PixelsPerMeter`). Blip slots update in place — the collection only resizes when
-the number of nearby cars changes.
+canvas pixels in `RadarBlipViewModel` (fixed-size icons, positions scaled).
+Blip slots update in place — the collection only resizes when the number of
+nearby cars changes.
+
+**The canvas scales to the range, not the other way round.** `RadarLayout` is a
+240 px-tall window on screen and the range is a setting, so the scale is derived
+(`RadarLayout.ScaleFor`) as "the range fills the canvas": a car at the limit of
+range always sits exactly at the top or bottom edge, whether the range is 15 m or
+200 m. This is also what makes the lateral axis readable — the separation the
+danger model grades is only a few pixels wide if the scale is set for a range
+nobody asked for. The canvas is 234 px wide because that is the widest a car can
+ever be placed: lateral offset comes from walking the learned track shape, so it
+is bounded by the arc walked, which the calculator has already bounded by the
+range. Nothing is ever clipped off the side, at any range setting.
 
 **Visual behaviour:**
 - The widget is visible only when there's something to show: the positional radar

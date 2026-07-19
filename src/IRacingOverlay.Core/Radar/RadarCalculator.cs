@@ -12,8 +12,9 @@ namespace IRacingOverlay.Core.Radar;
 /// </summary>
 public static class RadarCalculator
 {
-    /// <summary>How far ahead/behind (along the track) a car is still drawn, metres.</summary>
-    public const double DefaultRangeMeters = 60.0;
+    /// <summary>How far ahead/behind (along the track) a car is still drawn, metres.
+    /// Matches <c>WidgetTuning.RadarRangeMeters</c>, which is what the app passes.</summary>
+    public const double DefaultRangeMeters = 40.0;
 
     /// <summary>
     /// Where the spotter puts a car it has named a side for: the centre of the
