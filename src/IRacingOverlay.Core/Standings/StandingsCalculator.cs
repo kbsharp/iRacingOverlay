@@ -25,7 +25,8 @@ public static class StandingsCalculator
     public static IReadOnlyList<StandingsClassGroup> Compute(
         TelemetrySnapshot snapshot,
         SessionMetadata? metadata,
-        int maxPerClass = 30)
+        int maxPerClass = 30,
+        IReadOnlyDictionary<int, int>? startPositions = null)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxPerClass, 1);
 
@@ -64,7 +65,7 @@ public static class StandingsCalculator
 
         return entries
             .GroupBy(e => e.Driver?.ClassShortName ?? string.Empty)
-            .Select(g => BuildGroup(g.Key, [.. g], snapshot.PlayerCarIdx, maxPerClass, sessionBest))
+            .Select(g => BuildGroup(g.Key, [.. g], snapshot.PlayerCarIdx, maxPerClass, sessionBest, startPositions))
             // Show the class containing the best overall position first.
             .OrderBy(g => g.LeaderOverallPosition)
             .ThenBy(g => g.Group.ClassShortName, StringComparer.OrdinalIgnoreCase)
@@ -73,7 +74,8 @@ public static class StandingsCalculator
     }
 
     private static (StandingsClassGroup Group, int LeaderOverallPosition) BuildGroup(
-        string className, List<Entry> classEntries, int playerCarIdx, int maxPerClass, float sessionBest)
+        string className, List<Entry> classEntries, int playerCarIdx, int maxPerClass, float sessionBest,
+        IReadOnlyDictionary<int, int>? startPositions)
     {
         classEntries.Sort(static (a, b) =>
         {
@@ -93,7 +95,9 @@ public static class StandingsCalculator
         for (var i = 0; i < classEntries.Count; i++)
         {
             float? prevF2 = i > 0 ? classEntries[i - 1].Car.F2TimeSeconds : null;
-            rows.Add(ToRow(classEntries[i], i, leader, leaderF2, leaderBest, prevF2, className, playerCarIdx, sessionBest));
+            rows.Add(ToRow(
+                classEntries[i], i, leader, leaderF2, leaderBest, prevF2, className, playerCarIdx, sessionBest,
+                startPositions));
         }
 
         var shown = rows.Take(maxPerClass).ToList();
@@ -114,7 +118,8 @@ public static class StandingsCalculator
 
     private static StandingsRow ToRow(
         in Entry entry, int indexInClass, in CarTelemetry leader, float leaderF2, float leaderBestLap,
-        float? prevF2, string className, int playerCarIdx, float sessionBest)
+        float? prevF2, string className, int playerCarIdx, float sessionBest,
+        IReadOnlyDictionary<int, int>? startPositions)
     {
         var car = entry.Car;
         var driver = entry.Driver;
@@ -135,12 +140,18 @@ public static class StandingsCalculator
         var lastDelta = best is not null && last is not null ? last - best : null;
         var isSessionBest = sessionBest > 0 && best is not null && best.Value <= sessionBest + 1e-4;
 
+        // Gained is start minus current, so climbing the order is positive.
+        int? gained = startPositions is not null && startPositions.TryGetValue(car.CarIdx, out var startPos)
+            ? startPos - classPos
+            : null;
+
         return new StandingsRow(
             CarIdx: car.CarIdx,
             IsPlayer: car.CarIdx == playerCarIdx,
             OverallPosition: car.Position,
             ClassPosition: classPos,
             IsClassLeader: isLeader,
+            PositionsGained: gained,
             CarNumber: driver?.CarNumber ?? string.Empty,
             DisplayName: driver?.DisplayName ?? $"Car {car.CarIdx}",
             License: license,
