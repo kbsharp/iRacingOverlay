@@ -54,6 +54,9 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         private set => SetProperty(ref _rows, value);
     }
 
+    /// <summary>Projected iRating change; hides itself outside a race.</summary>
+    public IRatingChipViewModel IRating { get; } = new();
+
     public string SessionText
     {
         get => _sessionText;
@@ -214,6 +217,8 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         var incidentLimit = _metadata?.IncidentLimit;
         IncidentsText = SessionFormat.Incidents(snapshot.IncidentCount, incidentLimit);
         IncidentLevel = SessionFormat.IncidentLevel(snapshot.IncidentCount, incidentLimit);
+
+        IRating.Update(snapshot, _metadata);
 
         var flag = SessionFlagResolver.Resolve(snapshot.Flags);
         HasFlag = flag != SessionFlagState.None;

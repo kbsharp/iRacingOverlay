@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace IRacingOverlay.Core.Formatting;
 
 /// <summary>iRacing's official license classes, lowest to highest.</summary>
@@ -19,6 +21,14 @@ public enum IRatingTier
     Mid,
     High,
     Elite,
+}
+
+/// <summary>Which way a projected iRating change is going.</summary>
+public enum RatingTrend
+{
+    Flat,
+    Up,
+    Down,
 }
 
 /// <summary>Pure classification helpers that drive the relative widget's colour coding.</summary>
@@ -55,6 +65,20 @@ public static class RatingFormat
         < EliteThreshold => IRatingTier.High,
         _ => IRatingTier.Elite,
     };
+
+    public static RatingTrend ClassifyTrend(int delta) => delta switch
+    {
+        > 0 => RatingTrend.Up,
+        < 0 => RatingTrend.Down,
+        _ => RatingTrend.Flat,
+    };
+
+    /// <summary>
+    /// The magnitude of a projected iRating change, unsigned - the arrow beside
+    /// it carries the direction, so repeating it as a "+" reads as noise.
+    /// </summary>
+    public static string DeltaMagnitude(int delta) =>
+        Math.Abs(delta).ToString(CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Normalises iRacing's CarClassColor - reported as a decimal-packed 0xRRGGBB

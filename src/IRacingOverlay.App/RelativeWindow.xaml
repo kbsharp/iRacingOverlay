@@ -66,6 +66,19 @@
                             Visibility="{Binding HasFlag, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="{Binding FlagText}" Style="{StaticResource FlagChipText}" />
                     </Border>
+                    <!-- projected iRating: arrow + points at stake, hidden until a
+                         racing lap is complete and captured once the flag is out. -->
+                    <Border Margin="8,0,0,0"
+                            DataContext="{Binding IRating}"
+                            Style="{StaticResource RatingDeltaChipBackground}"
+                            Visibility="{Binding HasValue, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Arrow}" Style="{StaticResource RatingDeltaChipText}" />
+                            <TextBlock Text="{Binding DeltaText}"
+                                       Margin="3,0,0,0"
+                                       Style="{StaticResource RatingDeltaChipText}" />
+                        </StackPanel>
+                    </Border>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <!-- brake bias, marked with a disc rather than a "BB" prefix:
                              the glyph is read at a glance where two letters aren't. -->
