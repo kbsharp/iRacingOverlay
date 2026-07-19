@@ -60,24 +60,6 @@ public static class RatingFormat
         Math.Abs(delta).ToString(CultureInfo.InvariantCulture);
 
     /// <summary>
-    /// Corners per incident point, as a whole number - the fractional part of a
-    /// figure in the dozens-to-hundreds is noise, and it has to sit in a chip.
-    /// Caps the display at "999+" so a nearly-clean session can't stretch the
-    /// strip; the caller shows a clean session as words rather than a number.
-    /// </summary>
-    public static string Cpi(double cpi)
-    {
-        if (double.IsNaN(cpi) || cpi <= 0)
-        {
-            return "0";
-        }
-
-        return cpi >= 999.5
-            ? "999+"
-            : Math.Round(cpi).ToString("0", CultureInfo.InvariantCulture);
-    }
-
-    /// <summary>
     /// Normalises iRacing's CarClassColor - reported as a decimal-packed 0xRRGGBB
     /// integer (e.g. "16777215") - to a "#RRGGBB" string. Also accepts an
     /// already-hex value defensively. Returns null for anything unrecognised so

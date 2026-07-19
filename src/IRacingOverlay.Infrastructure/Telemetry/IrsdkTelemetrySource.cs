@@ -120,15 +120,11 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
         var maxFuelPct = info.DriverInfo?.DriverCarMaxFuelPct ?? 0f;
         var tankCapacityLiters = tankLiters > 0 && maxFuelPct > 0 ? tankLiters * maxFuelPct : 0d;
 
-        // Corner count for the safety chip's CPI. Absent on older builds, where
-        // 0 hides the chip rather than inventing a corner count.
-        var trackNumTurns = info.WeekendInfo?.TrackNumTurns ?? 0;
-
         SessionMetadataReceived?.Invoke(
             this,
             new SessionMetadata(
                 drivers, sessionTypes, setupName, setupIsModified, trackLengthMeters, incidentLimit,
-                sessionLaps, tankCapacityLiters, trackNumTurns));
+                sessionLaps, tankCapacityLiters));
     }
 
     private void HandleTelemetryData()

@@ -51,17 +51,17 @@ extends an existing widget rather than adding a new one.
   it does (`3L`). Colour reports what it means for you — green a place you take,
   amber a place you lose — and a catch that misses the flag stays grey, because
   it isn't a decision.
-- ~~**Session strip: projected Safety Rating chip**~~ — **done**, as a
-  *safety/CPI chip* rather than an SR delta *(unique)*. Building it turned up
-  the reason nobody ships this: iRacing has never published the CPI-to-SR
-  conversion, so a decimal SR delta would have been invented. What **is**
-  documented is the direction — beat your running average CPI and SR rises,
-  fall short and it drops — so that is what the chip reports. The standings
-  shows `▲ 49 CPI`, the relative shows the arrow alone beside its incident
-  count, and the rolling baseline is the app's own (iRacing's is server-side),
-  persisted as a 2000-corner window. Still answers the
-  drive-carefully-or-push question; still unique; just doesn't lie about a
-  number it can't know. See [FEATURES.md](FEATURES.md#safety--cpi--safetychipviewmodel--corerating).
+- ~~**Session strip: projected Safety Rating chip**~~ — **built, then removed.**
+  It shipped as a corners-per-incident chip (`▲ 49 CPI`) rather than an SR
+  delta, because iRacing has never published the CPI-to-SR conversion and only
+  the *direction* is documented. That reasoning still holds — and it was the
+  problem. CPI is not a unit drivers think in, the arrow was measured against a
+  baseline only this app knew, and the honest version of the feature was a
+  number that had to be explained before it meant anything. By the roadmap's own
+  test, a figure you have to learn before it changes a decision isn't changing
+  the decision. Removed rather than kept as a curiosity; the incident count it
+  sat beside is the part that was always doing the work. **If it returns**, it
+  needs a unit the driver already has — not a new one to teach.
 - ~~**Delta bar**~~ — **done**, though narrower than written. It was scoped as
   "lap delta to session/all-time best"; the sim has no cross-session personal
   best and the app keeps no lap store, so an all-time reference would have had
@@ -168,7 +168,7 @@ Revisit only once the core above is strong:
 | Track map | ✅ | ✅ (2 forms) | ❌ → mid-term (no track DB needed) |
 | Delta bar | ✅ | via columns | ✅ vs your session best, held at the line |
 | Projected iRating | gain shown | gain shown | ✅ full zero-sum model |
-| Safety direction (CPI vs your baseline) | ❌ | ❌ | ✅ **(unique)** |
+| Safety direction (CPI vs your baseline) | ❌ | ❌ | built, then removed — see above |
 | Battle catch/defend forecast | ❌ | ❌ | ✅ rate + laps-to-contact **(unique)** |
 | Pit-exit position projection | ❌ | ❌ | → bet **(unique)** |
 | Traffic meeting-point forecast | ❌ | behind-only warning | → bet **(unique)** |

@@ -176,21 +176,14 @@ internal static class Program
         RadarViewModel? radar = null;
         DeltaViewModel? delta = null;
 
-        // The safety chip draws no arrow until the driver has a baseline to be
-        // measured against, so a fresh one renders the no-history state and
-        // nothing else. Seed a plausible record - roughly a CPI of 40, a bit
-        // worse than the demo session runs at - so the render actually exercises
-        // the arrow and its colour. Both strips share one, as the app does.
-        var safety = new SafetyChipViewModel(new CpiHistory(1600, 40));
-
         if (targets.Contains("standings"))
         {
-            standings = new StandingsViewModel("Demo", safety);
+            standings = new StandingsViewModel("Demo");
         }
 
         if (targets.Contains("relative"))
         {
-            relative = new RelativeViewModel("Demo", safety);
+            relative = new RelativeViewModel("Demo");
         }
 
         if (targets.Contains("fuel"))

@@ -32,7 +32,6 @@ public partial class App : System.Windows.Application
     private TrayIconService? _trayIcon;
     private UpdateService? _updateService;
     private SettingsService? _settingsService;
-    private SafetyChipViewModel? _safetyChip;
     private SettingsWindow? _settingsWindow;
     private SingleInstanceGuard? _instanceGuard;
     private bool _isExiting;
@@ -100,15 +99,8 @@ public partial class App : System.Windows.Application
         _settingsService = new SettingsService(isInstalled);
         var settings = _settingsService.Current;
 
-        // One safety chip for both strips: it accumulates a persisted baseline,
-        // so a copy per widget would bank every session twice.
-        var safetyChip = new SafetyChipViewModel(
-            settings.SafetyHistory,
-            history => _settingsService.SetSafetyHistory(history));
-        _safetyChip = safetyChip;
-
-        var standingsViewModel = new StandingsViewModel(connectedLabel, safetyChip);
-        var relativeViewModel = new RelativeViewModel(connectedLabel, safetyChip);
+        var standingsViewModel = new StandingsViewModel(connectedLabel);
+        var relativeViewModel = new RelativeViewModel(connectedLabel);
         var fuelViewModel = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), connectedLabel);
         var radarViewModel = new RadarViewModel(connectedLabel);
         var deltaViewModel = new DeltaViewModel(connectedLabel);
@@ -165,14 +157,6 @@ public partial class App : System.Windows.Application
         _telemetrySource.ConnectionChanged += (_, connected) => Dispatcher.BeginInvoke(() =>
         {
             _isSimConnected = connected;
-
-            // Bank the session on the way out: a driver who closes the sim from
-            // the results screen would otherwise lose that race off their
-            // safety baseline entirely.
-            if (!connected)
-            {
-                _safetyChip?.CommitSession();
-            }
 
             foreach (var viewModel in viewModels)
             {
