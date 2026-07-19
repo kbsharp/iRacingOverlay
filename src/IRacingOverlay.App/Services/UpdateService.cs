@@ -4,6 +4,30 @@ using Velopack.Sources;
 
 namespace IRacingOverlay.App.Services;
 
+/// <summary>How an update check ended. "Up to date" and "couldn't ask" used to be
+/// the same <c>null</c>, which made the tray's manual check claim
+/// <em>"You're on the latest version"</em> when it had in fact failed to reach
+/// GitHub - the exact wording that hid a broken feed for three releases.</summary>
+public enum UpdateCheckStatus
+{
+    /// <summary>Not a Velopack install (source build, portable unzip) - there is
+    /// nothing to update, and no check was attempted.</summary>
+    NotInstalled,
+
+    /// <summary>The feed was reached and this copy is current.</summary>
+    UpToDate,
+
+    /// <summary>A newer release was found and downloaded, ready to install.</summary>
+    Ready,
+
+    /// <summary>The check or download failed - see <c>update.log</c>.</summary>
+    Failed,
+}
+
+/// <summary>The outcome of an update check. <paramref name="Update"/> is set only
+/// for <see cref="UpdateCheckStatus.Ready"/>.</summary>
+public sealed record UpdateCheckResult(UpdateCheckStatus Status, UpdateInfo? Update);
+
 /// <summary>
 /// In-app updater built on Velopack, pointed at the public GitHub Releases feed
 /// this app is published to (see <c>.github/workflows/release.yml</c>). The repo
@@ -39,18 +63,17 @@ public sealed class UpdateService
 
     /// <summary>
     /// Checks the GitHub feed and, if a newer release exists, downloads it in the
-    /// background. Returns the update (to read its version and to apply later)
-    /// when one is downloaded and ready to install, or <c>null</c> if the app is
-    /// already current or not installed.
+    /// background.
     ///
     /// Never throws: a flaky connection or a malformed feed must not be able to
-    /// take down the overlay, so failures are logged and swallowed.
+    /// take down the overlay, so failures are logged and reported as
+    /// <see cref="UpdateCheckStatus.Failed"/> rather than propagating.
     /// </summary>
-    public async Task<UpdateInfo?> CheckAndDownloadAsync()
+    public async Task<UpdateCheckResult> CheckAndDownloadAsync()
     {
         if (!_manager.IsInstalled)
         {
-            return null;
+            return new UpdateCheckResult(UpdateCheckStatus.NotInstalled, null);
         }
 
         try
@@ -58,16 +81,16 @@ public sealed class UpdateService
             var update = await _manager.CheckForUpdatesAsync().ConfigureAwait(false);
             if (update is null)
             {
-                return null;
+                return new UpdateCheckResult(UpdateCheckStatus.UpToDate, null);
             }
 
             await _manager.DownloadUpdatesAsync(update).ConfigureAwait(false);
-            return update;
+            return new UpdateCheckResult(UpdateCheckStatus.Ready, update);
         }
         catch (Exception ex)
         {
             Log($"Update check/download failed: {ex}");
-            return null;
+            return new UpdateCheckResult(UpdateCheckStatus.Failed, null);
         }
     }
 
