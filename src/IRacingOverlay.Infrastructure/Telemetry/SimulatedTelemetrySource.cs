@@ -97,6 +97,12 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     ];
 
     private readonly object _gate = new();
+
+    /// <summary>Serialises <see cref="Tick"/> against itself (see the comment
+    /// there). Distinct from <see cref="_gate"/> so event handlers never run
+    /// under the state lock the dev panel takes from the UI thread.</summary>
+    private readonly object _tickGate = new();
+
     private readonly List<SimDriver> _field = [];
 
     private RacePreset _preset = RacePresets.Default;
@@ -283,30 +289,49 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
 
     private void Tick(object? state)
     {
-        TelemetrySnapshot snapshot;
-        var announceConnection = false;
-
-        lock (_gate)
+        // System.Threading.Timer fires on the thread pool, so a handler that
+        // outlasts the ~33ms period would overlap the next tick and consumers
+        // would see concurrent events - the live source's single read loop never
+        // does that, and consumers (RenderWidget's warm-up, any headless
+        // harness) are entitled to the same sequential delivery. A tick that
+        // arrives while the previous one is still delivering is dropped, not
+        // queued: at 30Hz a skipped frame is indistinguishable from throttling.
+        if (!Monitor.TryEnter(_tickGate))
         {
-            if (!_connectionAnnounced)
+            return;
+        }
+
+        try
+        {
+            TelemetrySnapshot snapshot;
+            var announceConnection = false;
+
+            lock (_gate)
             {
-                _connectionAnnounced = true;
-                announceConnection = true;
+                if (!_connectionAnnounced)
+                {
+                    _connectionAnnounced = true;
+                    announceConnection = true;
+                }
+
+                _sessionTime += TickSeconds;
+                snapshot = BuildSnapshot();
             }
 
-            _sessionTime += TickSeconds;
-            snapshot = BuildSnapshot();
-        }
+            if (announceConnection)
+            {
+                ConnectionChanged?.Invoke(this, true);
+            }
 
-        if (announceConnection)
+            // The roster changes whenever the dev panel adds/removes a car, so
+            // re-broadcast metadata every tick rather than once at connect time.
+            SessionMetadataReceived?.Invoke(this, BuildMetadata());
+            TelemetryReceived?.Invoke(this, snapshot);
+        }
+        finally
         {
-            ConnectionChanged?.Invoke(this, true);
+            Monitor.Exit(_tickGate);
         }
-
-        // The roster changes whenever the dev panel adds/removes a car, so
-        // re-broadcast metadata every tick rather than once at connect time.
-        SessionMetadataReceived?.Invoke(this, BuildMetadata());
-        TelemetryReceived?.Invoke(this, snapshot);
     }
 
     /// <summary>Called under <see cref="_gate"/> from <see cref="Tick"/>.</summary>
