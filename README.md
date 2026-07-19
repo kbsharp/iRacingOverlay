@@ -151,31 +151,24 @@ the pattern for adding a new widget, and debugging notes; see
 
 ## Roadmap
 
-Recently landed: a **settings window** (tray → Settings...) covering per-widget
-on/off, per-widget scale, click-through, display units, the tuning numbers that
-used to be hardcoded, run-at-startup, and a layout reset. Widgets also stay hidden
-until iRacing is running (and hide again when it closes), so **Start with Windows**
-no longer leaves panels sitting over the desktop all day. See
-[docs/FEATURES.md](docs/FEATURES.md#settings).
+The full roadmap lives in [docs/ROADMAP.md](docs/ROADMAP.md), including a
+July 2026 market snapshot against RaceLab and iOverlay, the deliberate
+non-goals (VR, streaming tools, column customization, team sharing), and the
+judgement behind each call. The short version:
 
-Still open:
-
-- **A density pass over the radar.** The fuel widget has been retightened onto the
-  same 10px-inset / 6px-gap rhythm the list widgets use, and the setup widget folded
-  into it as a single line. The radar is the last widget not audited against that
-  rhythm — it's chrome-free, so the question there is the 150×240 field size and the
-  blip scale rather than padding.
-- Delta bar (lap delta to session/all-time best)
-- Extending the manufacturer badge to the relative (the four makes without a CC0
-  mark — Dallara, Ligier, Radical, Ruf — are wordmarks, so their abbreviation
-  chip is the intended rendering rather than something to replace)
-- Drag-to-resize widgets — the settings window offers a fixed set of scale steps;
-  resizing a widget by its corner is the natural next step
-- A speed readout somewhere, so the (already implemented) km/h / mph preference
-  has something to act on
-- Configurable telemetry refresh rate (currently fixed at ~30Hz)
-- Settings profiles per car/track, so a wet oval layout differs from a road one
-- Pin the tray icon
+- **Near-term:** a projected **Safety Rating** chip and **catch/defend pace
+  forecasts** on the relative (neither competitor has either), plus parity
+  items — delta bar, position-change arrows and pit status in the standings —
+  and the carried-over polish list (radar density pass, manufacturer badge on
+  the relative, drag-to-resize, a speed readout, configurable refresh rate,
+  tray-icon pinning).
+- **Mid-term:** a **track map** built from the shape the radar already learns
+  (no track database), an input-telemetry trace, per-session-type settings
+  profiles, a weather forecast strip, and a lap-time log.
+- **Differentiator bets:** **pit-exit position projection** ("pit now and you
+  rejoin P8, 1.8s behind #12"), a multiclass **traffic meeting-point
+  forecast**, and a push-vs-save fuel tradeoff readout — race-engineer calls
+  that no current overlay makes for you.
 
 ## Credits
 
