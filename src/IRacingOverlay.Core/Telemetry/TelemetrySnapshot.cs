@@ -38,6 +38,9 @@ public sealed record TelemetrySnapshot
 
     public required int IncidentCount { get; init; }
 
+    /// <summary>Raised track/personal flags; reduce with <see cref="SessionFlagResolver"/>.</summary>
+    public SessionFlags Flags { get; init; }
+
     /// <summary>Near-field proximity from iRacing's own spotter signal - see <see cref="Telemetry.CarLeftRight"/>.</summary>
     public required CarLeftRight CarLeftRight { get; init; }
 

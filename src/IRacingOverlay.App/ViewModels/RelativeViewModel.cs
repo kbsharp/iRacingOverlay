@@ -4,6 +4,8 @@ using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Relative;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Telemetry;
+using Brush = System.Windows.Media.Brush;
+using Brushes = System.Windows.Media.Brushes;
 
 namespace IRacingOverlay.App.ViewModels;
 
@@ -27,6 +29,13 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     private string _wetnessText = string.Empty;
     private bool _isWet;
     private string _incidentsText = "0x";
+    private IncidentSeverity _incidentLevel = IncidentSeverity.Ok;
+    private string _lapCounterText = string.Empty;
+    private string _flagText = string.Empty;
+    private bool _hasFlag;
+    private Brush _flagBackground = Brushes.Transparent;
+    private Brush _flagBorder = Brushes.Transparent;
+    private Brush _flagForeground = Brushes.Transparent;
 
     public RelativeViewModel(string connectedLabel = "Live")
         : base(connectedLabel)
@@ -93,6 +102,50 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         private set => SetProperty(ref _incidentsText, value);
     }
 
+    /// <summary>How close the incident count is to the session limit, so the
+    /// readout can warn before the limit rather than after.</summary>
+    public IncidentSeverity IncidentLevel
+    {
+        get => _incidentLevel;
+        private set => SetProperty(ref _incidentLevel, value);
+    }
+
+    public string LapCounterText
+    {
+        get => _lapCounterText;
+        private set => SetProperty(ref _lapCounterText, value);
+    }
+
+    public string FlagText
+    {
+        get => _flagText;
+        private set => SetProperty(ref _flagText, value);
+    }
+
+    public bool HasFlag
+    {
+        get => _hasFlag;
+        private set => SetProperty(ref _hasFlag, value);
+    }
+
+    public Brush FlagBackground
+    {
+        get => _flagBackground;
+        private set => SetProperty(ref _flagBackground, value);
+    }
+
+    public Brush FlagBorder
+    {
+        get => _flagBorder;
+        private set => SetProperty(ref _flagBorder, value);
+    }
+
+    public Brush FlagForeground
+    {
+        get => _flagForeground;
+        private set => SetProperty(ref _flagForeground, value);
+    }
+
     public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
 
     public override void ApplySettings(OverlaySettings settings)
@@ -148,13 +201,24 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         TrackTempText = "TRK " + UnitFormat.Temperature(snapshot.TrackTempC, _temperatureUnit);
         AirTempText = "AIR " + UnitFormat.Temperature(snapshot.AirTempC, _temperatureUnit);
 
+        // The lap counter carries the race distance when there is one, so a timed
+        // race shows the clock and a lap race shows both clock and "L12/25".
+        LapCounterText = SessionFormat.LapCounter(snapshot.Lap, _metadata?.LapsForSession(snapshot.SessionNum));
+
         HasBrakeBias = snapshot.BrakeBiasPct > 0;
-        BrakeBiasText = "BB " + snapshot.BrakeBiasPct.ToString("0.0", CultureInfo.InvariantCulture);
+        BrakeBiasText = snapshot.BrakeBiasPct.ToString("0.0", CultureInfo.InvariantCulture);
 
         IsWet = snapshot.Wetness >= TrackWetness.VeryLightlyWet;
         WetnessText = SessionFormat.Wetness(snapshot.Wetness);
 
-        IncidentsText = snapshot.IncidentCount.ToString(CultureInfo.InvariantCulture) + "x";
+        var incidentLimit = _metadata?.IncidentLimit;
+        IncidentsText = SessionFormat.Incidents(snapshot.IncidentCount, incidentLimit);
+        IncidentLevel = SessionFormat.IncidentLevel(snapshot.IncidentCount, incidentLimit);
+
+        var flag = SessionFlagResolver.Resolve(snapshot.Flags);
+        HasFlag = flag != SessionFlagState.None;
+        FlagText = SessionFlagResolver.Label(flag);
+        (FlagBackground, FlagBorder, FlagForeground) = FlagPalette.Resolve(flag);
     }
 
     private void UpdateRows(TelemetrySnapshot snapshot)

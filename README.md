@@ -13,7 +13,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   it complements the standings rather than repeating it. Each row carries its class's
   actual colour from the sim; lapping cars are red, lapped cars blue, pitting cars flagged,
   your own row highlighted in amber. A session strip on top shows session type + time
-  remaining, brake bias, track/air temps, a wetness badge, and your incident count.
+  remaining, the lap counter (`L8/25`), a flag chip when one is flying, brake bias,
+  track/air temps, a wetness badge, and your incidents against the session's limit
+  (`2x/17x`, warming to amber then red as you approach it).
 - **Fuel**: a strategy calculator — fuel level and laps in tank, average/last-lap burn,
   and the numbers you act on: fuel to finish, the margin you'll finish with (green spare
   / red short), fuel to add at the next stop, and a save-per-lap target. A strip along
@@ -114,7 +116,8 @@ Usage notes:
   to bring it back. The tray's **Exit** (or a widget's right-click **Exit**) is what actually
   quits the app.
 - **Demo mode** also opens a **dev control panel**: add/remove cars (up to a full 40-car
-  grid), drain/add fuel, set fuel critical, cycle track wetness, add an incident, toggle the
+  grid), drain/add fuel, set fuel critical, cycle track wetness, add an incident, cycle the
+  raised flag, toggle the
   player into the pits, cycle Practice/Qualify/Race (retriggers the setup-reminder flash),
   cycle the radar's spotter-fallback states — all live, no rebuild. See
   [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.

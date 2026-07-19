@@ -129,6 +129,15 @@
                 <TextBlock Text="{Binding WetnessText}"
                            Foreground="{StaticResource TextSecondary}"
                            FontSize="11"
+                           Margin="0,4,0,8" />
+
+                <Button Content="Cycle flag"
+                        Command="{Binding CycleFlagCommand}"
+                        Style="{StaticResource DevButton}"
+                        HorizontalAlignment="Stretch" />
+                <TextBlock Text="{Binding FlagText}"
+                           Foreground="{StaticResource TextSecondary}"
+                           FontSize="11"
                            Margin="0,4,0,12" />
 
                 <Button Content="Toggle player pit"

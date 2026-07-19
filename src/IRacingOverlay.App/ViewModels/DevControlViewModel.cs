@@ -22,6 +22,7 @@ public sealed class DevControlViewModel : ObservableObject
     private string _sessionTypeText = "RACE";
     private bool _isSetupModified;
     private string _radarText = "CLEAR";
+    private string _flagText = "NONE";
 
     public DevControlViewModel(IDemoControls controls)
     {
@@ -42,6 +43,8 @@ public sealed class DevControlViewModel : ObservableObject
         SetCriticalFuelCommand = new RelayCommand(_controls.SetFuelCritical);
         CycleWetnessCommand = new RelayCommand(() => WetnessText = SessionFormat.Wetness(_controls.CycleWetness()));
         AddIncidentCommand = new RelayCommand(_controls.AddIncident);
+        CycleFlagCommand = new RelayCommand(() =>
+            FlagText = _controls.CycleFlag().ToString().ToUpperInvariant());
         TogglePlayerPitCommand = new RelayCommand(_controls.TogglePlayerPit);
         CycleSessionCommand = new RelayCommand(() =>
         {
@@ -81,6 +84,8 @@ public sealed class DevControlViewModel : ObservableObject
 
     public ICommand CycleRadarCommand { get; }
 
+    public ICommand CycleFlagCommand { get; }
+
     public string CarCountText
     {
         get => _carCountText;
@@ -115,6 +120,12 @@ public sealed class DevControlViewModel : ObservableObject
     {
         get => _radarText;
         private set => SetProperty(ref _radarText, value);
+    }
+
+    public string FlagText
+    {
+        get => _flagText;
+        private set => SetProperty(ref _flagText, value);
     }
 
     private string FormatCarCount() => $"{_controls.CarCount} cars ({_controls.MinCarCount}-{_controls.MaxCarCount})";

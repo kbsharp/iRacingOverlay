@@ -6,9 +6,21 @@ namespace IRacingOverlay.Core.Session;
 /// whenever the sim re-broadcasts it. Pace cars and spectators are excluded
 /// from the roster.
 /// </summary>
+/// <param name="IncidentLimit">The session's incident cap, or null when unlimited.</param>
+/// <param name="SessionLapsByNum">Scheduled lap count per session number; absent
+/// for timed sessions, which the sim reports as "unlimited".</param>
 public sealed record SessionMetadata(
     IReadOnlyDictionary<int, RosterDriver> DriversByCarIdx,
     IReadOnlyDictionary<int, string> SessionTypesByNum,
     string PlayerSetupName,
     bool PlayerSetupIsModified,
-    double TrackLengthMeters = 0);
+    double TrackLengthMeters = 0,
+    int? IncidentLimit = null,
+    IReadOnlyDictionary<int, int>? SessionLapsByNum = null)
+{
+    /// <summary>The scheduled lap count for a session, or null when it is timed.</summary>
+    public int? LapsForSession(int sessionNum) =>
+        SessionLapsByNum is not null && SessionLapsByNum.TryGetValue(sessionNum, out var laps)
+            ? laps
+            : null;
+}

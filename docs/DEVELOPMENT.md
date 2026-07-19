@@ -213,7 +213,7 @@ default. This means:
 `SimulatedTelemetrySource` implements `IDemoControls`
 (`src/IRacingOverlay.Infrastructure/Telemetry/`) — live knobs for exercising the
 app without iRacing: add/remove cars, adjust fuel, cycle wetness, add an
-incident, toggle the player into the pits. `App.xaml.cs` checks whether the
+incident, cycle the raised flag, toggle the player into the pits. `App.xaml.cs` checks whether the
 active telemetry source implements `IDemoControls` and, if so (i.e. `--demo`
 was passed), builds a `DevControlViewModel` and shows `DevControlWindow`. In
 live mode neither exists — there's nothing to control.
