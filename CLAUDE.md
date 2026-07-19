@@ -12,17 +12,17 @@ mode also shows a dev control panel.
 
 ## Build & run
 
-The .NET 8 SDK is installed **per-user** at `%LOCALAPPDATA%\Microsoft\dotnet` and is
-**not on the system PATH**. Prefix commands:
+Use the scripts — they locate the SDK themselves (it may be a per-user install
+that isn't on PATH) and stop a running overlay that would lock the output DLLs:
 
 ```powershell
-$env:PATH="$env:LOCALAPPDATA\Microsoft\dotnet;$env:PATH"
-dotnet build
-dotnet test
-dotnet run --project src/IRacingOverlay.App -- --demo   # no iRacing needed
+.\scripts\build.ps1
+.\scripts\test.ps1                  # -Filter FuelCalculatorTests to narrow
+.\scripts\run-demo.ps1              # detached launch, no iRacing needed
 ```
 
-(Once `winget install Microsoft.DotNet.SDK.8` has been run, the prefix is unneeded.)
+Don't hand-write `$env:PATH` fix-ups in commands or docs — `scripts/_common.ps1`
+owns that, in one place.
 
 ## Definition of done — every change
 

@@ -9,26 +9,14 @@
 #>
 
 $ErrorActionPreference = 'Stop'
+. "$PSScriptRoot\_common.ps1"
 
-$repoRoot = Split-Path -Parent $PSScriptRoot
-$dotnetUserInstall = "$env:LOCALAPPDATA\Microsoft\dotnet"
-if (-not (Get-Command dotnet -ErrorAction SilentlyContinue) -and (Test-Path $dotnetUserInstall)) {
-    $env:PATH = "$dotnetUserInstall;$env:PATH"
-}
+Initialize-Dotnet
+Stop-RunningOverlay
+Invoke-Dotnet build src/IRacingOverlay.App --nologo --verbosity quiet
 
-Push-Location $repoRoot
-try {
-    dotnet build src/IRacingOverlay.App --nologo -v q
-    if ($LASTEXITCODE -ne 0) {
-        throw "Build failed (exit code $LASTEXITCODE)."
-    }
+$exe = Join-Path $RepoRoot 'src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.exe'
+Start-Process -FilePath $exe -ArgumentList '--demo'
 
-    $exe = Join-Path $repoRoot 'src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.exe'
-    Start-Process -FilePath $exe -ArgumentList '--demo'
-
-    Write-Host "Overlay started in demo mode. This terminal can be closed safely." -ForegroundColor Green
-    Write-Host "Look for the tray icon to show/hide widgets, open dev controls, or exit." -ForegroundColor Green
-}
-finally {
-    Pop-Location
-}
+Write-Host "Overlay started in demo mode. This terminal can be closed safely." -ForegroundColor Green
+Write-Host "Look for the tray icon to show/hide widgets, open dev controls, or exit." -ForegroundColor Green

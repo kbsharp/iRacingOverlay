@@ -10,16 +10,12 @@ implemented in detail, see [FEATURES.md](FEATURES.md).
 - .NET 8 SDK — `winget install Microsoft.DotNet.SDK.8`
 - iRacing (optional — everything below works against `--demo` without it)
 
-**This machine's SDK is installed per-user**, not via winget, so it isn't on the
-system PATH. Every command below assumes either:
-
-```powershell
-$env:PATH = "$env:LOCALAPPDATA\Microsoft\dotnet;$env:PATH"
-```
-
-...has been run in the shell, or that `dotnet` is already resolvable (e.g. after
-running the winget command above on a fresh machine). Check with `dotnet --version`
-before assuming it's missing.
+The SDK is sometimes installed **per-user** at `%LOCALAPPDATA%\Microsoft\dotnet`
+rather than via winget, in which case it isn't on the system PATH. **The scripts
+in `scripts/` handle this for you** — `scripts/_common.ps1` finds the SDK (or
+fails with a clear message) and every other script dot-sources it. Prefer them
+over raw `dotnet` commands, and don't copy a `$env:PATH` fix-up into a new
+script or doc — that's the one thing `_common.ps1` exists to keep in one place.
 
 No iRacing SDK install is needed — telemetry comes from the
 [IRSDKSharper](https://github.com/mherbold/IRSDKSharper) NuGet package, restored
@@ -37,6 +33,9 @@ src/
 tests/
   IRacingOverlay.Core.Tests/    # xUnit tests for Core
 scripts/
+  _common.ps1                   # SDK lookup + shared helpers; dot-sourced, not run
+  build.ps1                     # build the solution
+  test.ps1                      # run Core.Tests (-Filter to narrow)
   run-demo.ps1                  # build + launch, detached from the terminal (--demo)
   run-live.ps1                  # build + launch, detached from the terminal
 ```
@@ -59,33 +58,31 @@ simulator or a UI thread.
 ## Day-to-day commands
 
 ```powershell
-dotnet restore                 # first time / after pulling
-dotnet build                   # whole solution; warnings are errors
-dotnet test                    # Core.Tests only project with tests
+.\scripts\build.ps1                        # whole solution; warnings are errors
+.\scripts\test.ps1                         # Core.Tests, the only project with tests
+.\scripts\test.ps1 -Filter FuelCalculator  # narrow to one class while iterating
 
 # Run the app - detached from the terminal (see "Window lifecycle" below)
 .\scripts\run-demo.ps1
 .\scripts\run-live.ps1
+```
 
-# Or run it tied to the terminal, e.g. to see startup exceptions live
+Both build/run scripts **stop any running overlay first** (`Stop-RunningOverlay`
+in `_common.ps1`). Without that, a rebuild fails with `MSB3026: ... The file is
+locked by "IRacingOverlay (pid)"` — easy to hit, because the app survives
+window-close (see below) and a detached launch doesn't visibly tie up a terminal.
+This used to be a manual step and no longer is.
+
+To see startup exceptions live, run it tied to the terminal instead — or launch
+the built exe directly, which is what a scripted smoke test wants:
+
+```powershell
 dotnet run --project src/IRacingOverlay.App -- --demo
-dotnet run --project src/IRacingOverlay.App
-
-# Or the built exe directly (useful for scripted smoke tests)
 src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.exe --demo
 ```
 
-There's no watch/hot-reload script set up — `dotnet build` after each change is
-fast enough (a couple of seconds) that it hasn't been worth adding.
-
-**Before rebuilding, make sure no instance of the app is still running** — `dotnet
-build` will fail with `MSB3026: ... The file is locked by "IRacingOverlay (pid)"`
-if one holds the output DLLs open. This is easy to hit now that the app survives
-window-close (see below) and detached launches don't visibly tie up a terminal:
-
-```powershell
-Get-Process IRacingOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
-```
+There's no watch/hot-reload set up — a rebuild after each change takes a couple
+of seconds, so it hasn't been worth adding.
 
 ## Debugging
 
@@ -320,9 +317,8 @@ Treat pushing the tag as the point of no return.
    ```powershell
    git checkout main
    git pull
-   $env:PATH="$env:LOCALAPPDATA\Microsoft\dotnet;$env:PATH"
-   dotnet build     # TreatWarningsAsErrors is on - a warning is a failure
-   dotnet test
+   .\scripts\build.ps1   # TreatWarningsAsErrors is on - a warning is a failure
+   .\scripts\test.ps1
    ```
 
 2. **Bump `<Version>` in [`src/IRacingOverlay.App/IRacingOverlay.App.csproj`](../src/IRacingOverlay.App/IRacingOverlay.App.csproj)**
@@ -425,9 +421,9 @@ Because the app owns its entry point, the `VelopackApp.Build().Run()` bootstrap 
 
 | Symptom | Likely cause |
 |---|---|
-| `dotnet : term not recognized` | SDK not on PATH — see Prerequisites above |
+| `dotnet : term not recognized` | SDK not on PATH — use `scripts\build.ps1`, which finds a per-user install |
 | Build fails on a warning | `TreatWarningsAsErrors` is on by design — fix the warning, don't suppress it |
-| Build fails with `MSB3026 ... locked by "IRacingOverlay (pid)"` | A previous run is still alive (it no longer exits when its window closes) — `Get-Process IRacingOverlay \| Stop-Process -Force` |
+| Build fails with `MSB3026 ... locked by "IRacingOverlay (pid)"` | A previous run is still alive (it no longer exits when its window closes). `scripts\build.ps1` stops it for you; a raw `dotnet build` doesn't |
 | `CS0104` ambiguous reference to `Application`/`Color` | `UseWPF` + `UseWindowsForms` both contribute that type name — fully qualify it, see "Window lifecycle" above |
 | Demo window never appears, process exits 0 immediately | A copy of the **same flavour** is already running — `SingleInstanceGuard` yields to it. `Get-Process IRacingOverlay` to find it; the installed app and a source build don't block each other, two source builds do |
 | Demo window never appears | Check the process didn't exit immediately (`echo $?`/exit code) — a startup exception would show as a fast exit |

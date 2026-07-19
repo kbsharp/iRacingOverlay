@@ -79,12 +79,19 @@ terminal closes:
 .\scripts\run-live.ps1   # waits for iRacing
 ```
 
-Or the plain dotnet commands (tied to the terminal that launched them):
+To build and test:
+
+```powershell
+.\scripts\build.ps1
+.\scripts\test.ps1
+```
+
+Or the plain dotnet commands (tied to the terminal that launched them). These
+need `dotnet` on your PATH — the scripts above find a per-user SDK install too:
 
 ```powershell
 dotnet run --project src/IRacingOverlay.App              # live
 dotnet run --project src/IRacingOverlay.App -- --demo     # demo
-dotnet test
 ```
 
 Usage notes:
