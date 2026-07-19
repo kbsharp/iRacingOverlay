@@ -73,7 +73,7 @@ simulator or a UI thread.
 
 Both build/run scripts **stop any running overlay first** (`Stop-RunningOverlay`
 in `_common.ps1`). Without that, a rebuild fails with `MSB3026: ... The file is
-locked by "IRacingOverlay (pid)"` — easy to hit, because the app survives
+locked by "IRacingOverlay.Dev (pid)"` — easy to hit, because the app survives
 window-close (see below) and a detached launch doesn't visibly tie up a terminal.
 This used to be a manual step and no longer is.
 
@@ -82,7 +82,7 @@ the built exe directly, which is what a scripted smoke test wants:
 
 ```powershell
 dotnet run --project src/IRacingOverlay.App -- --demo
-src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.exe --demo
+src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.Dev.exe --demo
 ```
 
 There's no watch/hot-reload set up — a rebuild after each change takes a couple
@@ -101,7 +101,7 @@ of seconds, so it hasn't been worth adding.
   exe and checking the process stays alive:
 
   ```powershell
-  $exe = "src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.exe"
+  $exe = "src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.Dev.exe"
   $p = Start-Process -FilePath $exe -ArgumentList "--demo" -PassThru
   Start-Sleep -Seconds 5
   -not $p.HasExited   # True = still running
@@ -468,7 +468,7 @@ Because the app owns its entry point, the `VelopackApp.Build().Run()` bootstrap 
 |---|---|
 | `dotnet : term not recognized` | SDK not on PATH — use `scripts\build.ps1`, which finds a per-user install |
 | Build fails on a warning | `TreatWarningsAsErrors` is on by design — fix the warning, don't suppress it |
-| Build fails with `MSB3026 ... locked by "IRacingOverlay (pid)"` | A previous run is still alive (it no longer exits when its window closes). `scripts\build.ps1` stops it for you; a raw `dotnet build` doesn't |
+| Build fails with `MSB3026 ... locked by "IRacingOverlay.Dev (pid)"` | A previous run is still alive (it no longer exits when its window closes). `scripts\build.ps1` stops it for you; a raw `dotnet build` doesn't |
 | `CS0104` ambiguous reference to `Application`/`Color` | `UseWPF` + `UseWindowsForms` both contribute that type name — fully qualify it, see "Window lifecycle" above |
 | Demo window never appears, process exits 0 immediately | A copy of the **same flavour** is already running — `SingleInstanceGuard` yields to it. `Get-Process IRacingOverlay.Dev` to find it; the installed app and a source build don't block each other, two source builds do |
 | Process dies instantly with `FileLoadException … Application Control policy has blocked this file (0x800711C7)` | Windows **Smart App Control** has blocked a freshly built binary. It is reputation-based, applies to unsigned local builds, and its verdicts are not predictable from the code — the same project built and ran minutes earlier. **A reboot has cleared it every time so far.** Check with `Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy'` (`VerifiedAndReputablePolicyState`: 0 off, 1 enforcing, 2 evaluation), and confirm the specific file in Event Viewer under `Microsoft-Windows-CodeIntegrity/Operational`. Turning SAC off is possible but **irreversible without reinstalling Windows** |
