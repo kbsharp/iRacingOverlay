@@ -15,6 +15,13 @@ public static class RadarCalculator
     /// <summary>How far ahead/behind (along the track) a car is still drawn, metres.</summary>
     public const double DefaultRangeMeters = 60.0;
 
+    /// <summary>
+    /// Where the spotter puts a car it has named a side for: the centre of the
+    /// neighbouring lane. Coarse on purpose - the sim only tells us the side, so
+    /// the blip claims a side and nothing finer.
+    /// </summary>
+    public const double SpotterLaneOffsetMeters = RadarDanger.NeighbouringLaneMeters;
+
     public static RadarResult Compute(
         TelemetrySnapshot snapshot,
         SessionMetadata? metadata,
@@ -79,9 +86,70 @@ public static class RadarCalculator
                 ClassColorHex: RatingFormat.NormalizeHexColor(driver?.ClassColorRaw)));
         }
 
-        var danger = RadarDanger.Compute(blips);
+        var spotterLeft = RadarFormat.HasCarLeft(snapshot.CarLeftRight);
+        var spotterRight = RadarFormat.HasCarRight(snapshot.CarLeftRight);
+        ResolveStackedBlips(blips, snapshot.CarLeftRight, spotterLeft, spotterRight);
+
+        var danger = RadarDanger.Compute(blips, spotterLeft, spotterRight);
         return new RadarResult(blips, MapReady: true, LeftDanger: danger.Left, RightDanger: danger.Right);
     }
+
+    /// <summary>
+    /// Second-guess the cars the walk has stacked on top of us. The geometry places
+    /// a car from its along-track offset alone, so anyone level with us lands on the
+    /// centreline - which looks exactly like an empty mirror, and on a straight that
+    /// is every side-by-side car there is.
+    ///
+    /// iRacing's spotter is the only real lateral information the sim gives, so we
+    /// defer to it, the same way the first-lap fallback does. It names a side, not a
+    /// car, so we only move a blip when the attribution is unambiguous: one stacked
+    /// car and one side reported. Otherwise the blip stays where it is and is marked
+    /// unresolved, for the widget to draw as the doubt it is. "Clear" is an answer
+    /// too - nobody is alongside, so a stacked car really is queued in our lane.
+    /// </summary>
+    private static void ResolveStackedBlips(
+        List<RadarBlip> blips, CarLeftRight spotter, bool spotterLeft, bool spotterRight)
+    {
+        if (spotter is CarLeftRight.Off or CarLeftRight.Clear)
+        {
+            return;
+        }
+
+        var stacked = new List<int>();
+        for (var i = 0; i < blips.Count; i++)
+        {
+            if (IsStacked(blips[i]))
+            {
+                stacked.Add(i);
+            }
+        }
+
+        if (stacked.Count == 0)
+        {
+            return;
+        }
+
+        if (stacked.Count == 1 && spotterLeft != spotterRight)
+        {
+            var offset = spotterLeft ? -SpotterLaneOffsetMeters : SpotterLaneOffsetMeters;
+            blips[stacked[0]] = blips[stacked[0]] with { RightMeters = offset };
+            return;
+        }
+
+        foreach (var i in stacked)
+        {
+            blips[i] = blips[i] with { LateralUnresolved = true };
+        }
+    }
+
+    /// <summary>
+    /// True when the walk has drawn a car close enough to be alongside us but with
+    /// less than a car's width of separation - a position no two cars can occupy, so
+    /// it is the geometry saying "I don't know", not a measurement.
+    /// </summary>
+    private static bool IsStacked(RadarBlip blip)
+        => Math.Abs(blip.ForwardMeters) < RadarDanger.OverlapRangeMeters
+            && Math.Abs(blip.RightMeters) < RadarDanger.MinLateralMeters;
 
     private static bool TryFindPlayer(TelemetrySnapshot snapshot, out CarTelemetry player)
     {

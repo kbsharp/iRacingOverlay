@@ -693,6 +693,33 @@ past 9 m lateral or 7 m longitudinal. Crucially it ignores cars within
 racing line is queued traffic, not a side-by-side, and grading it as danger lit
 both glows solid for whole laps in the first pass.
 
+**Cars the geometry can't place.** The walk derives lateral offset from a car's
+*along-track* offset bent through the track's shape, so a car genuinely level with
+you has almost the same `LapDistPct` and lands on the centreline whatever lane it
+is really in — indistinguishable from an empty mirror, and on a straight that is
+every side-by-side car there is. The radar admits this rather than drawing the
+guess as confidently as a measurement. A blip closer than a car's width
+(`RadarDanger.MinLateralMeters`) while inside the overlap box is treated as the
+geometry saying *I don't know*, and iRacing's own `CarLeftRight` spotter — the only
+real lateral information the sim gives — is consulted:
+- **Spotter names one side and exactly one car is stacked**: the blip moves to the
+  centre of that lane (`RadarDanger.NeighbouringLaneMeters`, 3 m). Coarse on
+  purpose — the sim reports a side, so the blip claims a side and nothing finer.
+- **Two stacked cars, or cars reported both sides**: the spotter names a *side*,
+  not a *car*, so the attribution is ambiguous. Nothing is moved; the blips are
+  flagged `LateralUnresolved` and drawn at 45% opacity — present, plainly less
+  certain than the marks around them — while the glow still fires on every side
+  reported. An unknown side is not an absent car.
+- **Spotter says `Clear`**: that is an answer, not an absence of one. Nobody is
+  alongside, so a car on the centreline really *is* queued in your lane; it is left
+  alone and grades no danger.
+
+Unresolved cars are graded for the glow as if in the neighbouring lane — the same
+assumption used to place an attributable one — so resolving the ambiguity changes
+where a blip sits, never how hard the glow burns. Cars outside the overlap box
+aren't a side-by-side question at all and keep their geometric placement, so the
+corner-angled read of the field ahead is untouched.
+
 **First-lap fallback.** Until `TrackMap.IsReady`, there's no shape to place cars
 against, so the widget falls back to iRacing's coarse `CarLeftRight` spotter
 signal, via `RadarFormat`'s `HasCarLeft`/`HasCarRight` classifiers. It drives the
@@ -703,11 +730,11 @@ takes over.
 **Known limitations:**
 - **Needs ~one lap to learn the track** (per session / track). Before then it's
   the coarse left/right fallback.
-- **Lateral offset on a dead straight isn't resolvable.** With no per-car lateral
-  telemetry, two cars perfectly side-by-side on a straight both map onto the
-  centreline; the geometry separates cars by the track's curvature, which is zero
-  on a straight. The angle it *can* show (parallel) is still correct. The spotter
-  fallback's left/right remains the honest read for that exact case.
+- **Lateral offset for a car level with you isn't measurable**, on a straight or
+  anywhere else — there is no per-car lateral telemetry. The spotter covers the
+  case (above), but only as far as the sim's own resolution goes: one side, no
+  distance, and no answer at all when two cars are stacked or cars are reported
+  both sides. The angle the geometry *can* show is still correct.
 - **Left/right handedness assumes iRacing's `Yaw` is anticlockwise-positive**
   (standard, and what the geometry expects). Worth a live confirmation against the
   sim that a car actually on your left shows on your left — if mirrored, it's a

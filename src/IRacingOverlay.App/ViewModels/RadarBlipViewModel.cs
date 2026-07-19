@@ -15,6 +15,11 @@ public sealed class RadarBlipViewModel : ObservableObject
     private double _canvasTop;
     private double _angleDegrees;
     private string _number = string.Empty;
+    private double _opacity = 1.0;
+
+    /// <summary>How solid a car with no known side is drawn - present, but plainly
+    /// less certain than the marks around it. See <see cref="RadarBlip.LateralUnresolved"/>.</summary>
+    public const double UnresolvedOpacity = 0.45;
 
     public double CanvasLeft
     {
@@ -40,6 +45,13 @@ public sealed class RadarBlipViewModel : ObservableObject
         private set => SetProperty(ref _number, value);
     }
 
+    /// <summary>Full strength for a placed car, faded for one whose side is unknown.</summary>
+    public double Opacity
+    {
+        get => _opacity;
+        private set => SetProperty(ref _opacity, value);
+    }
+
     public void Update(RadarBlip blip)
     {
         // Metres -> canvas pixels: forward (+) is up the screen, right (+) is right.
@@ -53,5 +65,6 @@ public sealed class RadarBlipViewModel : ObservableObject
         // clockwise because the canvas Y axis points down, so negate.
         AngleDegrees = -blip.RelativeAngleRad * 180.0 / System.Math.PI;
         Number = blip.CarNumber;
+        Opacity = blip.LateralUnresolved ? UnresolvedOpacity : 1.0;
     }
 }

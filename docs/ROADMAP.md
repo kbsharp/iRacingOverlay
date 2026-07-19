@@ -100,18 +100,28 @@ extends an existing widget rather than adding a new one.
   against. See [FEATURES.md](FEATURES.md#delta--deltawindow--deltaviewmodel--coredeltadeltacalculator).
 - **Radar density pass** — the last widget not audited against the shared
   spacing rhythm; the question is the 150×240 field size and blip scale.
-- **Radar: show when the geometry can't resolve a car.** The one place in the
-  app that fails the second test above. Every other readout is either measured
-  or legibly a forecast; the radar draws *inferred* positions that look exactly
-  as authoritative as measured ones. It reconstructs a car's position by walking
-  the learned track shape, which separates cars by the track's **curvature** — 
-  and a straight has none, so two cars genuinely side-by-side on a straight both
-  land on the centreline. The driver cannot tell that case from an empty
-  mirror. The fix isn't better geometry (the data isn't there); it's admitting
-  it — fall back to, or blend in, iRacing's own `CarLeftRight` spotter signal
-  when the local track curvature is near zero, the way the first-lap fallback
-  already does. Same idea as the delta bar deferring to the sim's own number
-  rather than inventing a second opinion.
+- ~~**Radar: show when the geometry can't resolve a car**~~ — **done**. This was
+  the one place in the app that failed the second test above: every other readout
+  is either measured or legibly a forecast, while the radar drew *inferred*
+  positions that looked exactly as authoritative as measured ones.
+
+  Writing it clarified the problem, which was worse than the entry claimed. It
+  isn't that a *straight* defeats the geometry; it's that lateral offset is
+  derived from **along-track** offset bent through the learned shape, so a car
+  level with you has all but the same `LapDistPct` and lands on the centreline
+  in a corner too. No curvature test was needed in the end — the honest signal
+  is the output, not the cause: a blip drawn closer than a car's width while
+  inside the overlap box is in a position no two cars can occupy, which is the
+  geometry saying *I don't know*.
+
+  So that case now defers to iRacing's own `CarLeftRight`, the way the first-lap
+  fallback does. The spotter names a *side*, not a *car*, so it only moves a blip
+  when exactly one car is stacked and one side is reported; otherwise the blips
+  stay put, drop to 45% opacity, and the glow still fires on every side reported —
+  an unknown side is not an absent car. `Clear` is treated as an answer, so a
+  nose-to-tail queue is left alone. Cars outside the overlap box keep their
+  geometric placement, so the corner-angled read of the field ahead is untouched.
+  See [FEATURES.md](FEATURES.md#radar--radarwindow--radarviewmodel--coreradar).
 - Carried-over polish: manufacturer badge on the relative, drag-to-resize
   widgets, a speed readout for the existing km/h / mph preference,
   configurable telemetry refresh rate, pinning the tray icon.
