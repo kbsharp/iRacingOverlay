@@ -111,7 +111,8 @@ Usage notes:
   cycle the radar's spotter-fallback states — all live, no rebuild. See
   [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.
 - Drag each widget anywhere with the left mouse button. **Positions and the UI scale
-  are remembered between runs** (saved to `%LocalAppData%\IRacingOverlay\settings.json`);
+  are remembered between runs** (saved to `%LocalAppData%\IRacingOverlay\settings.json`,
+  or `settings.dev.json` for a source build, so development can't disturb a racing layout);
   the first launch uses sensible defaults — standings top-left, relative bottom-left, the
   rest in a right column. A layout saved on a monitor you've since unplugged falls back to
   the default rather than opening off-screen.

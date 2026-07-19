@@ -374,6 +374,14 @@ brake if you catch it fast.
 
 - The repo must have a **GitHub remote** with **Actions enabled** — already the
   case for `kbsharp/iRacingOverlay`; this only matters for a fresh fork or clone.
+- **The repo must be public.** `UpdateService` constructs its `GithubSource` with
+  `accessToken: null`, so Velopack asks for the release feed unauthenticated —
+  against a private repo GitHub answers **404**, the check fails, and the app
+  reports itself up to date. That is exactly what happened for 0.4.0–0.6.0: three
+  releases published fine and no installed copy could see any of them, with the
+  only evidence buried in `update.log`. Making the repo private again would break
+  in-app update for every user; distributing an embedded token instead is not a
+  fix, it's a published credential.
 - The **vpk CLI version is pinned to the `Velopack` NuGet version** (1.2.0) in the
   workflow. When you bump one, bump the other — a mismatch between the CLI and the
   library is unsupported.
@@ -397,8 +405,11 @@ launch (and from the tray's *Check for updates*) it checks and downloads any new
 release in the background, then reveals a tray *"Restart to install update"* action;
 it never restarts on its own. It **only runs for a Velopack-installed copy** —
 `UpdateManager.IsInstalled` is false under `dotnet run` or a portable unzip, so
-dev/demo launches no-op. Update failures are swallowed (a flaky connection must not
-take down the overlay) and logged to `%LocalAppData%\IRacingOverlay\update.log`.
+dev/demo launches no-op. Update failures never interrupt a session (a flaky
+connection must not take down the overlay) and are logged to
+`%LocalAppData%\IRacingOverlay\update.log`; a **manual** check reports them in the
+tray, since "couldn't reach the feed" and "you're up to date" must not look the
+same to the user.
 Because the app owns its entry point, the `VelopackApp.Build().Run()` bootstrap in
 `App.Main` is what makes the install/update hooks fire — don't remove it.
 
@@ -410,7 +421,11 @@ Because the app owns its entry point, the `VelopackApp.Build().Run()` bootstrap 
 | Build fails on a warning | `TreatWarningsAsErrors` is on by design — fix the warning, don't suppress it |
 | Build fails with `MSB3026 ... locked by "IRacingOverlay (pid)"` | A previous run is still alive (it no longer exits when its window closes) — `Get-Process IRacingOverlay \| Stop-Process -Force` |
 | `CS0104` ambiguous reference to `Application`/`Color` | `UseWPF` + `UseWindowsForms` both contribute that type name — fully qualify it, see "Window lifecycle" above |
+| Demo window never appears, process exits 0 immediately | A copy of the **same flavour** is already running — `SingleInstanceGuard` yields to it. `Get-Process IRacingOverlay` to find it; the installed app and a source build don't block each other, two source builds do |
 | Demo window never appears | Check the process didn't exit immediately (`echo $?`/exit code) — a startup exception would show as a fast exit |
+| Widgets don't appear at all in live mode | Expected when iRacing isn't running — they stay hidden until telemetry connects. Uncheck *Only show widgets while iRacing is running* in Settings → General to position them with the sim shut |
+| Your real layout got reset / dev windows moved your racing layout | Shouldn't happen since the settings split — confirm which file is being written: installed = `settings.json`, everything else = `settings.dev.json`, both in `%LocalAppData%\IRacingOverlay` |
+| Installed app never updates | Check `%LocalAppData%\IRacingOverlay\update.log`. A wall of `404 (Not Found)` means the release feed isn't publicly readable — see the release prerequisites above |
 | Closing a widget window doesn't quit the app | Expected — it hides, not closes. Use the tray icon to bring it back, or its Exit to actually quit |
 | No tray icon visible | Windows hides new tray icons behind the taskbar's `^` overflow arrow the first time — click it |
 | Live mode stuck on "Waiting for iRacing" | `irsdkEnableMem=1` not set, sim not running, or sim is in exclusive fullscreen |

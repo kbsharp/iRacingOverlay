@@ -123,6 +123,16 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   public feed — background check/download, tray-driven restart, and it no-ops unless
   `UpdateManager.IsInstalled` (so `dotnet run`/demo is unaffected). See
   [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#releasing).
+- **The GitHub repo must stay public.** `UpdateService` reads the release feed
+  with no token, so a private repo 404s and every installed copy silently believes
+  it's up to date. This already cost three undeliverable releases.
+- **One copy per flavour runs at a time** (`SingleInstanceGuard`, named mutex,
+  claimed before any window exists). Installed and source builds use different
+  mutex names *and* different settings files (`SettingsLocation`) — a dev run
+  must never write over a layout arranged for real racing.
+- **The app icon is generated, not hand-drawn**: `tools/MakeAppIcon.ps1` emits
+  `Assets/app.ico`. Sizes ≤64px must stay classic DIB entries — `System.Drawing.Icon`
+  (and therefore `NotifyIcon`) can't decode PNG-compressed ones.
 - **Persisted settings** (window positions + UI scale) follow the same split:
   the pure model/serializer/validation (`Core.Settings` — `OverlaySettings`,
   `OverlaySettingsSerializer`, `LayoutGuard`) is tested; the file I/O + WPF wiring
