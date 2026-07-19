@@ -24,6 +24,7 @@
       "Bash(gh run view:*)",
       "PowerShell(./scripts/build.ps1)",
       "PowerShell(./scripts/test.ps1:*)",
+      "PowerShell(./scripts/render.ps1:*)",
       "PowerShell(Get-Process IRacingOverlay:*)",
       "WebSearch"
     ]
