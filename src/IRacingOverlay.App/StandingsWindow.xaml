@@ -22,7 +22,10 @@
     </Window.ContextMenu>
 
     <Grid Margin="14">
-        <Border Width="590"
+        <!-- Widened by the position-change column's 26px rather than taking the
+             space out of the driver name, which was already the first thing to
+             ellipsize in a multiclass field. -->
+        <Border Width="616"
                 Padding="14,10,14,10"
                 CornerRadius="6"
                 Background="{StaticResource PanelBackground}"
@@ -119,6 +122,10 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="5" />
                             <ColumnDefinition Width="24" />
+                            <!-- Places gained/lost. No caption: an arrow needs no
+                                 heading, and there is no two-letter word for it
+                                 that reads faster than the glyph itself. -->
+                            <ColumnDefinition Width="26" />
                             <ColumnDefinition Width="40" />
                             <!-- Collapses to zero when the badges are switched off. -->
                             <ColumnDefinition Width="{Binding ManufacturerColumnWidth}" />
@@ -131,13 +138,13 @@
                             <ColumnDefinition Width="52" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="1" Text="P" Style="{StaticResource Caption}" Margin="3,0,0,0" />
-                        <TextBlock Grid.Column="3" Text="CAR" Style="{StaticResource Caption}" HorizontalAlignment="Center"
+                        <TextBlock Grid.Column="4" Text="CAR" Style="{StaticResource Caption}" HorizontalAlignment="Center"
                                    Visibility="{Binding ShowManufacturerBadges, Converter={StaticResource BoolToVis}}" />
-                        <TextBlock Grid.Column="4" Text="DRIVER" Style="{StaticResource Caption}" />
-                        <TextBlock Grid.Column="7" Text="INT" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                        <TextBlock Grid.Column="8" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                        <TextBlock Grid.Column="9" Text="FASTEST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                        <TextBlock Grid.Column="10" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
+                        <TextBlock Grid.Column="5" Text="DRIVER" Style="{StaticResource Caption}" />
+                        <TextBlock Grid.Column="8" Text="INT" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                        <TextBlock Grid.Column="9" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                        <TextBlock Grid.Column="10" Text="FASTEST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
+                        <TextBlock Grid.Column="11" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
                     </Grid>
                 </Border>
 
@@ -228,6 +235,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="5" />
                                             <ColumnDefinition Width="24" />
+                                            <ColumnDefinition Width="26" />
                                             <ColumnDefinition Width="40" />
                                             <ColumnDefinition Width="{Binding ManufacturerColumnWidth}" />
                                             <ColumnDefinition Width="*" />
@@ -252,7 +260,36 @@
                                                    Typography.NumeralAlignment="Tabular"
                                                    Foreground="{StaticResource TextPrimary}" />
 
+                                        <!-- Places gained/lost since the start. Blank for a car
+                                             still on its starting position, so the column only
+                                             speaks when something has actually happened. Green
+                                             up / red down is the same pair the projected-iRating
+                                             chip already uses for gain and loss. -->
                                         <TextBlock Grid.Column="2"
+                                                   Text="{Binding PositionChangeText}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Right"
+                                                   Margin="0,0,5,0"
+                                                   FontFamily="{StaticResource FontSmall}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   Typography.NumeralAlignment="Tabular">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding PositionTrend}" Value="Up">
+                                                            <Setter Property="Foreground" Value="{StaticResource Positive}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding PositionTrend}" Value="Down">
+                                                            <Setter Property="Foreground" Value="{StaticResource Negative}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <TextBlock Grid.Column="3"
                                                    Text="{Binding CarNumberText}"
                                                    VerticalAlignment="Center"
                                                    FontFamily="{StaticResource FontSmall}"
@@ -263,7 +300,7 @@
 
                                         <!-- Manufacturer badge: the vector mark where we have CC0 artwork,
                                              otherwise a short brand abbreviation in the same chip. -->
-                                        <Grid Grid.Column="3"
+                                        <Grid Grid.Column="4"
                                               HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               Visibility="{Binding HasManufacturer, Converter={StaticResource BoolToVis}}">
@@ -283,7 +320,7 @@
                                             </Border>
                                         </Grid>
 
-                                        <TextBlock Grid.Column="4"
+                                        <TextBlock Grid.Column="5"
                                                    Text="{Binding Name}"
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,6,0"
@@ -302,17 +339,17 @@
                                             </TextBlock.Style>
                                         </TextBlock>
 
-                                        <Border Grid.Column="5" Style="{StaticResource LicenseBadgeBackground}">
+                                        <Border Grid.Column="6" Style="{StaticResource LicenseBadgeBackground}">
                                             <TextBlock Text="{Binding License}"
                                                        Style="{StaticResource LicenseBadgeText}" />
                                         </Border>
 
-                                        <Border Grid.Column="6" Style="{StaticResource IRatingBadgeBackground}">
+                                        <Border Grid.Column="7" Style="{StaticResource IRatingBadgeBackground}">
                                             <TextBlock Text="{Binding IRatingText}"
                                                        Style="{StaticResource IRatingBadgeText}" />
                                         </Border>
 
-                                        <TextBlock Grid.Column="7"
+                                        <TextBlock Grid.Column="8"
                                                    Text="{Binding IntervalText}"
                                                    Style="{StaticResource Timing}"
                                                    Margin="0,0,6,0"
@@ -320,7 +357,7 @@
                                                    FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextMuted}" />
 
-                                        <TextBlock Grid.Column="8"
+                                        <TextBlock Grid.Column="9"
                                                    Text="{Binding GapText}"
                                                    Style="{StaticResource Timing}"
                                                    Margin="0,0,6,0"
@@ -328,7 +365,7 @@
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource TextSecondary}" />
 
-                                        <TextBlock Grid.Column="9"
+                                        <TextBlock Grid.Column="10"
                                                    Text="{Binding BestText}"
                                                    VerticalAlignment="Center"
                                                    HorizontalAlignment="Right"
@@ -348,7 +385,7 @@
                                             </TextBlock.Style>
                                         </TextBlock>
 
-                                        <TextBlock Grid.Column="10"
+                                        <TextBlock Grid.Column="11"
                                                    Text="{Binding LastDeltaText}"
                                                    FontSize="12"
                                                    FontWeight="SemiBold">

@@ -31,6 +31,8 @@ public sealed class StandingsRowViewModel : ObservableObject
     private bool _isAltRow;
     private bool _inPits;
     private string _positionText = string.Empty;
+    private string _positionChangeText = string.Empty;
+    private RatingTrend _positionTrend = RatingTrend.Flat;
     private string _carNumberText = string.Empty;
     private string _name = string.Empty;
     private string _license = string.Empty;
@@ -118,6 +120,22 @@ public sealed class StandingsRowViewModel : ObservableObject
     {
         get => _positionText;
         private set => SetProperty(ref _positionText, value);
+    }
+
+    /// <summary>Places gained or lost since the start ("▲2" / "▼1"), empty when
+    /// the car is still on its starting position or the start isn't known.</summary>
+    public string PositionChangeText
+    {
+        get => _positionChangeText;
+        private set => SetProperty(ref _positionChangeText, value);
+    }
+
+    /// <summary>Drives the arrow's colour - the same green-gain / red-loss pair as
+    /// the projected-iRating chip, so the direction needs no learning.</summary>
+    public RatingTrend PositionTrend
+    {
+        get => _positionTrend;
+        private set => SetProperty(ref _positionTrend, value);
     }
 
     public string CarNumberText
@@ -257,6 +275,8 @@ public sealed class StandingsRowViewModel : ObservableObject
         PositionText = row.ClassPosition > 0
             ? row.ClassPosition.ToString(CultureInfo.InvariantCulture)
             : string.Empty;
+        PositionChangeText = StandingsFormat.PositionChange(row.PositionsGained);
+        PositionTrend = RatingFormat.ClassifyTrend(row.PositionsGained ?? 0);
         CarNumberText = row.CarNumber.Length > 0 ? "#" + row.CarNumber : string.Empty;
         Name = row.DisplayName;
         License = row.License;

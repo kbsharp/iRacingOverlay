@@ -23,6 +23,24 @@ public class StandingsFormatTests
         Assert.Equal(TelemetryFormat.Placeholder, StandingsFormat.LapTime(seconds));
     }
 
+    [Theory]
+    [InlineData(2, "▲2")]
+    [InlineData(11, "▲11")]
+    [InlineData(-1, "▼1")]
+    [InlineData(-7, "▼7")]
+    public void PositionChange_ArrowCarriesTheSign(int gained, string expected)
+    {
+        Assert.Equal(expected, StandingsFormat.PositionChange(gained));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    public void PositionChange_UnchangedOrUnknown_IsBlank(int? gained)
+    {
+        Assert.Equal(string.Empty, StandingsFormat.PositionChange(gained));
+    }
+
     [Fact]
     public void Gap_LapsDown_ShowsLapCount()
     {

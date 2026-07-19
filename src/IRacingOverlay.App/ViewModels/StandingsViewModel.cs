@@ -17,6 +17,8 @@ namespace IRacingOverlay.App.ViewModels;
 /// </summary>
 public sealed class StandingsViewModel : OverlayViewModelBase
 {
+    private readonly StartPositionTracker _startPositions = new();
+
     private int _maxPerClass = new WidgetTuning().StandingsMaxPerClass;
     private bool _showManufacturerBadges = new OverlaySettings().ShowManufacturerBadges;
 
@@ -97,7 +99,8 @@ public sealed class StandingsViewModel : OverlayViewModelBase
 
     public override void ApplyTelemetry(TelemetrySnapshot snapshot)
     {
-        var groups = StandingsCalculator.Compute(snapshot, _metadata, _maxPerClass);
+        var startPositions = _startPositions.Update(snapshot, _metadata);
+        var groups = StandingsCalculator.Compute(snapshot, _metadata, _maxPerClass, startPositions);
 
         UpdateHeader(snapshot);
 

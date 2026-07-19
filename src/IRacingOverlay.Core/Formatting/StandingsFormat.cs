@@ -44,4 +44,18 @@ public static class StandingsFormat
 
         return "+" + seconds.Value.ToString("0.0", CultureInfo.InvariantCulture);
     }
+
+    /// <summary>
+    /// Formats places gained since the start as "▲2" / "▼1". A car sitting on its
+    /// starting position - and a car with no known start, outside a race - renders
+    /// as nothing at all: an unchanged column of dashes down a 20-car field is
+    /// noise, and the arrows are only worth their space where something moved.
+    /// The glyph carries the sign, so the number stays unsigned.
+    /// </summary>
+    public static string PositionChange(int? gained) => gained switch
+    {
+        > 0 => "▲" + gained.Value.ToString(CultureInfo.InvariantCulture),
+        < 0 => "▼" + (-gained.Value).ToString(CultureInfo.InvariantCulture),
+        _ => string.Empty,
+    };
 }

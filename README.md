@@ -3,7 +3,8 @@
 A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
 
 - **Standings**: the full, class-grouped field (top-left by default) — colour-tinted class
-  banners with **Strength of Field**, then each car by class position with car number, a
+  banners with **Strength of Field**, then each car by class position with a
+  **position-change arrow** (▲2 / ▼1 vs where it started the race), car number, a
   driver, colour-coded license and iRating badges, an optional (experimental) car
   manufacturer badge, interval to the car
   ahead, gap to the class leader, best lap (session-fastest in purple) and last-lap delta.
@@ -160,7 +161,7 @@ behind each call. The short version:
 
 - **Core pass:** finish the widgets we have — a projected **Safety Rating**
   chip and **catch/defend pace forecasts** on the relative (neither
-  competitor has either), position-change arrows and pit status in the
+  competitor has either), pit status in the
   standings, a delta bar, and the carried-over polish list (radar density
   pass, manufacturer badge on the relative, drag-to-resize, a speed readout,
   configurable refresh rate, tray-icon pinning).

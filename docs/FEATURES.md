@@ -16,7 +16,7 @@ The full, class-grouped field table — the "big" widget, anchored top-left by
 default. Every car ordered by position within its class, with best/last lap
 times and gaps.
 
-**Layout:** 560px wide, borderless, always-on-top, draggable, right-click →
+**Layout:** 616px wide, borderless, always-on-top, draggable, right-click →
 Exit. Soft-cornered (`6px`), near-opaque with a top-lit panel material —
 styled after RaceLab/iOverlay/LMU standings. Default position top-left
 (`Left=24, Top=24`), then restored from
@@ -47,12 +47,45 @@ grouping legible from the cockpit. Its label flips between dark and light by
 since class colours are series-defined and a dark fill would otherwise swallow
 a dark label. Under it, its cars ordered by position, each with a
 full-height class-colour bar flush to the panel's left edge, and alternating
-(zebra) row shading. Each car row: class position, car number, a
+(zebra) row shading. Each car row: class position, a **position-change arrow**
+(see below), car number,
 an optional **manufacturer badge**, driver name, a license badge and a neutral iRating
 badge (the same chips as the relative), then **Int** (interval to the car
 ahead), **Gap** (to the class
 leader), **Fastest** (best lap, purple when session-best), and **Last**
 (last-lap delta to that car's own best, red when slower).
+
+**Position-change arrows — `StartPositionTracker` (Core).** A 26px column right
+of the class position showing places gained or lost since the race started:
+`▲2` in green, `▼1` in red, and **nothing at all** for a car still on its
+starting position. Blank rather than a dash is deliberate — a column of "0"s or
+"–"s down a 20-car field is noise, and the arrows are only worth their space
+where something actually moved. The glyph carries the sign, so the number stays
+unsigned (`StandingsFormat.PositionChange`). Green-gain/red-loss reuses the
+`Positive`/`Negative` pair the projected-iRating chip already means gain and
+loss with, so the direction needs no learning.
+
+The count is **class positions**, matching the P column beside it — in a
+multiclass race, places gained means places gained *in your class*.
+
+iRacing exposes no "starting position" variable, so it has to be latched from
+telemetry. `StartPositionTracker` records each car's class position the **first**
+time it sees that car in a race session and never revises it. Before the green,
+positions are grid order, so an overlay already running when the race begins
+records the grid — the normal case for a tray app left running across a session.
+
+- **Race sessions only.** Practice and qualifying order cars by lap time, so
+  "places gained" there would be counting improved laps, not overtakes. Outside
+  a race the column is empty everywhere.
+- **Cars are latched individually.** A car whose position reads 0 on the first
+  frame (iRacing reports 0 before it classifies a car) is simply recorded a frame
+  or two later, still on the grid. A car that joins late is baselined where it
+  joined rather than left arrow-less for the rest of the race. A car that
+  disconnects and returns keeps its original baseline.
+- **A session-number change resets everything**, so qualifying order never leaks
+  into the race's baseline, and a heat → feature pair counts separately.
+- Falls back to the overall position for a session that leaves
+  `CarIdxClassPosition` at 0.
 
 **Manufacturer badge — off by default, opt-in.** `OverlaySettings.ShowManufacturerBadges`
 (Settings → Tuning, "Manufacturer badges in the standings", tagged EXPERIMENTAL)
@@ -135,8 +168,13 @@ churn.
   brand abbreviation instead. All four are wordmarks, so the abbreviation is the
   intended rendering, not a stopgap (see the badge section above). McLaren's
   upstream mark is a wordmark too, so it reads denser than the others at row size.
-- No iRating ▲/▼ position-change arrows (shown in reference overlays) — needs
-  per-driver start-position tracking. A roadmap item.
+- **Position-change arrows can't be right if the overlay is launched mid-race.**
+  The baseline is then wherever the field was when the overlay attached, not the
+  grid. There is no telemetry signal that separates that from a genuine race
+  start — as far as the sim is concerned they are the same frame — so the tracker
+  latches what it sees rather than guessing. Start the overlay before the race
+  (or leave it running, which is what the tray icon is for) and the baseline is
+  the grid.
 - Demo-mode gaps are exaggerated (tens of seconds between adjacent positions)
   because the fake F2Time is scaled from the demo's track-position spread;
   real sessions show true sub-second gaps.

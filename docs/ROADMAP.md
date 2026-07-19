@@ -41,9 +41,6 @@ assets.
 Near-term, high value, fits the existing architecture. Almost all of this
 extends an existing widget rather than adding a new one.
 
-- **Standings: position-change arrows** (▲2 / ▼1 vs starting position) —
-  needs per-driver start-position tracking, already noted in FEATURES.md.
-  Parity with iOverlay's "positions gained" column.
 - **Standings: pit status** — the relative flags pitting cars, the standings
   doesn't. Extend the existing PIT badge across.
 - **Relative: catch/defend pace trend** *(unique — neither competitor has
@@ -151,6 +148,7 @@ Revisit only once the core above is strong:
 | Capability | RaceLab | iOverlay | Us |
 |---|---|---|---|
 | Standings / relative / fuel | ✅ | ✅ | ✅ |
+| Positions gained vs the grid | ✅ | ✅ (column) | ✅ per class |
 | Proximity radar | ✅ (radar + bars) | spotter indicator | ✅ corner-angled, learned geometry |
 | Track map | ✅ | ✅ (2 forms) | ❌ → mid-term (no track DB needed) |
 | Delta bar | ✅ | via columns | ❌ → core pass |

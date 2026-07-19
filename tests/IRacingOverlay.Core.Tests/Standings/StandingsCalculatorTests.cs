@@ -261,6 +261,37 @@ public class StandingsCalculatorTests
         Assert.Equal(Manufacturer.Unknown, rows.Single(r => r.CarIdx == 1).Manufacturer);
     }
 
+    [Fact]
+    public void Compute_PositionsGained_IsStartMinusCurrentClassPosition()
+    {
+        // GT3: car0 started 3rd and now leads (+2); car2 started 1st and is now
+        // 3rd (-2); car1 hasn't moved.
+        var startPositions = new Dictionary<int, int> { [0] = 3, [1] = 2, [2] = 1 };
+
+        var gt3 = StandingsCalculator.Compute(
+            MulticlassSnapshot(), MulticlassRoster(), maxPerClass: 30, startPositions)[0];
+
+        Assert.Equal(2, Assert.Single(gt3.Rows, r => r.CarIdx == 0).PositionsGained);
+        Assert.Equal(0, Assert.Single(gt3.Rows, r => r.CarIdx == 1).PositionsGained);
+        Assert.Equal(-2, Assert.Single(gt3.Rows, r => r.CarIdx == 2).PositionsGained);
+    }
+
+    [Fact]
+    public void Compute_PositionsGained_IsNullWithoutAStartingPosition()
+    {
+        // No start positions at all (outside a race), and a car missing from an
+        // otherwise-populated map, both mean "unknown" rather than "gained none".
+        var noneAtAll = StandingsCalculator.Compute(MulticlassSnapshot(), MulticlassRoster())[0];
+        Assert.All(noneAtAll.Rows, r => Assert.Null(r.PositionsGained));
+
+        var partial = StandingsCalculator.Compute(
+            MulticlassSnapshot(), MulticlassRoster(), maxPerClass: 30,
+            new Dictionary<int, int> { [0] = 1 })[0];
+
+        Assert.Equal(0, Assert.Single(partial.Rows, r => r.CarIdx == 0).PositionsGained);
+        Assert.Null(Assert.Single(partial.Rows, r => r.CarIdx == 1).PositionsGained);
+    }
+
     private static CarTelemetry Car(
         int idx, int position, int classPosition, int lapsCompleted,
         float best, float last, float f2,
