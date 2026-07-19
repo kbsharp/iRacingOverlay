@@ -248,23 +248,24 @@
             <StackPanel Visibility="{Binding ShowSetupReminder, Converter={StaticResource BoolToVis}}">
                 <Border Height="1" Background="{StaticResource Separator}" Margin="0,6,0,6" />
                 <DockPanel>
-                    <Border DockPanel.Dock="Left" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
+                    <Border DockPanel.Dock="Left">
                         <Border.Style>
-                            <Style TargetType="Border">
+                            <!-- Same chip as the standings/relative badges: this had
+                                 drifted to its own radius and padding. -->
+                            <Style TargetType="Border" BasedOn="{StaticResource Chip}">
                                 <Setter Property="Background" Value="#14FFFFFF" />
+                                <Setter Property="BorderBrush" Value="#26FFFFFF" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsRaceOrQualify}" Value="True">
-                                        <Setter Property="Background" Value="#33FFB03D" />
+                                        <Setter Property="Background" Value="#3DFFB03D" />
+                                        <Setter Property="BorderBrush" Value="#8AFFB03D" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
-                        <TextBlock Text="{Binding SessionTypeText}"
-                                   FontFamily="{StaticResource FontSmall}"
-                                   FontSize="10"
-                                   FontWeight="Bold">
+                        <TextBlock Text="{Binding SessionTypeText}">
                             <TextBlock.Style>
-                                <Style TargetType="TextBlock">
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource ChipText}">
                                     <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsRaceOrQualify}" Value="True">
