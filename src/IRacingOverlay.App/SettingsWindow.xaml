@@ -414,7 +414,14 @@
                                    Text="{Binding FuelSafetyMarginLaps, StringFormat={}{0:0.0} lap}" />
                     </Grid>
 
-                    <Grid Margin="0,4">
+                    <CheckBox Content="Show the setup reminder on the fuel widget"
+                              IsChecked="{Binding ShowSetupReminder}" Margin="0,6,0,0" />
+                    <TextBlock Style="{StaticResource Hint}"
+                               Text="Adds a strip to the fuel widget with the loaded setup, and pulses the panel at the start of a Qualify or Race so you notice you're on the wrong one." />
+
+                    <!-- Only has an effect while the checkbox above is on, hence the
+                         binding that greys it out rather than a separate section. -->
+                    <Grid Margin="0,4" IsEnabled="{Binding ShowSetupReminder}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="170" />
                             <ColumnDefinition Width="*" />

@@ -13,11 +13,15 @@ public static class WidgetIds
     public const string Standings = "StandingsWindow";
     public const string Relative = "RelativeWindow";
     public const string Fuel = "FuelWindow";
-    public const string Setup = "SetupWindow";
     public const string Radar = "RadarWindow";
 
     /// <summary>Every widget the settings surface knows about, in the order the
-    /// tray menu and settings window list them.</summary>
+    /// tray menu and settings window list them.
+    ///
+    /// There was a "SetupWindow" entry here until the setup readout was folded
+    /// into the fuel widget. A settings file written before that still carries
+    /// its keys; every per-widget map is read by lookup, so the stale entries are
+    /// simply never consulted.</summary>
     public static IReadOnlyList<string> All { get; } =
-        [Standings, Relative, Fuel, Setup, Radar];
+        [Standings, Relative, Fuel, Radar];
 }

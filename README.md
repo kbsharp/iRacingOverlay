@@ -16,10 +16,11 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   remaining, brake bias, track/air temps, a wetness badge, and your incident count.
 - **Fuel**: a strategy calculator — fuel level and laps in tank, average/last-lap burn,
   and the numbers you act on: fuel to finish, the margin you'll finish with (green spare
-  / red short), fuel to add at the next stop, and a save-per-lap target.
-- **Setup**: shows the currently loaded setup file and flashes for the first minute of
+  / red short), fuel to add at the next stop, and a save-per-lap target. A strip along
+  the bottom shows the **loaded setup file** and pulses the panel for the first minute of
   Qualifying or Race — a reminder to catch the classic "raced on the qualifying setup"
-  mistake before it costs you a fuel-short race.
+  mistake before it costs you a fuel-short race. Switch the strip off in Settings if you
+  don't want it.
 - **Radar**: an LMU-style top-down proximity radar — nearby cars drawn as class-coloured
   icons at their real positions relative to you, *angled to match the track* through
   corners. It hides itself when nobody's near and reappears the moment a car comes into
@@ -148,6 +149,11 @@ no longer leaves panels sitting over the desktop all day. See
 
 Still open:
 
+- **A density pass over the radar.** The fuel widget has been retightened onto the
+  same 10px-inset / 6px-gap rhythm the list widgets use, and the setup widget folded
+  into it as a single line. The radar is the last widget not audited against that
+  rhythm — it's chrome-free, so the question there is the 150×240 field size and the
+  blip scale rather than padding.
 - Delta bar (lap delta to session/all-time best)
 - Extending the manufacturer badge to the relative (the four makes without a CC0
   mark — Dallara, Ligier, Radical, Ruf — are wordmarks, so their abbreviation

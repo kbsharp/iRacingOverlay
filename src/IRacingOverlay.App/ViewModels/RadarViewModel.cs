@@ -32,6 +32,8 @@ public sealed class RadarViewModel : OverlayViewModelBase
     private bool _hasCarLeft;
     private bool _hasCarRight;
     private bool _shouldShow;
+    private double _leftDanger;
+    private double _rightDanger;
 
     public RadarViewModel(string connectedLabel = "Live")
         : base(connectedLabel)
@@ -51,6 +53,7 @@ public sealed class RadarViewModel : OverlayViewModelBase
             {
                 OnPropertyChanged(nameof(IsWaitingForData));
                 OnPropertyChanged(nameof(ShowFallback));
+                OnPropertyChanged(nameof(ShowCar));
             }
         }
     }
@@ -65,6 +68,7 @@ public sealed class RadarViewModel : OverlayViewModelBase
             {
                 OnPropertyChanged(nameof(ShowRadar));
                 OnPropertyChanged(nameof(ShowFallback));
+                OnPropertyChanged(nameof(ShowCar));
             }
         }
     }
@@ -78,11 +82,28 @@ public sealed class RadarViewModel : OverlayViewModelBase
     /// <summary>The coarse spotter zones stand in for the first lap, before the map is ready.</summary>
     public bool ShowFallback => IsActive && !MapReady && (HasCarLeft || HasCarRight);
 
+    /// <summary>The player's own mark is drawn for both the positional and fallback modes.</summary>
+    public bool ShowCar => ShowRadar || ShowFallback;
+
     /// <summary>Whether the whole widget is visible - it disappears when nobody's near.</summary>
     public bool ShouldShow
     {
         get => _shouldShow;
         private set => SetProperty(ref _shouldShow, value);
+    }
+
+    /// <summary>Opacity of the left proximity glow, 0-1. See <see cref="RadarDanger"/>.</summary>
+    public double LeftDanger
+    {
+        get => _leftDanger;
+        private set => SetProperty(ref _leftDanger, value);
+    }
+
+    /// <summary>Opacity of the right proximity glow, 0-1.</summary>
+    public double RightDanger
+    {
+        get => _rightDanger;
+        private set => SetProperty(ref _rightDanger, value);
     }
 
     public bool HasCarLeft
@@ -93,6 +114,7 @@ public sealed class RadarViewModel : OverlayViewModelBase
             if (SetProperty(ref _hasCarLeft, value))
             {
                 OnPropertyChanged(nameof(ShowFallback));
+                OnPropertyChanged(nameof(ShowCar));
             }
         }
     }
@@ -105,6 +127,7 @@ public sealed class RadarViewModel : OverlayViewModelBase
             if (SetProperty(ref _hasCarRight, value))
             {
                 OnPropertyChanged(nameof(ShowFallback));
+                OnPropertyChanged(nameof(ShowCar));
             }
         }
     }
@@ -135,7 +158,13 @@ public sealed class RadarViewModel : OverlayViewModelBase
         MapReady = result.MapReady;
         UpdateBlips(result.Blips);
 
+        // Before the map is ready there are no positions to grade, so the coarse
+        // spotter flag drives the glow at full strength - same visual, less detail.
+        LeftDanger = MapReady ? result.LeftDanger : (HasCarLeft ? 1.0 : 0.0);
+        RightDanger = MapReady ? result.RightDanger : (HasCarRight ? 1.0 : 0.0);
+
         OnPropertyChanged(nameof(ShowRadar));
+        OnPropertyChanged(nameof(ShowCar));
         ShouldShow = ShowRadar || ShowFallback || IsWaitingForData;
     }
 

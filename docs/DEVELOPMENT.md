@@ -118,7 +118,7 @@ Get-Process IRacingOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
   ```powershell
   dotnet run --project tools/RenderWidget                            # standings.png
   dotnet run --project tools/RenderWidget -- relative out/rel.png    # pick widget + path
-  dotnet run --project tools/RenderWidget -- settings out/set.png    # standings, relative, settings
+  dotnet run --project tools/RenderWidget -- settings out/set.png    # standings, relative, fuel, radar, settings
   ```
 
   It's deliberately **not** in `IRacingOverlay.sln`, so `dotnet build` and CI
@@ -127,6 +127,14 @@ Get-Process IRacingOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
   the real view model, and `RenderTargetBitmap`s the real window's `Content` at
   2× DPI (192) over an opaque backdrop. Adding another widget is one `case` in
   `BuildWindow`.
+
+  Most widgets render from a single frame, but the **radar** needs history — it
+  shows nothing until `TrackMap` has learned the track — so its case runs the demo
+  source until `ShowRadar` goes true (demo laps are 15 s, so seconds, not minutes).
+  Its red proximity glow won't fire under demo data at all: the demo field runs
+  nose-to-tail at zero lateral offset, which `RadarDanger` correctly reads as
+  queued traffic rather than a side-by-side. To eyeball the glow, temporarily pin
+  the ellipses' `Opacity` to a literal in `RadarWindow.xaml` and render.
 
   `RenderTargetBitmap` uses greyscale antialiasing exactly as the live
   `AllowsTransparency` windows do, so text weight comes out faithful — which is

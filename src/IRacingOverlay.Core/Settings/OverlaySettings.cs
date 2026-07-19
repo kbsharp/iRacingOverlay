@@ -51,6 +51,12 @@ public sealed record OverlaySettings
     /// <summary>Whether the app registers itself to launch with Windows.</summary>
     public bool RunAtStartup { get; init; }
 
+    /// <summary>Whether the fuel widget shows the loaded setup and pulses at the
+    /// start of a Qualify/Race session. On by default - it's the behaviour the
+    /// standalone setup widget had before it was folded into the fuel panel.
+    /// Off gives a fuel widget with no setup strip at all.</summary>
+    public bool ShowSetupReminder { get; init; } = true;
+
     /// <summary>Whether widgets stay hidden while iRacing isn't running. On by
     /// default: with <see cref="RunAtStartup"/> set, the alternative is a set of
     /// always-on-top panels sitting over the desktop all day. Turn it off to

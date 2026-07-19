@@ -17,13 +17,14 @@
         MouseLeftButtonDown="OnDragWindow">
 
     <Window.Resources>
-        <!-- Fallback proximity zone (first lap, before the track is mapped). -->
-        <Style x:Key="FallbackZone" TargetType="Border">
-            <Setter Property="Width" Value="30" />
-            <Setter Property="Height" Value="64" />
-            <Setter Property="CornerRadius" Value="3" />
-            <Setter Property="Background" Value="#14FFFFFF" />
-        </Style>
+        <!-- The proximity glow: hottest at the inner edge (your door), falling away
+             outward. Painted twice, mirrored, so each side reads independently. -->
+        <RadialGradientBrush x:Key="DangerGlow" GradientOrigin="0.5,0.5" Center="0.5,0.5"
+                             RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Offset="0.0" Color="#FFFF2A2A" />
+            <GradientStop Offset="0.45" Color="#B8FF1F1F" />
+            <GradientStop Offset="1.0" Color="#00FF0000" />
+        </RadialGradientBrush>
     </Window.Resources>
 
     <Window.ContextMenu>
@@ -32,122 +33,100 @@
         </ContextMenu>
     </Window.ContextMenu>
 
-    <!-- The whole widget hides when nobody is near; ShouldShow drives that. -->
+    <!-- The whole widget hides when nobody is near; ShouldShow drives that.
+         Deliberately chrome-free - no panel, no border, no scope field. The radar
+         reads as marks floating on the track, so it costs the driver nothing when
+         the mirrors are already busy; only the glow is meant to catch the eye. -->
     <Grid Margin="14"
           Visibility="{Binding ShouldShow, Converter={StaticResource BoolToVis}}">
-        <Border Padding="10"
-                CornerRadius="6"
-                Background="{StaticResource PanelBackground}"
-                BorderBrush="{StaticResource PanelBorder}"
-                BorderThickness="1">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.6" Color="#000000" />
-            </Border.Effect>
+        <Grid Width="230" Height="{x:Static vm:RadarLayout.CanvasHeight}">
 
-            <Grid>
-                <!-- ================= Positional radar (track learned) ================= -->
-                <Grid Width="{x:Static vm:RadarLayout.CanvasWidth}"
-                      Height="{x:Static vm:RadarLayout.CanvasHeight}"
-                      Visibility="{Binding ShowRadar, Converter={StaticResource BoolToVis}}">
+            <!-- Proximity glows: tight blobs sitting just off each door, not a wash
+                 over the whole widget - they have to read in peripheral vision without
+                 hiding the track behind them. -->
+            <Ellipse Width="78" Height="104"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Margin="-96,0,0,0"
+                     IsHitTestVisible="False"
+                     Fill="{StaticResource DangerGlow}"
+                     Opacity="{Binding LeftDanger}" />
+            <Ellipse Width="78" Height="104"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Margin="96,0,0,0"
+                     IsHitTestVisible="False"
+                     Fill="{StaticResource DangerGlow}"
+                     Opacity="{Binding RightDanger}" />
 
-                    <!-- Scope field -->
-                    <Border CornerRadius="3" Background="#B30A0E14" BorderBrush="#26FFFFFF" BorderThickness="1" />
+            <!-- ================= Positional radar (track learned) ================= -->
+            <Grid Width="{x:Static vm:RadarLayout.CanvasWidth}"
+                  Height="{x:Static vm:RadarLayout.CanvasHeight}"
+                  Visibility="{Binding ShowRadar, Converter={StaticResource BoolToVis}}">
 
-                    <!-- Faint axes through the player, for orientation -->
-                    <Border Width="1" HorizontalAlignment="Center" Background="#18FFFFFF" />
-                    <Border Height="1" VerticalAlignment="Center" Background="#18FFFFFF" />
+                <!-- The one piece of furniture: a dashed line level with your axles,
+                     so overlap is judged against something instead of guessed. -->
+                <Path Stroke="#59FFFFFF" StrokeThickness="1" StrokeDashArray="3 4"
+                      VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                      Data="M0,0 L150,0" />
 
-                    <!-- Other cars, absolutely positioned on a Canvas by the view model -->
-                    <ItemsControl ItemsSource="{Binding Blips}"
-                                  Width="{x:Static vm:RadarLayout.CanvasWidth}"
-                                  Height="{x:Static vm:RadarLayout.CanvasHeight}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemContainerStyle>
-                            <Style TargetType="ContentPresenter">
-                                <Setter Property="Canvas.Left" Value="{Binding CanvasLeft}" />
-                                <Setter Property="Canvas.Top" Value="{Binding CanvasTop}" />
-                            </Style>
-                        </ItemsControl.ItemContainerStyle>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Width="{x:Static vm:RadarLayout.BlipWidth}"
-                                        Height="{x:Static vm:RadarLayout.BlipHeight}"
-                                        CornerRadius="2"
-                                        Background="{Binding Fill}"
-                                        BorderBrush="#40000000"
-                                        BorderThickness="1"
-                                        RenderTransformOrigin="0.5,0.5">
-                                    <Border.RenderTransform>
-                                        <RotateTransform Angle="{Binding AngleDegrees}" />
-                                    </Border.RenderTransform>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <!-- Player car, always dead centre facing up -->
-                    <Border Width="{x:Static vm:RadarLayout.BlipWidth}"
-                            Height="{x:Static vm:RadarLayout.BlipHeight}"
-                            CornerRadius="2"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Background="{StaticResource TextPrimary}">
-                        <Border Width="7"
-                                Height="5"
-                                Margin="0,3,0,0"
-                                CornerRadius="1"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Top"
-                                Background="{StaticResource Accent}" />
-                    </Border>
-                </Grid>
-
-                <!-- ================= Spotter fallback (first lap) ================= -->
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Visibility="{Binding ShowFallback, Converter={StaticResource BoolToVis}}">
-                    <Border Margin="0,0,6,0">
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource FallbackZone}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasCarLeft}" Value="True">
-                                        <Setter Property="Background" Value="#B0FF5C6C" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                    </Border>
-                    <Border Width="20"
-                            Height="52"
-                            CornerRadius="2"
-                            Background="{StaticResource TextMuted}"
-                            Opacity="0.9" />
-                    <Border Margin="6,0,0,0">
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource FallbackZone}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasCarRight}" Value="True">
-                                        <Setter Property="Background" Value="#B0FF5C6C" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                    </Border>
-                </StackPanel>
-
-                <!-- ================= Placeholder (pre-session) ================= -->
-                <TextBlock Text="radar"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           FontSize="11"
-                           Foreground="{StaticResource TextMuted}"
-                           Visibility="{Binding IsWaitingForData, Converter={StaticResource BoolToVis}}" />
+                <!-- Other cars, absolutely positioned on a Canvas by the view model -->
+                <ItemsControl ItemsSource="{Binding Blips}"
+                              Width="{x:Static vm:RadarLayout.CanvasWidth}"
+                              Height="{x:Static vm:RadarLayout.CanvasHeight}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Canvas.Left" Value="{Binding CanvasLeft}" />
+                            <Setter Property="Canvas.Top" Value="{Binding CanvasTop}" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="{x:Static vm:RadarLayout.BlipWidth}"
+                                    Height="{x:Static vm:RadarLayout.BlipHeight}"
+                                    CornerRadius="2"
+                                    Background="#FFF2F4F7"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <!-- A soft dark halo instead of a hard border: keeps a pale
+                                     car legible against sky or kerbs without drawing a box. -->
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="6" ShadowDepth="0"
+                                                      Opacity="0.85" Color="#000000" />
+                                </Border.Effect>
+                                <Border.RenderTransform>
+                                    <RotateTransform Angle="{Binding AngleDegrees}" />
+                                </Border.RenderTransform>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </Grid>
-        </Border>
+
+            <!-- Your car: dead centre, facing up, green so it never reads as traffic.
+                 Lives outside the canvas so the first-lap spotter fallback - glow only,
+                 no positions - still has something to be centred on. -->
+            <Border Width="{x:Static vm:RadarLayout.BlipWidth}"
+                    Height="{x:Static vm:RadarLayout.BlipHeight}"
+                    CornerRadius="2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#FF37D14A"
+                    Visibility="{Binding ShowCar, Converter={StaticResource BoolToVis}}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="6" ShadowDepth="0" Opacity="0.85" Color="#000000" />
+                </Border.Effect>
+            </Border>
+
+            <!-- ================= Placeholder (pre-session) ================= -->
+            <TextBlock Text="radar"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="11"
+                       Foreground="{StaticResource TextMuted}"
+                       Visibility="{Binding IsWaitingForData, Converter={StaticResource BoolToVis}}" />
+        </Grid>
     </Grid>
 </Window>

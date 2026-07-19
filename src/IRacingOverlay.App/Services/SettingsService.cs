@@ -110,6 +110,11 @@ public sealed class SettingsService
     public void SetHideWhenSimClosed(bool hideWhenSimClosed)
         => Update(_current with { HideWhenSimClosed = hideWhenSimClosed });
 
+    /// <summary>Records whether the fuel widget carries the setup strip and its
+    /// start-of-session pulse.</summary>
+    public void SetShowSetupReminder(bool showSetupReminder)
+        => Update(_current with { ShowSetupReminder = showSetupReminder });
+
     /// <summary>Forgets every saved window position, so the next launch puts each
     /// widget back at its default corner. The recovery path for a layout that's
     /// been dragged somewhere unusable - previously this meant deleting

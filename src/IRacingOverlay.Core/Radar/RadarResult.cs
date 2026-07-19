@@ -6,7 +6,11 @@ namespace IRacingOverlay.Core.Radar;
 /// caller should fall back to the coarse spotter signal; when
 /// <see cref="AnyInRange"/> is false the widget hides itself entirely.
 /// </summary>
-public readonly record struct RadarResult(IReadOnlyList<RadarBlip> Blips, bool MapReady)
+public readonly record struct RadarResult(
+    IReadOnlyList<RadarBlip> Blips,
+    bool MapReady,
+    double LeftDanger = 0,
+    double RightDanger = 0)
 {
     public static readonly RadarResult Empty = new([], false);
 

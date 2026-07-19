@@ -226,6 +226,19 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>Whether the fuel widget shows the loaded setup and pulses at the
+    /// start of a Qualify/Race. The flash length below only matters while this is
+    /// on.</summary>
+    public bool ShowSetupReminder
+    {
+        get => _settings.Current.ShowSetupReminder;
+        set
+        {
+            _settings.SetShowSetupReminder(value);
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>Unsubscribes from the settings service. The window is rebuilt each
     /// time it's opened, so without this every open would leave a live handler on
     /// a service that outlives it.</summary>
@@ -262,6 +275,7 @@ public sealed class SettingsViewModel : ObservableObject
 
             RaiseUnitProperties();
             RaiseTuningProperties();
+            OnPropertyChanged(nameof(ShowSetupReminder));
         }
         finally
         {
