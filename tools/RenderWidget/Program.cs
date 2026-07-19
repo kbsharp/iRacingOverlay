@@ -278,8 +278,10 @@ internal static class Program
             }
         };
 
+        var frames = 0;
         source.TelemetryReceived += (_, s) =>
         {
+            Interlocked.Increment(ref frames);
             foreach (var vm in viewModels)
             {
                 vm.ApplyTelemetry(s);
@@ -300,7 +302,11 @@ internal static class Program
             var fuelReady = !needsLaps || elapsed >= FuelWarmup;
             var radarReady = radar is null || radar.ShowRadar;
 
-            if (fuelReady && radarReady)
+            // At least one frame, always. Widgets that need neither laps nor a
+            // track map (standings, relative) otherwise satisfied both checks on
+            // the first pass and were rendered before any telemetry arrived -
+            // an empty panel that looks like a styling result rather than a bug.
+            if (Volatile.Read(ref frames) > 0 && fuelReady && radarReady)
             {
                 break;
             }
@@ -309,6 +315,12 @@ internal static class Program
         }
 
         source.Stop();
+
+        if (Volatile.Read(ref frames) == 0)
+        {
+            Console.Error.WriteLine(
+                "Warning: no telemetry arrived during warm-up; widgets will render empty.");
+        }
 
         if (radar is not null && !radar.ShowRadar)
         {
