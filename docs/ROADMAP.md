@@ -141,9 +141,40 @@ extends an existing widget rather than adding a new one.
   nose-to-tail queue is left alone. Cars outside the overlap box keep their
   geometric placement, so the corner-angled read of the field ahead is untouched.
   See [FEATURES.md](FEATURES.md#radar--radarwindow--radarviewmodel--coreradar).
-- Carried-over polish: manufacturer badge on the relative, drag-to-resize
-  widgets, a speed readout for the existing km/h / mph preference,
-  configurable telemetry refresh rate, pinning the tray icon.
+- Carried-over polish: drag-to-resize widgets, a speed readout for the existing
+  km/h / mph preference, configurable telemetry refresh rate, pinning the tray
+  icon.
+
+## Needs research first
+
+Not parked and not rejected — these pass the decision test, but there's an open
+question that has to be answered *before* the build is worth starting, because
+the answer decides whether there's a feature at all.
+
+- **Manufacturer badge on the relative.** The badge already ships on the
+  standings, off by default, and moving it to the relative looks like a
+  half-hour of markup. It isn't, for two reasons that both need settling first.
+
+  **The mark set is incomplete, and the relative punishes that harder.**
+  `ManufacturerResolver` brand-matches substrings of `CarPath`/`CarScreenName`
+  and deliberately isn't exhaustive — an unrecognised car resolves to `Unknown`
+  and the column simply omits it. On the standings, a scattering of blanks down
+  a long list reads as a list with some gaps. On the relative — six or seven
+  rows, the cars actually around you — a blank next to the car you're fighting
+  is the one place the badge had a job to do. The research: across the classes
+  people actually race, what fraction of a typical relative's rows resolve? If
+  it isn't near-total, the badge is worse than nothing there.
+
+  **And it may be the wrong signal for that widget.** The relative already
+  colours by `CarClassColor`, and in a single-make field every badge is
+  identical — a column of the same mark, costing width on the app's densest
+  row. The question is whether the badge changes a decision *on the relative*
+  (recognising who's alongside you in multiclass) or is just the standings
+  feature relocated. Answer that with real multiclass sessions, not reasoning.
+
+  Until both are answered this stays out of the core pass. It remains the
+  worked example of a toggle used as a staging area, referenced above and in
+  the non-goals — that role doesn't depend on it reaching the relative.
 
 ## The strategy layer — the bets nobody has
 
