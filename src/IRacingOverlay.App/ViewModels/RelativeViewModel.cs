@@ -21,7 +21,9 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     private TemperatureUnit _temperatureUnit = TemperatureUnit.Celsius;
     private TelemetrySnapshot? _lastSnapshot;
 
-    private string _sessionText = "SESSION";
+    private string _sessionTypeText = "SESSION";
+    private string _sessionRemainingText = string.Empty;
+    private bool _hasSessionRemaining;
     private string _trackTempText = string.Empty;
     private string _airTempText = string.Empty;
     private string _brakeBiasText = string.Empty;
@@ -57,10 +59,27 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     /// <summary>Projected iRating change; hides itself outside a race.</summary>
     public IRatingChipViewModel IRating { get; } = new();
 
-    public string SessionText
+    /// <summary>The session label ("RACE") - the quiet half of the strip.</summary>
+    public string SessionTypeText
     {
-        get => _sessionText;
-        private set => SetProperty(ref _sessionText, value);
+        get => _sessionTypeText;
+        private set => SetProperty(ref _sessionTypeText, value);
+    }
+
+    /// <summary>Time or laps remaining - the strip's headline figure, typeset a
+    /// step larger than everything around it.</summary>
+    public string SessionRemainingText
+    {
+        get => _sessionRemainingText;
+        private set => SetProperty(ref _sessionRemainingText, value);
+    }
+
+    /// <summary>False for an unlimited session with no lap count, so the strip
+    /// shows the label alone rather than a stray separator.</summary>
+    public bool HasSessionRemaining
+    {
+        get => _hasSessionRemaining;
+        private set => SetProperty(ref _hasSessionRemaining, value);
     }
 
     public string TrackTempText
@@ -194,12 +213,11 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     {
         var sessionType = SessionFormat.ResolveSessionType(_metadata?.SessionTypesByNum, snapshot.SessionNum);
 
-        var timeRemaining = SessionFormat.TimeRemaining(snapshot.SessionTimeRemainSeconds);
-        SessionText = timeRemaining is not null
-            ? $"{sessionType} · {timeRemaining}"
-            : snapshot.SessionLapsRemain > 0
-                ? $"{sessionType} · {snapshot.SessionLapsRemain} LAPS"
-                : sessionType;
+        var header = SessionFormat.Header(
+            sessionType, snapshot.SessionTimeRemainSeconds, snapshot.SessionLapsRemain);
+        SessionTypeText = header.TypeText;
+        SessionRemainingText = header.RemainingText;
+        HasSessionRemaining = header.RemainingText.Length > 0;
 
         TrackTempText = "TRK " + UnitFormat.Temperature(snapshot.TrackTempC, _temperatureUnit);
         AirTempText = "AIR " + UnitFormat.Temperature(snapshot.AirTempC, _temperatureUnit);

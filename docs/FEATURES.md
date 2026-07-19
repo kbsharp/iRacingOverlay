@@ -24,15 +24,28 @@ saved settings. No widget-name label — the class banners and columns identify
 it; the top strip carries session type + time/laps remaining + the same
 `Ln/total` lap counter as the relative widget + the
 [projected-iRating chip](#projected-irating--iratingchipviewmodel--corerating)
-+ car count.
++ car count. Within that strip the **remaining figure is the headline**
+(`17px` here, `15px` on the relative) against the session label's quieter
+`13px`/`12px` secondary tone — `SessionFormat.Header` splits the two so they
+can be typeset separately, since a single `"RACE · 3:24"` string could only
+ever carry one size and left the strip reading as a row of equal-weight
+tokens. The separator hides when the session is unlimited and has no lap
+count, so no stray `·` is left behind.
 Under that strip, the column captions sit on a full-bleed **header band**
 (`HeaderBand` fill, `Separator` underline) so the table reads as having a head
 rather than a floating row of grey labels.
 
 **Rows** are grouped by class. Each class shows a colour-tinted **banner** (a
-translucent wash of the sim's `CarClassColor`) with the class short name, its
-**Strength of Field** (`StrengthOfField.Compute`, iRacing's real SoF formula),
-and a car count. Under it, its cars ordered by position, each with a
+translucent wash of the sim's `CarClassColor`) carrying a solid **class
+name-plate** — the short name in a filled block of the class colour, like a
+number-board — plus its **Strength of Field** (`StrengthOfField.Compute`,
+iRacing's real SoF formula) and a car count. The plate exists because the
+translucent wash alone left three classes reading as three similar dark tints
+at a squint; a solid block of the sim's own class hue is what makes multiclass
+grouping legible from the cockpit. Its label flips between dark and light by
+`RatingFormat.PrefersDarkText` (Rec. 601 relative luminance, threshold `0.55`),
+since class colours are series-defined and a dark fill would otherwise swallow
+a dark label. Under it, its cars ordered by position, each with a
 full-height class-colour bar flush to the panel's left edge, and alternating
 (zebra) row shading. Each car row: class position, car number, a
 an optional **manufacturer badge**, driver name, a license badge and a neutral iRating
@@ -181,6 +194,12 @@ the car is on pit road or in a pit stall, and a signed time delta (`+n.n` /
 `-n.n`). Zebra striping is fixed per slot (`RelativeRowViewModel.IsAltRow`) so
 it stays stable as rows update in place.
 
+**Row hierarchy:** the delta is the headline — `16px` Bold, a clear step above
+the driver name at `13px`, with the position and car number recessive at
+`11px` `FontSmall`. The delta is the one number read at 200kph, so the eye must
+land on it first; at its previous `13px` it tied with the name and the row read
+as a set of equal-weight tokens.
+
 **Colour coding** (the widget's main visual identity — deliberately not
 blue-dominated; blue is reserved for the header label and the A-license
 badge specifically):
@@ -321,6 +340,16 @@ unchanged, only the space around them.
 **Displayed fields:**
 - Current fuel level (`nn.nn L`) and laps of running left in the tank at
   current burn (`FuelEstimate.EstimatedLapsRemaining`).
+- **Tank gauge** — a slim `6px` bar under the headline figure: fill = current
+  fuel against usable tank capacity, with a 2px tick at the fuel needed to
+  finish. Green fill when the level clears the tick, red when short — the same
+  `Positive`/`Negative` pair, and the same question, as the margin badge below
+  it. Flat fill, 1px edge, no gloss: an instrument drawn in the panel material,
+  not a borrowed pill gauge. Fuel is the one quantity in the app with a natural
+  zero *and* a natural maximum, which is why it gets a bar and the timing
+  widgets stay number sheets. Geometry is expressed as `Grid` star weights
+  (`GaugeFillWeight` and friends), so the bar follows the tray UI-scale with no
+  magic pixel width to keep in sync.
 - Used/lap, last lap (both from `FuelCalculator`'s rolling average).
 - Race laps remaining (whole laps, from `FuelStrategyCalculator.
   EstimateRaceLapsRemaining`).
@@ -348,6 +377,23 @@ unchanged, only the space around them.
 - A lap-counter *decrease* (tow back to pits, session restart) re-baselines
   the current-lap tracking but keeps prior recorded laps in the average —
   they're still representative of this car/track/fuel load.
+
+**`FuelGaugeCalculator`** (the tank gauge's two positions):
+- `Compute(fuelLiters, tankCapacityLiters, fuelToFinishLiters)` → `FuelGauge`
+  (`HasGauge`, `FillFraction`, `ShowTick`, `TickFraction`, `ClearsTick`).
+- **No capacity means no gauge.** A missing/zero/NaN capacity returns
+  `HasGauge = false` and the bar is hidden — a bar drawn against a guessed
+  maximum reads "half full" when it isn't, which is worse than no bar.
+- Fractions are clamped to 0–1: an overfull tank is a full bar, and a
+  to-finish figure beyond one tankful pins the tick at the end rather than
+  silently rescaling the bar.
+- `ClearsTick` is inclusive at the boundary, matching the margin badge — zero
+  laps spare is still "will finish", so the bar must not flip red at exactly
+  enough.
+- Capacity comes from session info as `DriverCarFuelMaxLtr × DriverCarMaxFuelPct`
+  (`SessionMetadata.TankCapacityLiters`) — **usable** capacity, since series
+  rules routinely cap max fuel below the car's physical tank. Both SDK vars are
+  absent on older builds and degrade to 0, which hides the gauge.
 
 **`LapTimeTracker`** (rolling lap time): same detection pattern as
 `FuelCalculator` (rolling window default 5, ignores multi-lap jumps,
@@ -1020,6 +1066,13 @@ testable in `Core` even though the actual brushes live in `App.xaml`.
   `CarClassColor` format (a decimal-packed `0xRRGGBB` int, e.g. `"16750899"`)
   and, defensively, an already-hex value (`"FFCC00"`, `"#ffcc00"`, or an
   8-digit ARGB/RGBA string).
+- `PrefersDarkText(hex)` → whether a label drawn **on** a solid block of that
+  colour should be dark. Rec. 601 relative luminance
+  (`0.299R + 0.587G + 0.114B`) against a `0.55` threshold — the perceptual
+  weights matter, since a plain RGB average calls a saturated blue "light" and
+  a saturated green "dark". Anything unparseable answers "use light text", so
+  the fallback grey plate can never render an invisible label. Used by the
+  standings class name-plate.
 
 ## UI shell (`App.xaml`)
 
@@ -1090,9 +1143,19 @@ nothing but colour. They had previously been retyped at each of six call sites
 and had already drifted (the fuel session chip was at radius 3 with different
 padding and no edge).
 
-Tinted chips follow one formula: **`#3D<hue>` fill, `#8A<hue>` edge, full-hue
+Tinted chips follow one formula: **`#3D<hue>` fill, `#66<hue>` edge, full-hue
 text**. A bare tint with no edge has no boundary at this size and just looks
 like text sitting on a smudge.
+
+The edge was `#8A<hue>` until the row hierarchy was audited: on the dark rows a
+bright edge *and* bright text made the license chip out-shout the driver name
+beside it, so a row read chips-first. Dropping the edge alone was enough — the
+chip still reads as a chip, but the row now runs **delta → name → chips**. The
+hue and the text are deliberately untouched: they're iRacing's own licence
+colours and dimming them would cost the tier its instant read. Two chips keep
+the louder `#8A` edge on purpose — **PIT** and the projected-iRating chip are
+event flags rather than steady per-row furniture, and are meant to catch the
+eye when they appear.
 
 **Vertical centring is not `VerticalAlignment="Center"`.** A 10px line box is
 ~13.3 DIP tall but the caps and digits inside it are only ~7 DIP, and the font
@@ -1165,6 +1228,7 @@ on the content root (see the tray icon section).
 |---|---|
 | `Fuel/FuelCalculatorTests.cs` | Rolling burn average, refuel detection, lap jumps/resets, window trimming |
 | `Fuel/FuelStrategyCalculatorTests.cs` | Fuel-to-finish, margin, add-fuel, save target, race-laps estimation (lap-limited and timed) |
+| `Fuel/FuelGaugeCalculatorTests.cs` | Tank-gauge fill/tick fractions, missing capacity, clamping, the clears-tick boundary |
 | `Fuel/LapTimeTrackerTests.cs` | Rolling lap-time average, jump/reset handling |
 | `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging, license tier and class colour propagation |
 | `Standings/StandingsCalculatorTests.cs` | Class grouping/ordering, within-class ordering, class-leader gaps + interval, time-based laps-down (+ lap-count fallback), last-lap delta, per-class SoF, best/last nulls, session-fastest flag, per-class truncation keeping the player, no-metadata fallback, filtering |

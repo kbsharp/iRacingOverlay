@@ -100,6 +100,33 @@ public static class SessionFormat
     }
 
     /// <summary>
+    /// The session strip's two headline parts, split so they can be typeset
+    /// separately: the session type ("RACE") as a quiet label, and the primary
+    /// figure ("3:24" or "12 LAPS") as the headline. Joined into one string they
+    /// could only ever share one size, which is what made the strip read as a
+    /// row of equal-weight tokens.
+    /// </summary>
+    /// <param name="RemainingText">Empty when the session is unlimited and has
+    /// no lap count either - the strip then shows the type alone.</param>
+    public readonly record struct SessionHeader(string TypeText, string RemainingText);
+
+    /// <summary>
+    /// Splits a session into its label and its primary figure. Prefers the
+    /// clock; falls back to a lap count; falls back again to no figure at all.
+    /// </summary>
+    public static SessionHeader Header(string sessionType, double timeRemainSeconds, int lapsRemain)
+    {
+        if (TimeRemaining(timeRemainSeconds) is { } time)
+        {
+            return new SessionHeader(sessionType, time);
+        }
+
+        return lapsRemain > 0
+            ? new SessionHeader(sessionType, lapsRemain.ToString(CultureInfo.InvariantCulture) + " LAPS")
+            : new SessionHeader(sessionType, string.Empty);
+    }
+
+    /// <summary>
     /// The player's lap against the race distance, e.g. "L12/25". Falls back to
     /// "L12" when the session is timed rather than lap-limited, and to an empty
     /// string before the player has completed anything (lap 0 in the pits).

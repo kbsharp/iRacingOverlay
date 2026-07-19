@@ -48,11 +48,30 @@
                             </Style>
                         </Ellipse.Style>
                     </Ellipse>
-                    <TextBlock Text="{Binding SessionText}"
+                    <!-- Session label stays quiet; the figure beside it is the
+                         strip's headline. Split into two TextBlocks (rather than
+                         one "RACE · 3:24" string) precisely so they can carry
+                         different sizes - joined, the strip read as a row of
+                         equal-weight tokens. -->
+                    <TextBlock Text="{Binding SessionTypeText}"
                                Margin="9,0,0,0"
                                VerticalAlignment="Center"
                                FontSize="12"
                                FontWeight="Bold"
+                               Foreground="{StaticResource TextSecondary}" />
+                    <TextBlock Text="·"
+                               Margin="6,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource TextMuted}"
+                               Visibility="{Binding HasSessionRemaining, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding SessionRemainingText}"
+                               Margin="6,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="15"
+                               FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextPrimary}" />
                     <TextBlock Text="{Binding LapCounterText}"
                                Margin="8,0,0,0"
@@ -163,7 +182,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="44" />
                                         <ColumnDefinition Width="42" />
-                                        <ColumnDefinition Width="62" />
+                                        <ColumnDefinition Width="70" />
                                     </Grid.ColumnDefinitions>
 
                                     <!-- full-height class colour bar, flush to the panel edge -->
@@ -234,8 +253,13 @@
                                                 Visibility="{Binding InPits, Converter={StaticResource BoolToVis}}">
                                             <TextBlock Text="PIT" Style="{StaticResource PitBadgeText}" />
                                         </Border>
+                                        <!-- The delta is the widget's reason to exist - the one
+                                             number read at 200kph - so it is the largest, heaviest
+                                             thing in the row and everything else steps down behind
+                                             it. At the old 13 it tied with the driver name and the
+                                             eye had nowhere to land. -->
                                         <TextBlock Text="{Binding DeltaText}"
-                                                   FontSize="13"
+                                                   FontSize="16"
                                                    FontWeight="Bold"
                                                    Typography.NumeralAlignment="Tabular"
                                                    Foreground="{StaticResource TextPrimary}" />
