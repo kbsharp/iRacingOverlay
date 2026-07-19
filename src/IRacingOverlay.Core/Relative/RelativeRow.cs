@@ -20,7 +20,6 @@ public sealed record RelativeRow(
     string License,
     LicenseTier LicenseTier,
     int IRating,
-    IRatingTier IRatingTier,
     string ClassShortName,
     string? ClassColorHex,
     double DeltaSeconds,

@@ -167,7 +167,6 @@ public class RelativeCalculatorTests
         Assert.Equal("Driver 1", other.DisplayName);
         Assert.Equal("1", other.CarNumber);
         Assert.Equal(2000, other.IRating);
-        Assert.Equal(IRatingTier.Mid, other.IRatingTier);
         Assert.Equal("A 4.99", other.License);
         Assert.Equal(LicenseTier.A, other.LicenseTier);
         Assert.Equal("GT3", other.ClassShortName);

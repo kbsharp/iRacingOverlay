@@ -14,15 +14,6 @@ public enum LicenseTier
     Pro,
 }
 
-/// <summary>Rough iRating bands, used to give the rating badge visual weight.</summary>
-public enum IRatingTier
-{
-    Low,
-    Mid,
-    High,
-    Elite,
-}
-
 /// <summary>Which way a projected iRating change is going.</summary>
 public enum RatingTrend
 {
@@ -34,10 +25,6 @@ public enum RatingTrend
 /// <summary>Pure classification helpers that drive the relative widget's colour coding.</summary>
 public static class RatingFormat
 {
-    private const int MidThreshold = 1500;
-    private const int HighThreshold = 2500;
-    private const int EliteThreshold = 4000;
-
     /// <summary>Reads the license class from an iRacing LicString ("A 4.99", "Rookie", "Pro").</summary>
     public static LicenseTier ParseLicenseTier(string? license)
     {
@@ -57,14 +44,6 @@ public static class RatingFormat
             _ => LicenseTier.Unknown,
         };
     }
-
-    public static IRatingTier ClassifyIRating(int irating) => irating switch
-    {
-        < MidThreshold => IRatingTier.Low,
-        < HighThreshold => IRatingTier.Mid,
-        < EliteThreshold => IRatingTier.High,
-        _ => IRatingTier.Elite,
-    };
 
     public static RatingTrend ClassifyTrend(int delta) => delta switch
     {
