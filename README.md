@@ -151,24 +151,27 @@ the pattern for adding a new widget, and debugging notes; see
 
 ## Roadmap
 
-The full roadmap lives in [docs/ROADMAP.md](docs/ROADMAP.md), including a
-July 2026 market snapshot against RaceLab and iOverlay, the deliberate
-non-goals (VR, streaming tools, column customization, team sharing), and the
-judgement behind each call. The short version:
+The full roadmap lives in [docs/ROADMAP.md](docs/ROADMAP.md), built around
+one test — *does it change a decision the driver makes in the car?* — with a
+July 2026 market snapshot against RaceLab and iOverlay and the judgement
+behind each call. The short version:
 
-- **Near-term:** a projected **Safety Rating** chip and **catch/defend pace
-  forecasts** on the relative (neither competitor has either), plus parity
-  items — delta bar, position-change arrows and pit status in the standings —
-  and the carried-over polish list (radar density pass, manufacturer badge on
-  the relative, drag-to-resize, a speed readout, configurable refresh rate,
-  tray-icon pinning).
-- **Mid-term:** a **track map** built from the shape the radar already learns
-  (no track database), an input-telemetry trace, per-session-type settings
-  profiles, a weather forecast strip, and a lap-time log.
-- **Differentiator bets:** **pit-exit position projection** ("pit now and you
-  rejoin P8, 1.8s behind #12"), a multiclass **traffic meeting-point
-  forecast**, and a push-vs-save fuel tradeoff readout — race-engineer calls
-  that no current overlay makes for you.
+- **Core pass:** finish the widgets we have — a projected **Safety Rating**
+  chip and **catch/defend pace forecasts** on the relative (neither
+  competitor has either), position-change arrows and pit status in the
+  standings, a delta bar, and the carried-over polish list (radar density
+  pass, manufacturer badge on the relative, drag-to-resize, a speed readout,
+  configurable refresh rate, tray-icon pinning).
+- **The strategy layer** (nobody has these): **pit-exit position
+  projection** ("pit now and you rejoin P8, 1.8s behind #12"), a
+  push-vs-save fuel tradeoff readout, and a multiclass **traffic
+  meeting-point forecast** — race-engineer calls no current overlay makes.
+- **Mid-term:** a **track map** built from the shape the radar already
+  learns (no track database), a weather forecast strip, per-session-type
+  settings profiles.
+- **Parked or out, on purpose:** input trace and lap graphs wait until the
+  core is strong; VR, gimmick data blocks (heart rate, G-force), column
+  customization, streaming tools and team sharing are non-goals.
 
 ## Credits
 

@@ -1189,9 +1189,9 @@ Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
 manufacturer badge to the relative, drag-to-resize widgets,
 a speed readout for the existing km/h / mph preference, a configurable
 telemetry refresh rate, per-car/track settings profiles, and pinning the tray
-icon — plus the market-gap and differentiator items from the July 2026
-competitive review (projected Safety Rating, catch/defend forecasts, track
-map, input trace, pit-exit projection).
+icon — plus the items from the July 2026 competitive review (projected
+Safety Rating, catch/defend forecasts, track map, pit-exit projection), with
+the parked list and non-goals recorded there too.
 
 (Click-through, running at Windows startup, and the settings surface itself have
 since landed — see [Settings](#settings--settingswindow--settingsviewmodel--coresettings).)
