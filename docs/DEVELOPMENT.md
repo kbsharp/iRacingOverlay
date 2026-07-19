@@ -312,8 +312,18 @@ run the released copy for real racing on the same machine we develop on.
 | Assembly / exe | `IRacingOverlay.exe` | `IRacingOverlay.Dev.exe` |
 | Product / Company | `IRacingOverlay` | `iRacing Overlay (Dev)` |
 | Version | the git tag, e.g. `0.10.0` | `0.0.0-dev` |
-| Settings file | `settings.json` | `settings.dev.json` |
+| Settings folder | `%LocalAppData%\IRacingOverlay\` | `%LocalAppData%\IRacingOverlay.Dev\` |
+| Settings file | `settings.json` | `settings.json` |
 | Single-instance mutex | scoped by install kind | scoped by install kind |
+
+Separate **folders**, not two file names in one folder. The installed folder is
+Velopack's — it creates it, updates inside it and deletes it on uninstall — so a
+source build writing there left files the uninstaller had no reason to know
+about. A dev layout written under the old scheme
+(`IRacingOverlay\settings.dev.json`) is copied across on first run by
+`SettingsService.MigrateLegacyDevSettings`; it copies rather than moves, since
+this build has no business deleting from the installed app's folder. The stale
+original is harmless and can be deleted by hand.
 
 The identity split lives in a `Configuration == 'Debug'` property group in
 `IRacingOverlay.App.csproj`; **Release builds are untouched**, so the shipped
@@ -464,7 +474,7 @@ Because the app owns its entry point, the `VelopackApp.Build().Run()` bootstrap 
 | Process dies instantly with `FileLoadException … Application Control policy has blocked this file (0x800711C7)` | Windows **Smart App Control** has blocked a freshly built binary. It is reputation-based, applies to unsigned local builds, and its verdicts are not predictable from the code — the same project built and ran minutes earlier. **A reboot has cleared it every time so far.** Check with `Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy'` (`VerifiedAndReputablePolicyState`: 0 off, 1 enforcing, 2 evaluation), and confirm the specific file in Event Viewer under `Microsoft-Windows-CodeIntegrity/Operational`. Turning SAC off is possible but **irreversible without reinstalling Windows** |
 | Demo window never appears | Check the process didn't exit immediately (`echo $?`/exit code) — a startup exception would show as a fast exit |
 | Widgets don't appear at all in live mode | Expected when iRacing isn't running — they stay hidden until telemetry connects. Uncheck *Only show widgets while iRacing is running* in Settings → General to position them with the sim shut |
-| Your real layout got reset / dev windows moved your racing layout | Shouldn't happen since the settings split — confirm which file is being written: installed = `settings.json`, everything else = `settings.dev.json`, both in `%LocalAppData%\IRacingOverlay` |
+| Your real layout got reset / dev windows moved your racing layout | Shouldn't happen since the settings split — confirm which file is being written: installed = `%LocalAppData%\IRacingOverlay\settings.json`, everything else = `%LocalAppData%\IRacingOverlay.Dev\settings.json` |
 | Installed app never updates | Check `%LocalAppData%\IRacingOverlay\update.log`. A wall of `404 (Not Found)` means the release feed isn't publicly readable — see the release prerequisites above |
 | Closing a widget window doesn't quit the app | Expected — it hides, not closes. Use the tray icon to bring it back, or its Exit to actually quit |
 | No tray icon visible | Windows hides new tray icons behind the taskbar's `^` overflow arrow the first time — click it |
