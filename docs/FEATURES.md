@@ -51,9 +51,16 @@ full-height class-colour bar flush to the panel's left edge, and alternating
 (see below), car number,
 an optional **manufacturer badge**, driver name, a license badge and a neutral iRating
 badge (the same chips as the relative), then **Int** (interval to the car
-ahead), **Gap** (to the class
+ahead, replaced by a **PIT** badge while that car is in the lane), **Gap** (to the class
 leader), **Fastest** (best lap, purple when session-best), and **Last**
 (last-lap delta to that car's own best, red when slower).
+
+**PIT badge.** A car on pit road or in its stall shows the same amber `PIT` chip
+the relative uses (shared `PitBadgeBackground` style) in place of its **Int**
+value, and its name dims. Int is the one number in the row it costs nothing to
+lose — a car sitting in its box has no meaningful interval to the car ahead —
+while **Gap**, which is what tells you where they rejoin, stays put. That keeps
+the pit state visible without a column that would sit empty for most of a race.
 
 **Position-change arrows — `StartPositionTracker` (Core).** A 26px column right
 of the class position showing places gained or lost since the race started:

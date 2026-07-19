@@ -392,13 +392,33 @@
                                                        Style="{StaticResource IRatingBadgeText}" />
                                         </Border>
 
-                                        <TextBlock Grid.Column="8"
-                                                   Text="{Binding IntervalText}"
-                                                   Style="{StaticResource Timing}"
-                                                   Margin="0,0,6,0"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextMuted}" />
+                                        <!-- INT doubles as the pit indicator. A car sitting in
+                                             its box has no meaningful interval to the car ahead,
+                                             and this is the one number in the row it costs
+                                             nothing to lose - the gap to the class leader, which
+                                             is what tells you where they rejoin, stays put. The
+                                             badge is the relative widget's, by the shared style. -->
+                                        <Grid Grid.Column="8" Margin="0,0,6,0">
+                                            <Border HorizontalAlignment="Right"
+                                                    Style="{StaticResource PitBadgeBackground}"
+                                                    Visibility="{Binding InPits, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="PIT" Style="{StaticResource PitBadgeText}" />
+                                            </Border>
+                                            <TextBlock Text="{Binding IntervalText}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextMuted}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Timing}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding InPits}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
 
                                         <TextBlock Grid.Column="9"
                                                    Text="{Binding GapText}"
