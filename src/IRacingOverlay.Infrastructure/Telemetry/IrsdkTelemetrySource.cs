@@ -111,10 +111,20 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
         var setupIsModified = (info.DriverInfo?.DriverSetupIsModified ?? 0) != 0;
         var trackLengthMeters = TrackLengthParser.ParseToMeters(info.WeekendInfo?.TrackLength);
 
+        // Usable capacity, not the physical tank: series rules routinely cap
+        // max fuel below the car's real tank (DriverCarMaxFuelPct), and the
+        // gauge has to be scaled to what the driver can actually load. Both
+        // vars are absent on older builds, so a missing/zero value falls back
+        // to 0 and hides the gauge.
+        var tankLiters = info.DriverInfo?.DriverCarFuelMaxLtr ?? 0f;
+        var maxFuelPct = info.DriverInfo?.DriverCarMaxFuelPct ?? 0f;
+        var tankCapacityLiters = tankLiters > 0 && maxFuelPct > 0 ? tankLiters * maxFuelPct : 0d;
+
         SessionMetadataReceived?.Invoke(
             this,
             new SessionMetadata(
-                drivers, sessionTypes, setupName, setupIsModified, trackLengthMeters, incidentLimit, sessionLaps));
+                drivers, sessionTypes, setupName, setupIsModified, trackLengthMeters, incidentLimit,
+                sessionLaps, tankCapacityLiters));
     }
 
     private void HandleTelemetryData()

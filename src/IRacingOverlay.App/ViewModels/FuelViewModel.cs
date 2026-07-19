@@ -4,6 +4,8 @@ using IRacingOverlay.Core.Fuel;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Setup;
 using IRacingOverlay.Core.Telemetry;
+using GridLength = System.Windows.GridLength;
+using GridUnitType = System.Windows.GridUnitType;
 
 namespace IRacingOverlay.App.ViewModels;
 
@@ -37,6 +39,14 @@ public sealed class FuelViewModel : OverlayViewModelBase
     private string _addFuelText = TelemetryFormat.Placeholder;
     private string _saveTargetText = TelemetryFormat.Placeholder;
     private string _fuelUnitLabel = UnitFormat.FuelLabel(FuelUnit.Liters);
+
+    private bool _hasGauge;
+    private bool _showGaugeTick;
+    private bool _gaugeClearsTick = true;
+    private GridLength _gaugeFillWeight = new(0, GridUnitType.Star);
+    private GridLength _gaugeEmptyWeight = new(1, GridUnitType.Star);
+    private GridLength _gaugeTickWeight = new(0, GridUnitType.Star);
+    private GridLength _gaugeTickRestWeight = new(1, GridUnitType.Star);
 
     private string _setupNameText = TelemetryFormat.Placeholder;
     private bool _isSetupModified;
@@ -143,6 +153,59 @@ public sealed class FuelViewModel : OverlayViewModelBase
     {
         get => _fuelUnitLabel;
         private set => SetProperty(ref _fuelUnitLabel, value);
+    }
+
+    // ---- Tank gauge --------------------------------------------------------
+    //
+    // Expressed as Grid star weights rather than pixel widths so the bar
+    // follows the tray UI-scale and the panel width without a magic constant
+    // to keep in sync.
+
+    /// <summary>False when the sim hasn't reported a tank capacity, which hides
+    /// the bar rather than scaling it against a guess.</summary>
+    public bool HasGauge
+    {
+        get => _hasGauge;
+        private set => SetProperty(ref _hasGauge, value);
+    }
+
+    /// <summary>Whether the fuel-to-finish tick is drawn yet.</summary>
+    public bool ShowGaugeTick
+    {
+        get => _showGaugeTick;
+        private set => SetProperty(ref _showGaugeTick, value);
+    }
+
+    /// <summary>Green fill when the level clears the tick, red when short - the
+    /// same meaning as the margin badge beside it.</summary>
+    public bool GaugeClearsTick
+    {
+        get => _gaugeClearsTick;
+        private set => SetProperty(ref _gaugeClearsTick, value);
+    }
+
+    public GridLength GaugeFillWeight
+    {
+        get => _gaugeFillWeight;
+        private set => SetProperty(ref _gaugeFillWeight, value);
+    }
+
+    public GridLength GaugeEmptyWeight
+    {
+        get => _gaugeEmptyWeight;
+        private set => SetProperty(ref _gaugeEmptyWeight, value);
+    }
+
+    public GridLength GaugeTickWeight
+    {
+        get => _gaugeTickWeight;
+        private set => SetProperty(ref _gaugeTickWeight, value);
+    }
+
+    public GridLength GaugeTickRestWeight
+    {
+        get => _gaugeTickRestWeight;
+        private set => SetProperty(ref _gaugeTickRestWeight, value);
     }
 
     // ---- Setup strip -------------------------------------------------------
@@ -270,5 +333,21 @@ public sealed class FuelViewModel : OverlayViewModelBase
         WillFinish = strategy.WillFinish;
         MarginText = strategy.MarginLaps is { } margin ? SessionFormat.Delta(margin) : TelemetryFormat.Placeholder;
         MarginLabel = strategy.WillFinish ? "LAPS SPARE" : "LAPS SHORT";
+
+        RenderGauge(fuel, strategy.FuelToFinishLiters);
+    }
+
+    private void RenderGauge(double fuelLiters, double? fuelToFinishLiters)
+    {
+        var gauge = FuelGaugeCalculator.Compute(
+            fuelLiters, _metadata?.TankCapacityLiters ?? 0, fuelToFinishLiters);
+
+        HasGauge = gauge.HasGauge;
+        ShowGaugeTick = gauge.ShowTick;
+        GaugeClearsTick = gauge.ClearsTick;
+        GaugeFillWeight = new GridLength(gauge.FillFraction, GridUnitType.Star);
+        GaugeEmptyWeight = new GridLength(1 - gauge.FillFraction, GridUnitType.Star);
+        GaugeTickWeight = new GridLength(gauge.TickFraction, GridUnitType.Star);
+        GaugeTickRestWeight = new GridLength(1 - gauge.TickFraction, GridUnitType.Star);
     }
 }

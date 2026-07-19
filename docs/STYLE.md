@@ -68,12 +68,8 @@ a human eye in the sim.
    `16px` Bold against the name's `13px`.
 2. ~~**Standings: solid class name-plates.**~~ *Shipped* — solid plate in the
    class hue, label darkened/lightened by measured luminance.
-3. **Fuel: a tank gauge bar.** One slim horizontal bar under the headline
-   figure: fill = current fuel against tank capacity, a tick at
-   fuel-needed-to-finish. Green fill when level clears the tick, red when
-   short (the existing Positive/Negative pair — same meaning as the margin
-   badge it sits near). Flat fill, 1px edge, no gloss: an instrument drawn
-   in our terminal material. The single biggest vibe upgrade available.
+3. ~~**Fuel: a tank gauge bar.**~~ *Shipped* — `6px` bar, fill against usable
+   tank capacity, tick at fuel-to-finish, green/red on clearing it.
 4. **Session strip: give it a headline too.** The primary figure (time/laps
    remaining) steps up a size so the strip stops reading as a row of
    equal-weight tokens; the chips (flag, iRating, temps) stay as they are.

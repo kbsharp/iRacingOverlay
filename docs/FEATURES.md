@@ -334,6 +334,16 @@ unchanged, only the space around them.
 **Displayed fields:**
 - Current fuel level (`nn.nn L`) and laps of running left in the tank at
   current burn (`FuelEstimate.EstimatedLapsRemaining`).
+- **Tank gauge** — a slim `6px` bar under the headline figure: fill = current
+  fuel against usable tank capacity, with a 2px tick at the fuel needed to
+  finish. Green fill when the level clears the tick, red when short — the same
+  `Positive`/`Negative` pair, and the same question, as the margin badge below
+  it. Flat fill, 1px edge, no gloss: an instrument drawn in the panel material,
+  not a borrowed pill gauge. Fuel is the one quantity in the app with a natural
+  zero *and* a natural maximum, which is why it gets a bar and the timing
+  widgets stay number sheets. Geometry is expressed as `Grid` star weights
+  (`GaugeFillWeight` and friends), so the bar follows the tray UI-scale with no
+  magic pixel width to keep in sync.
 - Used/lap, last lap (both from `FuelCalculator`'s rolling average).
 - Race laps remaining (whole laps, from `FuelStrategyCalculator.
   EstimateRaceLapsRemaining`).
@@ -361,6 +371,23 @@ unchanged, only the space around them.
 - A lap-counter *decrease* (tow back to pits, session restart) re-baselines
   the current-lap tracking but keeps prior recorded laps in the average —
   they're still representative of this car/track/fuel load.
+
+**`FuelGaugeCalculator`** (the tank gauge's two positions):
+- `Compute(fuelLiters, tankCapacityLiters, fuelToFinishLiters)` → `FuelGauge`
+  (`HasGauge`, `FillFraction`, `ShowTick`, `TickFraction`, `ClearsTick`).
+- **No capacity means no gauge.** A missing/zero/NaN capacity returns
+  `HasGauge = false` and the bar is hidden — a bar drawn against a guessed
+  maximum reads "half full" when it isn't, which is worse than no bar.
+- Fractions are clamped to 0–1: an overfull tank is a full bar, and a
+  to-finish figure beyond one tankful pins the tick at the end rather than
+  silently rescaling the bar.
+- `ClearsTick` is inclusive at the boundary, matching the margin badge — zero
+  laps spare is still "will finish", so the bar must not flip red at exactly
+  enough.
+- Capacity comes from session info as `DriverCarFuelMaxLtr × DriverCarMaxFuelPct`
+  (`SessionMetadata.TankCapacityLiters`) — **usable** capacity, since series
+  rules routinely cap max fuel below the car's physical tank. Both SDK vars are
+  absent on older builds and degrade to 0, which hides the gauge.
 
 **`LapTimeTracker`** (rolling lap time): same detection pattern as
 `FuelCalculator` (rolling window default 5, ignores multi-lap jumps,
@@ -1185,6 +1212,7 @@ on the content root (see the tray icon section).
 |---|---|
 | `Fuel/FuelCalculatorTests.cs` | Rolling burn average, refuel detection, lap jumps/resets, window trimming |
 | `Fuel/FuelStrategyCalculatorTests.cs` | Fuel-to-finish, margin, add-fuel, save target, race-laps estimation (lap-limited and timed) |
+| `Fuel/FuelGaugeCalculatorTests.cs` | Tank-gauge fill/tick fractions, missing capacity, clamping, the clears-tick boundary |
 | `Fuel/LapTimeTrackerTests.cs` | Rolling lap-time average, jump/reset handling |
 | `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging, license tier and class colour propagation |
 | `Standings/StandingsCalculatorTests.cs` | Class grouping/ordering, within-class ordering, class-leader gaps + interval, time-based laps-down (+ lap-count fallback), last-lap delta, per-class SoF, best/last nulls, session-fastest flag, per-class truncation keeping the player, no-metadata fallback, filtering |

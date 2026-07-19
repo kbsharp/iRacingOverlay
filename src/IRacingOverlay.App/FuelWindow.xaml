@@ -130,6 +130,57 @@
                 </StackPanel>
             </DockPanel>
 
+            <!-- Tank gauge: fill = fuel against usable tank capacity, with a tick
+                 at the fuel needed to finish. Fuel is the one quantity in the app
+                 with a natural zero and a natural maximum, so it's the one that
+                 reads faster as a bar than as digits - the timing widgets stay
+                 number sheets on purpose.
+
+                 Flat fill, 1px edge, no gloss: an instrument drawn in the panel
+                 material rather than a borrowed pill gauge. Green/red is the same
+                 pair as the margin badge below, so it needs no learning. Hidden
+                 entirely when the sim hasn't reported a capacity. -->
+            <Grid Height="6"
+                  Margin="0,0,0,7"
+                  Visibility="{Binding HasGauge, Converter={StaticResource BoolToVis}}">
+                <Border CornerRadius="2"
+                        Background="#1FFFFFFF"
+                        BorderBrush="#2EFFFFFF"
+                        BorderThickness="1" />
+
+                <Grid Margin="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding GaugeFillWeight}" />
+                        <ColumnDefinition Width="{Binding GaugeEmptyWeight}" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" CornerRadius="1">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="#CC33D689" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding GaugeClearsTick}" Value="False">
+                                        <Setter Property="Background" Value="#CCFF5C6C" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </Grid>
+
+                <!-- The tick sits on top of the fill, so "level past the tick"
+                     is legible as the bar having crossed it. -->
+                <Grid Visibility="{Binding ShowGaugeTick, Converter={StaticResource BoolToVis}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding GaugeTickWeight}" />
+                        <ColumnDefinition Width="{Binding GaugeTickRestWeight}" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0"
+                            Width="2"
+                            HorizontalAlignment="Right"
+                            Background="{StaticResource TextPrimary}" />
+                </Grid>
+            </Grid>
+
             <!-- per-lap burn and race length -->
             <Grid Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>

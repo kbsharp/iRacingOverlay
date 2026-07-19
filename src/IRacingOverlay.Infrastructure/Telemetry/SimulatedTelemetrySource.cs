@@ -529,7 +529,8 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             setupModified,
             DemoTrackLengthMeters,
             DemoIncidentLimit,
-            new Dictionary<int, int> { [sessionNum] = DemoRaceLaps });
+            new Dictionary<int, int> { [sessionNum] = DemoRaceLaps },
+            TankCapacityLiters);
     }
 
     private sealed record SimDriver(
