@@ -308,6 +308,40 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Safety chip (session strip): corners per incident, and whether that beats
+             the driver's own baseline. Reuses the projected-iRating chip's green-up /
+             red-down pair on purpose - it is the same news about a different rating,
+             and a third hue for "your licence is improving" would have to be learned.
+
+             Deliberately quieter than that chip, though: it sits immediately beside it,
+             and giving both a tinted outline produced two near-identical green chips
+             that had to be read to be told apart. So the border stays neutral here and
+             only the text takes the hue - one outlined chip in the strip, and the
+             projection you can still do something about stays the loud one.
+
+             No filled variant either: unlike the iRating projection this never settles,
+             since an incident on the cool-down lap still counts. -->
+        <Style x:Key="SafetyChipBackground" TargetType="Border" BasedOn="{StaticResource Chip}">
+            <Setter Property="Background" Value="#14FFFFFF" />
+            <Setter Property="BorderBrush" Value="#1FFFFFFF" />
+        </Style>
+
+        <Style x:Key="SafetyChipText" TargetType="TextBlock" BasedOn="{StaticResource ChipText}">
+            <!-- Neutral until there is a baseline to compare against: with no history
+                 the figure is still real, but its direction is unknown, and colouring
+                 it would assert something the app cannot support. -->
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Trend}" Value="Up">
+                    <Setter Property="Foreground" Value="{StaticResource Positive}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Trend}" Value="Down">
+                    <Setter Property="Foreground" Value="{StaticResource Negative}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- Manufacturer badge chip. Deliberately neutral/monochrome, not another
              coloured tier: the class bar, license and iRating chips already carry
              hue-as-meaning, so the manufacturer mark reads as iconography sitting in

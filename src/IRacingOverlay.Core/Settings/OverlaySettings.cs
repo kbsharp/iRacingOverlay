@@ -1,3 +1,5 @@
+using IRacingOverlay.Core.Rating;
+
 namespace IRacingOverlay.Core.Settings;
 
 /// <summary>A saved window position (top-left corner, in device-independent
@@ -50,6 +52,14 @@ public sealed record OverlaySettings
 
     /// <summary>Whether the app registers itself to launch with Windows.</summary>
     public bool RunAtStartup { get; init; }
+
+    /// <summary>
+    /// The driver's rolling corners-per-incident baseline. Not a preference -
+    /// it's earned data, and it lives here because it has to survive a restart
+    /// to be worth anything. A fresh install starts empty and the safety chip
+    /// shows no direction until a few sessions have been watched.
+    /// </summary>
+    public CpiHistory SafetyHistory { get; init; } = CpiHistory.Empty;
 
     /// <summary>Whether the fuel widget shows the loaded setup and pulses at the
     /// start of a Qualify/Race session. On by default - it's the behaviour the

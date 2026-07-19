@@ -24,7 +24,8 @@ saved settings. No widget-name label — the class banners and columns identify
 it; the top strip carries session type + time/laps remaining + the same
 `Ln/total` lap counter as the relative widget + the
 [projected-iRating chip](#projected-irating--iratingchipviewmodel--corerating)
-+ car count. Within that strip the **remaining figure is the headline**
++ the [safety chip](#safety--cpi--safetychipviewmodel--corerating) + car
+count. Within that strip the **remaining figure is the headline**
 (`17px` here, `15px` on the relative) against the session label's quieter
 `13px`/`12px` secondary tone — `SessionFormat.Header` splits the two so they
 can be typeset separately, since a single `"RACE · 3:24"` string could only
@@ -232,6 +233,11 @@ widget-name label — the session strip heads it.
   `WeekendOptions: IncidentLimit`), falling back to `Nx` when the session is
   unlimited. Colour-graded by `SessionFormat.IncidentLevel`: amber from 70% of
   the limit, red from 90%, so it warns before the limit rather than after.
+- [Safety arrow](#safety--cpi--safetychipviewmodel--corerating) — a green/red
+  glyph immediately after the incident count, saying whether the session's
+  corners-per-incident is beating the driver's own baseline. No CPI figure
+  here: the strip has no room for one, and the arrow is what changes a
+  decision. Hidden until there is a baseline to be measured against.
 
 **Strip width budget.** The strip is a `Grid`, and deliberately not a
 `DockPanel`. Under a `DockPanel` the left-hand tokens claimed width first and
@@ -462,6 +468,80 @@ points, not a guarantee.
 not official, so the figure can differ from the sim's by a handful of points;
 iRacing's own protections (the reduced change for very new accounts, and
 whatever it does with disconnects at the margin) aren't modelled.
+
+### Safety / CPI — `SafetyChipViewModel` / `Core.Rating`
+
+The licence companion to the projected-iRating chip, answering the
+drive-carefully-or-push question: **is this session helping or hurting my
+Safety Rating?** Both competitors show a raw incident count; neither says which
+way it is pushing your licence.
+
+**What it shows.** Corners cleared per incident point this session, plus an
+arrow for whether that beats the driver's own rolling baseline.
+
+- **Standings** — a chip, `▲ 49 CPI`, or `▲ CLEAN` while the session has no
+  incidents.
+- **Relative** — the arrow alone, beside the incident count it gives meaning
+  to (`2x/17x ▲`). At 470px this strip has no room for the chip (see *Strip
+  width budget*), and the arrow is the part that changes a decision anyway.
+  Four incidents in a 90-minute enduro is a rising licence; four in a sprint
+  is not.
+
+**What it deliberately does not show: a projected SR value.** iRacing has never
+published the CPI-to-SR conversion. What *is* documented is the direction rule —
+a session whose CPI beats your running average raises SR, one below it lowers
+it, and a session with zero incidents always gains. So the app reports the
+direction, which it can support, and not a decimal SR delta, which it would
+have to invent. This is the same judgement that killed the iRating badge's
+colour bands.
+
+**The corner count** is `WeekendInfo:TrackNumTurns × laps completed`. iRacing
+scores SR against a per-track *corner multiplier* tuned for complexity, which
+the SDK does not expose — so this is the same shape of measurement, not the
+same number. It stays self-consistent, which is all the comparison against our
+own baseline needs. A sim build that doesn't report `TrackNumTurns` reports 0
+and hides the chip rather than guessing.
+
+**The baseline** (`CpiHistory`, persisted in `OverlaySettings.SafetyHistory`) is
+the app's own, accumulated from sessions it has watched, because iRacing's
+running average is server-side. It is a **corner budget**, not a session count —
+2000 corners, with older evidence scaled out proportionally as new sessions land
+— so a 90-minute enduro weighs more than a six-lap sprint, as it should. It
+moves gradually by design: eight tidy sessions lift a CPI-50 baseline to the
+mid-200s, not to the 500 those sessions were run at. A baseline that snapped to
+the last session would just *be* the last session.
+
+**The behaviour** (`SafetyTracker`):
+
+- **Every session type counts** — unlike the iRating chip. Practice and
+  qualifying move Safety Rating just as a race does.
+- **Except offline testing**, which moves no rating and would otherwise pour
+  hours of clean corners into the baseline and make every real session look
+  reckless by comparison.
+- **Nothing before 2 completed laps** (`Pending`). One incident on lap one is a
+  CPI of a dozen corners; the figure swings wildly early and reports nothing
+  actionable.
+- **No arrow until there is a baseline** (300 corners banked, and at least one
+  incident in the window). The CPI figure still shows — it is a real
+  measurement either way — but it stays neutral-coloured, because the direction
+  is unknown and colouring it would assert something the app cannot support.
+  A spotless window also yields no baseline: the true average is then unbounded
+  and every session would score "worse" against it, which is backwards.
+- **Everything ratchets within a session.** The sim reports −1 laps for a car
+  that has left the world and can drop the incident count as a session tears
+  down; read literally, that blanks the chip at the end of every race and banks
+  a finished race as zero corners driven.
+- **A session is banked when the sim moves to the next one**, or when the sim
+  disconnects — so a race finished on the way to the desktop still counts. A
+  session in progress is never part of the baseline it is measured against.
+- **One tracker, shared by both widgets.** It accumulates persisted state, so a
+  copy per window would bank every session twice. `Update` is idempotent for a
+  repeated frame, so both strips can safely feed it.
+
+**Limitations:** the baseline is the app's own measurement, not iRacing's, so
+the arrow can disagree with the sim near the crossover point — especially in a
+driver's first few sessions, and on a track whose corner multiplier diverges
+most from its turn count. It is a direction, and it is honest about being one.
 
 ### Fuel — `FuelWindow` / `FuelViewModel` / `FuelCalculator` + `FuelStrategyCalculator` + `LapTimeTracker`
 
@@ -1205,6 +1285,8 @@ testable in `Core` even though the actual brushes live in `App.xaml`.
 - `ParseLicenseTier(license)` → `LicenseTier` (Unknown/Rookie/D/C/B/A/Pro) by
   reading the leading letter of the sim's `LicString`.
 - `ClassifyTrend(delta)` → `RatingTrend` (Up/Down/Flat) and
+  `Cpi(cpi)` → corners per incident as a whole number, capped at `"999+"` so a
+  nearly-clean session can't stretch the session strip;
   `DeltaMagnitude(delta)` → the unsigned points, for the projected-iRating chip;
   the arrow beside it carries the sign, so repeating it as a `+` reads as noise.
 - `NormalizeHexColor(raw)` → `"#RRGGBB"` or null. Handles iRacing's real
@@ -1392,8 +1474,10 @@ on the content root (see the tray icon section).
 | `Radar/RadarGeometryTests.cs` | Local-frame placement: straight → ahead/behind at 0°, left/right corners → offset + rotated, reference-heading cancellation, start/finish wrap |
 | `Radar/RadarCalculatorTests.cs` | Blip building: map-not-ready/zero-length guards, range gating, pit/pace-car exclusion, roster colour+number |
 | `Radar/TrackLengthParserTests.cs` | `WeekendInfo:TrackLength` km/mi parsing, missing/invalid → 0 |
+| `Rating/SafetyTrackerTests.cs` | CPI from turns × laps, minimum-laps gate, clean session = infinite rate + always gaining, above/below-baseline direction, no baseline = figure but no direction, missing turn count/metadata hides it, offline testing excluded, practice counted, banking on session change, ratcheting through a car leaving the world, idempotent repeated frames, double-commit safety |
+| `Rating/CpiHistoryTests.cs` | Baseline gated on minimum corners, spotless window = no baseline, accumulation, corner-budget cap, recent sessions displacing older ones, oversized session truncated without distorting its rate |
 | `Formatting/StandingsFormatTests.cs` | Lap-time (m:ss.fff) and gap ("+n.n"/"+nL"/blank) formatting |
-| `Settings/OverlaySettingsSerializerTests.cs` | JSON round-trip (incl. the widget/unit/tuning fields), missing/corrupt file → defaults, out-of-range scale sanitizing, unknown-field tolerance, pre-settings-window file shape still loading with every widget enabled, null maps/records → empty defaults, per-widget scale and tuning clamping |
+| `Settings/OverlaySettingsSerializerTests.cs` | JSON round-trip (incl. the widget/unit/tuning fields and the safety baseline), impossible safety-baseline values reset, missing/corrupt file → defaults, out-of-range scale sanitizing, unknown-field tolerance, pre-settings-window file shape still loading with every widget enabled, null maps/records → empty defaults, per-widget scale and tuning clamping |
 | `Settings/OverlaySettingsTests.cs` | Sparse-map defaults: absent key = enabled / shared scale / interactive; overrides win; widget ids distinct |
 | `Settings/WidgetTuningTests.cs` | Defaults match the previously hardcoded constants, in-band values untouched, out-of-band clamped, non-finite → default not band edge |
 | `Settings/UnitPreferencesTests.cs` | Metric defaults, valid choices preserved, undefined enum value → metric |
@@ -1407,8 +1491,8 @@ Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
 manufacturer badge to the relative, drag-to-resize widgets,
 a speed readout for the existing km/h / mph preference, a configurable
 telemetry refresh rate, per-car/track settings profiles, and pinning the tray
-icon — plus the items from the July 2026 competitive review (projected
-Safety Rating, catch/defend forecasts, track map, pit-exit projection), with
+icon — plus the items from the July 2026 competitive review (track map,
+pit-exit projection), with
 the parked list and non-goals recorded there too.
 
 (Click-through, running at Windows startup, and the settings surface itself have

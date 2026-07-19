@@ -173,6 +173,38 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
+                        <!-- Safety direction, riding beside the incident count rather
+                             than in a chip of its own: at 470px this strip has no room
+                             for the standings' "47 CPI" chip, and the arrow is the part
+                             that changes a decision anyway. It gives the incident count
+                             the context it lacks alone - four incidents in a 90-minute
+                             enduro is a rising licence, four in a sprint is not.
+                             Hidden until the driver has a baseline to be measured
+                             against, so it never guesses. -->
+                        <TextBlock Text="{Binding Safety.Arrow}"
+                                   Margin="4,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="10"
+                                   FontWeight="Bold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource Positive}" />
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Safety.Trend}" Value="Down">
+                                            <Setter Property="Foreground" Value="{StaticResource Negative}" />
+                                        </DataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Safety.HasValue}" Value="True" />
+                                                <Condition Binding="{Binding Safety.HasTrend}" Value="True" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </StackPanel>
                 </Grid>
 

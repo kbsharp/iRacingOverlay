@@ -1,4 +1,5 @@
 using System.Text.Json;
+using IRacingOverlay.Core.Rating;
 
 namespace IRacingOverlay.Core.Settings;
 
@@ -46,6 +47,7 @@ public static class OverlaySettingsSerializer
                 WidgetScales = SanitizeScales(parsed.WidgetScales),
                 Units = (parsed.Units ?? new UnitPreferences()).Sanitized(),
                 Tuning = (parsed.Tuning ?? new WidgetTuning()).Sanitized(),
+                SafetyHistory = SanitizeSafetyHistory(parsed.SafetyHistory),
             };
         }
         catch (JsonException)
@@ -53,6 +55,26 @@ public static class OverlaySettingsSerializer
             // Corrupt/hand-mangled file - fall back to defaults rather than fail.
             return new OverlaySettings();
         }
+    }
+
+    /// <summary>
+    /// The safety baseline is accumulated data rather than a preference, so a
+    /// nonsensical value (negative, NaN, or a corner count beyond the window it
+    /// is meant to cover) means the file was hand-edited or written by a
+    /// different build. Start it over rather than judging real sessions against
+    /// a figure that can't have been earned.
+    /// </summary>
+    private static CpiHistory SanitizeSafetyHistory(CpiHistory? history)
+    {
+        if (history is null
+            || !double.IsFinite(history.Corners) || !double.IsFinite(history.IncidentPoints)
+            || history.Corners < 0 || history.IncidentPoints < 0
+            || history.Corners > CpiHistory.WindowCorners)
+        {
+            return CpiHistory.Empty;
+        }
+
+        return history;
     }
 
     private static IReadOnlyDictionary<string, double> SanitizeScales(
