@@ -613,7 +613,14 @@ fire on background threads; all marshalling to the UI thread happens in
 
 **`SimulatedTelemetrySource`** (`--demo`): drives the app without iRacing
 running, on a `System.Threading.Timer` ticking at the same ~30Hz as live
-mode.
+mode. Ticks are **non-reentrant**: a tick arriving while the previous one is
+still delivering its events is dropped (a `Monitor.TryEnter` guard), so
+consumers see sequential, in-order events exactly as they do from the live
+source's single read loop — a slow handler throttles the feed rather than
+receiving concurrent frames. (Found when `tools/RenderWidget`'s warm-up, which
+subscribes view models directly on the timer thread with no Dispatcher
+marshalling, crashed `IRatingTracker` on overlapping ticks; verified with a
+throwaway stress harness per the dev-controls convention.)
 - Builds its field from a selectable **race preset** (`RacePresets`,
   `Core/Demo`) modelled on a real iRacing series — its classes, class colours,
   per-class pace, and a typical grid size. It opens on the IMSA preset (3-class
