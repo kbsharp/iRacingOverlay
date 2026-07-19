@@ -41,8 +41,10 @@ assets.
 Near-term, high value, fits the existing architecture. Almost all of this
 extends an existing widget rather than adding a new one.
 
-- **Standings: pit status** — the relative flags pitting cars, the standings
-  doesn't. Extend the existing PIT badge across.
+- ~~**Standings: pit status**~~ — **done**. The relative's PIT badge now shows in
+  the standings too, taking over the Int column while a car is in the lane — Int
+  is meaningless for a car in its box, and Gap, which tells you where they
+  rejoin, is preserved.
 - **Relative: catch/defend pace trend** *(unique — neither competitor has
   it)*. Each row already shows a delta; track its per-lap trend and show
   "closing 0.3s/lap — on you in 6 laps" (or "caught before the flag: no").
