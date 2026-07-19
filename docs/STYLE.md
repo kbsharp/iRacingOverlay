@@ -64,11 +64,8 @@ Every move is small, lands separately, and is verified with
 Anything a static PNG can't settle — motion, glow at speed — is flagged for
 a human eye in the sim.
 
-1. **Relative: make the delta the headline.** Raise the delta column one
-   type step (and keep it heaviest in the row) so the eye lands there
-   first; the driver name second; chips and car number recede. This is
-   information hierarchy, not decoration — the delta is the widget's reason
-   to exist.
+1. ~~**Relative: make the delta the headline.**~~ *Shipped* — delta raised to
+   `16px` Bold against the name's `13px`.
 2. **Standings: solid class name-plates.** The class short name on each
    banner moves into a small solid block of the class colour with dark
    text — a number-board, in the sim's own class hue — while the banner

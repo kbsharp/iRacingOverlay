@@ -181,6 +181,12 @@ the car is on pit road or in a pit stall, and a signed time delta (`+n.n` /
 `-n.n`). Zebra striping is fixed per slot (`RelativeRowViewModel.IsAltRow`) so
 it stays stable as rows update in place.
 
+**Row hierarchy:** the delta is the headline — `16px` Bold, a clear step above
+the driver name at `13px`, with the position and car number recessive at
+`11px` `FontSmall`. The delta is the one number read at 200kph, so the eye must
+land on it first; at its previous `13px` it tied with the name and the row read
+as a set of equal-weight tokens.
+
 **Colour coding** (the widget's main visual identity — deliberately not
 blue-dominated; blue is reserved for the header label and the A-license
 badge specifically):
