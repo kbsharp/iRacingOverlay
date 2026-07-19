@@ -40,6 +40,11 @@ public interface IDemoControls
 
     void AddIncident();
 
+    /// <summary>Advances through the flag states a race meets (green running, green
+    /// held, yellow, blue, white, chequered, meatball, black), wrapping around.
+    /// Returns the flag the session strip will now show.</summary>
+    SessionFlagState CycleFlag();
+
     /// <summary>Flips whether the player's own car is shown as pitting.</summary>
     void TogglePlayerPit();
 

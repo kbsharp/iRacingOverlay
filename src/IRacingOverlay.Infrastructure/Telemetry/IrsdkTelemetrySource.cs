@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Radar;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Telemetry;
@@ -92,17 +93,28 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
         }
 
         var sessionTypes = new Dictionary<int, string>();
+        var sessionLaps = new Dictionary<int, int>();
         foreach (var session in info.SessionInfo?.Sessions ?? [])
         {
             sessionTypes[session.SessionNum] = session.SessionType ?? string.Empty;
+
+            // SessionLaps is "unlimited" for timed sessions - only record real counts.
+            if (SessionFormat.ParseLimit(session.SessionLaps) is { } laps)
+            {
+                sessionLaps[session.SessionNum] = laps;
+            }
         }
+
+        var incidentLimit = SessionFormat.ParseLimit(info.WeekendInfo?.WeekendOptions?.IncidentLimit);
 
         var setupName = info.DriverInfo?.DriverSetupName ?? string.Empty;
         var setupIsModified = (info.DriverInfo?.DriverSetupIsModified ?? 0) != 0;
         var trackLengthMeters = TrackLengthParser.ParseToMeters(info.WeekendInfo?.TrackLength);
 
         SessionMetadataReceived?.Invoke(
-            this, new SessionMetadata(drivers, sessionTypes, setupName, setupIsModified, trackLengthMeters));
+            this,
+            new SessionMetadata(
+                drivers, sessionTypes, setupName, setupIsModified, trackLengthMeters, incidentLimit, sessionLaps));
     }
 
     private void HandleTelemetryData()
@@ -163,6 +175,7 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
             Wetness = (TrackWetness)GetIntOrDefault(data, "TrackWetness"),
             BrakeBiasPct = GetFloatOrDefault(data, "dcBrakeBias"),
             IncidentCount = GetIntOrDefault(data, "PlayerCarMyIncidentCount"),
+            Flags = (SessionFlags)GetBitFieldOrDefault(data, "SessionFlags"),
             CarLeftRight = (CarLeftRight)GetIntOrDefault(data, "CarLeftRight"),
             PlayerYawRad = GetFloatOrDefault(data, "Yaw"),
             Cars = cars,
@@ -174,6 +187,9 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
 
     private static float GetFloatOrDefault(IRacingSdkData data, string name, float fallback = 0f) =>
         data.TelemetryDataProperties.TryGetValue(name, out var datum) ? data.GetFloat(datum) : fallback;
+
+    private static uint GetBitFieldOrDefault(IRacingSdkData data, string name, uint fallback = 0) =>
+        data.TelemetryDataProperties.TryGetValue(name, out var datum) ? data.GetBitField(datum) : fallback;
 
     private void ReadIntArray(IRacingSdkData data, string name, int[] buffer)
     {

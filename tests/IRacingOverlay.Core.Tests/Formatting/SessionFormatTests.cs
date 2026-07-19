@@ -59,4 +59,80 @@ public class SessionFormatTests
     {
         Assert.Equal("41°", SessionFormat.Temperature(40.6f));
     }
+
+    [Theory]
+    [InlineData("17", 17)]
+    [InlineData("  25 ", 25)]
+    public void ParseLimit_ReadsNumericLimits(string raw, int expected)
+    {
+        Assert.Equal(expected, SessionFormat.ParseLimit(raw));
+    }
+
+    [Theory]
+    [InlineData("unlimited")]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public void ParseLimit_UnlimitedOrJunk_ReturnsNull(string? raw)
+    {
+        Assert.Null(SessionFormat.ParseLimit(raw));
+    }
+
+    [Fact]
+    public void Incidents_WithLimit_ShowsBothSides()
+    {
+        Assert.Equal("4x/17x", SessionFormat.Incidents(4, 17));
+    }
+
+    [Fact]
+    public void Incidents_Unlimited_ShowsCountOnly()
+    {
+        Assert.Equal("4x", SessionFormat.Incidents(4, null));
+    }
+
+    [Theory]
+    [InlineData(0, 17, IncidentSeverity.Ok)]
+    [InlineData(11, 17, IncidentSeverity.Ok)]     // 0.65
+    [InlineData(12, 17, IncidentSeverity.Warning)] // 0.71
+    [InlineData(16, 17, IncidentSeverity.Critical)] // 0.94
+    [InlineData(17, 17, IncidentSeverity.Critical)]
+    public void IncidentLevel_WarnsBeforeTheLimit(int count, int limit, IncidentSeverity expected)
+    {
+        Assert.Equal(expected, SessionFormat.IncidentLevel(count, limit));
+    }
+
+    [Fact]
+    public void IncidentLevel_Unlimited_IsAlwaysOk()
+    {
+        Assert.Equal(IncidentSeverity.Ok, SessionFormat.IncidentLevel(300, null));
+    }
+
+    [Fact]
+    public void LapCounter_LapLimited_ShowsCurrentAndTotal()
+    {
+        Assert.Equal("L12/25", SessionFormat.LapCounter(12, 25));
+    }
+
+    [Fact]
+    public void LapCounter_Timed_ShowsCurrentOnly()
+    {
+        Assert.Equal("L12", SessionFormat.LapCounter(12, null));
+    }
+
+    [Fact]
+    public void LapCounter_PastTheTotal_ClampsToTheRaceDistance()
+    {
+        // The sim keeps counting on the cool-down lap; "L26/25" reads as a bug.
+        Assert.Equal("L25/25", SessionFormat.LapCounter(26, 25));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void LapCounter_BeforeTheFirstLap_IsEmpty(int lap)
+    {
+        Assert.Equal(string.Empty, SessionFormat.LapCounter(lap, 25));
+    }
 }

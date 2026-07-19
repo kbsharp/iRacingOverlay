@@ -1,0 +1,38 @@
+namespace IRacingOverlay.Core.Telemetry;
+
+/// <summary>
+/// Mirrors iRacing's <c>SessionFlags</c> bitfield. Many bits can be set at once
+/// (a caution period is <see cref="Yellow"/> + <see cref="Caution"/>, often with
+/// <see cref="YellowWaving"/> too), so use <see cref="SessionFlagState"/> to pick
+/// the one worth showing rather than testing bits at the call site.
+/// </summary>
+[Flags]
+public enum SessionFlags : uint
+{
+    None = 0,
+    Checkered = 0x00000001,
+    White = 0x00000002,
+    Green = 0x00000004,
+    Yellow = 0x00000008,
+    Red = 0x00000010,
+    Blue = 0x00000020,
+    Debris = 0x00000040,
+    Crossed = 0x00000080,
+    YellowWaving = 0x00000100,
+    OneLapToGreen = 0x00000200,
+    GreenHeld = 0x00000400,
+    TenToGo = 0x00000800,
+    FiveToGo = 0x00001000,
+    RandomWaving = 0x00002000,
+    Caution = 0x00004000,
+    CautionWaving = 0x00008000,
+    Black = 0x00010000,
+    Disqualify = 0x00020000,
+    Servicible = 0x00040000,
+    Furled = 0x00080000,
+    Repair = 0x00100000,
+    StartHidden = 0x10000000,
+    StartReady = 0x20000000,
+    StartSet = 0x40000000,
+    StartGo = 0x80000000,
+}

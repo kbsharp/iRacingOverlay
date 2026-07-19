@@ -21,6 +21,11 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     private const float BaseLitersPerLap = 2.4f;
     private const int MinCarCountValue = 3;
 
+    // A licence-style incident cap and race distance, so the session strip shows
+    // its "x/limit" and "Lx/y" forms in the demo rather than the bare fallbacks.
+    private const int DemoIncidentLimit = 17;
+    private const int DemoRaceLaps = 25;
+
     // The radar needs a real track length (to turn lap-fraction gaps into metres)
     // and a track shape (the player's heading around the lap) to place cars. Give
     // the demo a plausible short circuit that weaves through a few corners, so the
@@ -45,6 +50,22 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         TrackWetness.VeryLightlyWet,
         TrackWetness.ModeratelyWet,
         TrackWetness.VeryWet,
+    ];
+
+    /// <summary>Flag states the dev panel cycles through, in the order a race
+    /// tends to meet them.</summary>
+    private static readonly SessionFlags[] FlagCycle =
+    [
+        // Green running with nothing raised - the resting state, so the strip
+        // shows no flag pill until the dev panel cycles it.
+        SessionFlags.Green,
+        SessionFlags.Green | SessionFlags.GreenHeld,
+        SessionFlags.Yellow | SessionFlags.Caution,
+        SessionFlags.Blue,
+        SessionFlags.White,
+        SessionFlags.Checkered,
+        SessionFlags.Repair,
+        SessionFlags.Black,
     ];
 
     /// <summary>Driver names/numbers the field is drawn from, in order. The field
@@ -86,6 +107,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     private float _fuel = StartingFuelLiters;
     private int _wetnessIndex = 1; // VeryLightlyWet, matching the original fixed demo value
     private int _incidentCount = 2;
+    private int _flagIndex;
     private bool _playerInPits;
     private bool _connectionAnnounced;
 
@@ -207,6 +229,15 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         lock (_gate)
         {
             _incidentCount++;
+        }
+    }
+
+    public SessionFlagState CycleFlag()
+    {
+        lock (_gate)
+        {
+            _flagIndex = (_flagIndex + 1) % FlagCycle.Length;
+            return SessionFlagResolver.Resolve(FlagCycle[_flagIndex]);
         }
     }
 
@@ -357,6 +388,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             Wetness = WetnessCycle[_wetnessIndex],
             BrakeBiasPct = 54.2f,
             IncidentCount = _incidentCount,
+            Flags = FlagCycle[_flagIndex],
             CarLeftRight = _carLeftRight,
             PlayerYawRad = DemoHeading(playerPct),
             Cars = cars,
@@ -470,7 +502,9 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             new Dictionary<int, string> { [sessionNum] = sessionType },
             setupFile,
             setupModified,
-            DemoTrackLengthMeters);
+            DemoTrackLengthMeters,
+            DemoIncidentLimit,
+            new Dictionary<int, int> { [sessionNum] = DemoRaceLaps });
     }
 
     private sealed record SimDriver(
