@@ -603,6 +603,22 @@
                     </CheckBox>
                     <TextBlock Style="{StaticResource Hint}"
                                Text="Adds a car-maker column to the standings. Off by default: only some makes have a logo, so the rest fall back to a short text abbreviation (DAL, LIG, RAD, RUF) and the column reads as a mix." />
+
+                    <CheckBox IsChecked="{Binding ShowPaceTrend}" Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Catch/defend trend in the relative" VerticalAlignment="Center" />
+                            <Border Background="{StaticResource Warning}" Opacity="0.85"
+                                    CornerRadius="2" Padding="4,0" Margin="6,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="EXPERIMENTAL"
+                                           FontFamily="{StaticResource FontSmall}"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="#101010" />
+                            </Border>
+                        </StackPanel>
+                    </CheckBox>
+                    <TextBlock Style="{StaticResource Hint}"
+                               Text="Adds a column showing how fast each gap is closing or opening, and the laps until the battle lands. Off by default: the numbers are right but the column doesn't say what they are - a bare arrow and 0.2 has to be explained before it reads as seconds per lap." />
                 </StackPanel>
             </Border>
 

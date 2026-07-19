@@ -126,6 +126,10 @@ public sealed class SettingsService
     public void SetShowManufacturerBadges(bool showManufacturerBadges)
         => Update(_current with { ShowManufacturerBadges = showManufacturerBadges });
 
+    /// <summary>Records whether the relative shows the catch/defend trend column.</summary>
+    public void SetShowPaceTrend(bool showPaceTrend)
+        => Update(_current with { ShowPaceTrend = showPaceTrend });
+
     /// <summary>Forgets every saved window position, so the next launch puts each
     /// widget back at its default corner. The recovery path for a layout that's
     /// been dragged somewhere unusable - previously this meant deleting

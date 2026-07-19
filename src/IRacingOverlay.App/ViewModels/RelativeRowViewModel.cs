@@ -2,6 +2,8 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Relative;
+using IRacingOverlay.Core.Settings;
+using GridLength = System.Windows.GridLength;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
 using Color = System.Windows.Media.Color;
@@ -17,6 +19,9 @@ namespace IRacingOverlay.App.ViewModels;
 /// </summary>
 public sealed class RelativeRowViewModel : ObservableObject
 {
+    /// <summary>Width the trend column takes when it's switched on.</summary>
+    private const double TrendColumnPixels = 52;
+
     private static readonly Brush FallbackClassBrush = Brushes.Gray;
 
     private bool _isVisible;
@@ -37,6 +42,7 @@ public sealed class RelativeRowViewModel : ObservableObject
     private string _trendRateText = string.Empty;
     private string _trendLapsText = string.Empty;
     private PaceTrendTone _trendTone;
+    private bool _showPaceTrend = new OverlaySettings().ShowPaceTrend;
 
     public bool IsVisible
     {
@@ -153,6 +159,26 @@ public sealed class RelativeRowViewModel : ObservableObject
         get => _trendTone;
         private set => SetProperty(ref _trendTone, value);
     }
+
+    /// <summary>Whether this row carries the catch/defend column at all. Off by
+    /// default - see <see cref="OverlaySettings.ShowPaceTrend"/>.</summary>
+    public bool ShowPaceTrend
+    {
+        get => _showPaceTrend;
+        set
+        {
+            if (SetProperty(ref _showPaceTrend, value))
+            {
+                OnPropertyChanged(nameof(TrendColumnWidth));
+            }
+        }
+    }
+
+    /// <summary>The trend column's width, so switching it off reclaims the space
+    /// for the name rather than leaving a gap. Bound by the row grid directly:
+    /// a collapsed child still holds its column open otherwise.</summary>
+    public GridLength TrendColumnWidth
+        => ShowPaceTrend ? new GridLength(TrendColumnPixels) : new GridLength(0);
 
     public void Show(RelativeRow row, PaceTrend trend)
     {

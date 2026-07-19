@@ -252,6 +252,19 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>Whether the relative carries the catch/defend trend column.
+    /// Experimental while the readout still has to be explained before it reads -
+    /// see <see cref="OverlaySettings.ShowPaceTrend"/>.</summary>
+    public bool ShowPaceTrend
+    {
+        get => _settings.Current.ShowPaceTrend;
+        set
+        {
+            _settings.SetShowPaceTrend(value);
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>Unsubscribes from the settings service. The window is rebuilt each
     /// time it's opened, so without this every open would leave a live handler on
     /// a service that outlives it.</summary>
@@ -290,6 +303,7 @@ public sealed class SettingsViewModel : ObservableObject
             RaiseTuningProperties();
             OnPropertyChanged(nameof(ShowSetupReminder));
             OnPropertyChanged(nameof(ShowManufacturerBadges));
+            OnPropertyChanged(nameof(ShowPaceTrend));
         }
         finally
         {

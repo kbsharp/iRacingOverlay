@@ -267,8 +267,9 @@ both `RelativeCalculator.Compute` and `RelativeViewModel`). Rows are updated
 in place each frame rather than rebuilt, so the list is allocation-free and
 the layout doesn't jump. Each row shows: race position, a class-colour bar,
 car number, driver name, a license badge and iRating badge, a PIT badge when
-the car is on pit road or in a pit stall, a [catch/defend trend](#catchdefend-pace-trend--corerelativepacetrendtracker),
-and a signed time delta (`+n.n` / `-n.n`). Zebra striping is fixed per slot
+the car is on pit road or in a pit stall, an optional
+[catch/defend trend](#catchdefend-pace-trend--corerelativepacetrendtracker)
+(off by default), and a signed time delta (`+n.n` / `-n.n`). Zebra striping is fixed per slot
 (`RelativeRowViewModel.IsAltRow`) so it stays stable as rows update in place.
 
 **Row hierarchy:** the delta is the headline — `16px` Bold, a clear step above
@@ -326,6 +327,18 @@ the roster's `ClassEstLapTimeSeconds` when available, else a 120s fallback
 (`FallbackLapTimeSeconds`).
 
 ### Catch/defend pace trend — `Core.Relative.PaceTrendTracker`
+
+> **Off by default, opt-in** (`OverlaySettings.ShowPaceTrend`, settings window,
+> marked EXPERIMENTAL). The calculation below is sound and unchanged; the
+> *column* was switched off because it doesn't say what it is. On the row it's a
+> bare `▲ 0.2` with no unit and no referent — never "seconds per lap", never per
+> lap toward what — sitting between an iRating badge and a delta that are also
+> small numbers. It has to be explained before it reads, which is the test the
+> removed safety chip failed in a louder way. Staged rather than deleted because
+> the fix is presentational, not conceptual; see
+> [ROADMAP.md](ROADMAP.md#core-pass--finish-the-widgets-we-have) for what a
+> legible version needs. When off, the column collapses to zero width and the
+> name column reclaims the space.
 
 A delta says where someone is; the trend says where they will be. Each
 non-player row carries a compact forecast to the left of the delta:
@@ -1098,13 +1111,17 @@ makes these numbers choosable.
 |---|---|
 | **Widgets** | Per widget: on/off, a scale override (100/125/150/175%), and click-through. |
 | **Units** | Fuel litres/gallons, temperature °C/°F, speed km/h / mph. |
-| **Tuning** | Fuel safety margin (0–5 laps), the setup reminder toggle + its flash (5–300 s), radar range (15–200 m), relative cars each side (1–8), standings cars per class (5–60), manufacturer badges (experimental, off by default). |
+| **Tuning** | Fuel safety margin (0–5 laps), the setup reminder toggle + its flash (5–300 s), radar range (15–200 m), relative cars each side (1–8), standings cars per class (5–60), manufacturer badges and the relative's catch/defend trend column (both experimental, off by default). |
 | **General** | Start with Windows; only show widgets while iRacing is running; **Reset widget positions**. |
 
 - **An amber `EXPERIMENTAL` chip** marks a setting that's off by default because
-  the feature behind it is incomplete rather than merely optional — currently
-  just the manufacturer badges. The hint line under it must say *what* is
-  unfinished, so the tag is information rather than a warning label.
+  the feature behind it is incomplete rather than merely optional — currently the
+  manufacturer badges (an incomplete mark set) and the catch/defend trend column
+  (a readout that has to be explained before it reads). The hint line under it
+  must say *what* is unfinished, so the tag is information rather than a warning
+  label. The chip is only honest while the gap is **fixable**: a toggle is a
+  staging area, not somewhere to park a feature that can never be finished —
+  that one gets deleted, as the safety chip was.
 - **Per-widget scale** overrides the shared tray scale for that widget only — a
   standings table and a radar rarely want the same size. Absent override = follow
   the shared scale.

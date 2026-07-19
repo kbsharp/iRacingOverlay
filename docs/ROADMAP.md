@@ -59,12 +59,31 @@ extends an existing widget rather than adding a new one.
   the standings too, taking over the Int column while a car is in the lane — Int
   is meaningless for a car in its box, and Gap, which tells you where they
   rejoin, is preserved.
-- ~~**Relative: catch/defend pace trend**~~ — **done** *(unique — neither
-  competitor has it)*. Every row now carries a regressed per-lap gap rate
-  (`▼ 0.4`) and, when the battle actually lands before the flag, the laps until
-  it does (`3L`). Colour reports what it means for you — green a place you take,
-  amber a place you lose — and a catch that misses the flag stays grey, because
-  it isn't a decision.
+- **Relative: catch/defend pace trend** — **built, shipped, now off by default.**
+  Every row carries a regressed per-lap gap rate (`▼ 0.4`) and, when the battle
+  lands before the flag, the laps until it does (`3L`). Colour reports what it
+  means for you — green a place you take, amber a place you lose — and a catch
+  that misses the flag stays grey.
+
+  The maths survives the first test: it changes a decision (chase or defend), in
+  seconds and laps, checkable a lap later. It's the **presentation** that fails
+  the second one. On the row it reads as a bare `▲ 0.2` with no unit and no
+  referent — it never says *seconds per lap*, or per lap toward *what*. Sat
+  between an iRating badge and a delta, both also small numbers, it's one more
+  figure to decode rather than one to read. That's the CPI failure in a milder
+  form: not a made-up unit this time, but still a number you must be taught
+  before it says anything.
+
+  Switched off behind `OverlaySettings.ShowPaceTrend` rather than deleted,
+  because unlike the safety chip this has a **fixable** path — the quantity is
+  right, the typography isn't — which is exactly what the manufacturer badge's
+  toggle-as-staging-area is for. The column collapses to zero width when off, so
+  the name reclaims the space. **What a legible version needs:** carry its unit
+  or referent on the row (`-0.4s/L`, or a form that reads as *closing*), or drop
+  the rate entirely and show only the part that's already a sentence — the
+  laps-to-contact countdown, which needs no teaching. Worth resolving against the
+  delta column too: two signed numbers side by side is the density problem, not
+  just the label.
 - ~~**Session strip: projected Safety Rating chip**~~ — **built, then removed.**
   It shipped as a corners-per-incident chip (`▲ 49 CPI`) rather than an SR
   delta, because iRacing has never published the CPI-to-SR conversion and only
@@ -215,7 +234,7 @@ Revisit only once the core above is strong:
 | Delta bar | ✅ | via columns | ✅ vs your session best, held at the line |
 | Projected iRating | gain shown | gain shown | ✅ full zero-sum model |
 | Safety direction (CPI vs your baseline) | ❌ | ❌ | built, then removed — see above |
-| Battle catch/defend forecast | ❌ | ❌ | ✅ rate + laps-to-contact **(unique)** |
+| Battle catch/defend forecast | ❌ | ❌ | built **(unique)**, off by default — legibility, see above |
 | Pit-exit position projection | ❌ | ❌ | → bet **(unique)** |
 | Traffic meeting-point forecast | ❌ | behind-only warning | → bet **(unique)** |
 | Setup-file reminder | ❌ | ❌ | ✅ **(unique)** |

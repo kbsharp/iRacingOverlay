@@ -21,6 +21,7 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     private IReadOnlyList<RelativeRowViewModel> _rows = [];
     private int _slotsPerSide = new WidgetTuning().RelativeSlotsPerSide;
     private TemperatureUnit _temperatureUnit = TemperatureUnit.Celsius;
+    private bool _showPaceTrend = new OverlaySettings().ShowPaceTrend;
     private TelemetrySnapshot? _lastSnapshot;
 
     private string _sessionTypeText = "SESSION";
@@ -175,11 +176,16 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     public override void ApplySettings(OverlaySettings settings)
     {
         _temperatureUnit = settings.Units.Temperature;
+        _showPaceTrend = settings.ShowPaceTrend;
 
         if (_slotsPerSide != settings.Tuning.RelativeSlotsPerSide)
         {
             _slotsPerSide = settings.Tuning.RelativeSlotsPerSide;
             BuildRows();
+        }
+        else
+        {
+            ApplyPaceTrendVisibility();
         }
 
         // Re-render the last frame so the temps and the new slot count appear
@@ -209,6 +215,17 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         }
 
         Rows = rows;
+        ApplyPaceTrendVisibility();
+    }
+
+    /// <summary>The column lives on the row, so the setting has to reach every slot -
+    /// including ones just rebuilt by a slot-count change.</summary>
+    private void ApplyPaceTrendVisibility()
+    {
+        foreach (var row in Rows)
+        {
+            row.ShowPaceTrend = _showPaceTrend;
+        }
     }
 
     private void UpdateHeader(TelemetrySnapshot snapshot)
