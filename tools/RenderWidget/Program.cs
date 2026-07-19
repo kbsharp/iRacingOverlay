@@ -43,7 +43,8 @@ internal static class Program
     /// rather than a separate widget - see <see cref="RenderRadarDanger"/>.
     /// </summary>
     private static readonly string[] AllTargets =
-        ["standings", "relative", "fuel", "radar", "radar-danger", "delta", "settings"];
+        ["standings", "relative", "fuel", "radar", "radar-danger", "radar-unresolved", "delta",
+         "settings"];
 
     [STAThread]
     private static int Main(string[] args)
@@ -250,6 +251,11 @@ internal static class Program
             results.Add(("radar-danger", RenderRadarDanger()));
         }
 
+        if (targets.Contains("radar-unresolved"))
+        {
+            results.Add(("radar-unresolved", RenderRadarUnresolved()));
+        }
+
         return results;
     }
 
@@ -354,6 +360,48 @@ internal static class Program
             Console.Error.WriteLine(
                 $"Warning: radar-danger expected both glows lit, got "
                 + $"left={vm.LeftDanger:0.00} right={vm.RightDanger:0.00}.");
+        }
+
+        return new IRacingOverlay.App.RadarWindow { DataContext = vm };
+    }
+
+    /// <summary>
+    /// Renders the positional radar's other honest state: the track is mapped, but
+    /// the cars level with the player are stacked on the centreline, where the walk
+    /// can't say which side they are. The demo field runs nose-to-tail, so cycling
+    /// the spotter to CarLeft while the map is ready produces exactly that - dimmed
+    /// blips plus a left glow, rather than a confident placement or an empty mirror.
+    /// </summary>
+    private static Window RenderRadarUnresolved()
+    {
+        var vm = new RadarViewModel("Demo");
+        using var source = new SimulatedTelemetrySource();
+
+        source.SessionMetadataReceived += (_, m) => vm.ApplySessionMetadata(m);
+        source.TelemetryReceived += (_, s) => vm.ApplyTelemetry(s);
+        vm.SetConnectionState(true);
+        source.Start();
+
+        var started = DateTime.UtcNow;
+        while (!vm.ShowRadar && DateTime.UtcNow - started < WarmupCap)
+        {
+            Thread.Sleep(100);
+        }
+
+        var state = CarLeftRight.Off;
+        for (var i = 0; i < 50 && state != CarLeftRight.CarLeft; i++)
+        {
+            state = source.CycleCarLeftRight();
+        }
+
+        Thread.Sleep(500);
+        source.Stop();
+
+        if (!vm.ShowRadar || vm.LeftDanger <= 0)
+        {
+            Console.Error.WriteLine(
+                $"Warning: radar-unresolved expected a mapped radar with a left glow, got "
+                + $"mapped={vm.MapReady} left={vm.LeftDanger:0.00}.");
         }
 
         return new IRacingOverlay.App.RadarWindow { DataContext = vm };

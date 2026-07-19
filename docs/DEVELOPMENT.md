@@ -118,8 +118,8 @@ of seconds, so it hasn't been worth adding.
   .\scripts\render.ps1 fuel relative    # just these two
   ```
 
-  Targets: `standings`, `relative`, `fuel`, `radar`, `radar-danger`, `delta`,
-  `settings`.
+  Targets: `standings`, `relative`, `fuel`, `radar`, `radar-danger`,
+  `radar-unresolved`, `delta`, `settings`.
   **Rendering everything is the default** and costs barely more than rendering
   one — all the view models are fed from a single demo session, and the slow part
   is wall-clock demo laps (the fuel burn average needs ~35 s of them), not the
@@ -131,6 +131,12 @@ of seconds, so it hasn't been worth adding.
   **spotter fallback** instead, via `IDemoControls.CycleCarLeftRight()`. The glow
   ellipses sit outside both the positional and fallback subtrees in
   `RadarWindow.xaml`, so it's the real binding, not a mock.
+
+  `radar-unresolved` is the other half of that story: it warms up until the track
+  *is* mapped, then cycles the spotter to `CarLeft`. The demo field's nose-to-tail
+  pack is exactly the stacked-on-the-centreline case, so the render shows what the
+  radar does when the geometry can't name a side — faded blips plus a graded glow,
+  rather than a confident placement or an empty mirror.
 
   **What a render still can't settle** — say so rather than claiming it looks
   right: the *graded* glow (a car fading out as it drifts away) needs real

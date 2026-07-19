@@ -89,7 +89,8 @@
                                     Height="{x:Static vm:RadarLayout.BlipHeight}"
                                     CornerRadius="2"
                                     Background="#FFF2F4F7"
-                                    RenderTransformOrigin="0.5,0.5">
+                                    RenderTransformOrigin="0.5,0.5"
+                                    Opacity="{Binding Opacity}">
                                 <!-- A soft dark halo instead of a hard border: keeps a pale
                                      car legible against sky or kerbs without drawing a box. -->
                                 <Border.Effect>
