@@ -489,3 +489,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Claude Code: the shared permission allowlist (.claude/settings.json) is
+# checked in; per-user overrides are not.
+.claude/settings.local.json
