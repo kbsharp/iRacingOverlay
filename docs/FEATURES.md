@@ -219,12 +219,16 @@ NotInWorld`, e.g. not yet spawned) are excluded per-frame.
 A strategy calculator, not just a burn-rate readout — the numbers shown are
 the ones a driver acts on mid-race.
 
-**Layout:** 330px wide, same borderless/transparent/topmost/draggable
+**Layout:** 252px wide, same borderless/transparent/topmost/draggable
 behaviour as the relative. Default position on first launch (`Left=80, Top=140`),
-then restored from saved settings. Deliberately compact vertically — every field from
-the original layout is still present, just with tighter margins/padding and a
-smaller headline number, so it takes noticeably less screen height without
-losing any of the strategy numbers.
+then restored from saved settings.
+
+Spacing is deliberately on the **same rhythm as the list widgets**: a 10px panel
+inset and 6px between blocks, with the headline readout at 26px and the labelled
+figures at 15px (the shared `Value` style). The panel previously ran an 18/12
+inset with 8–10px gaps and every figure at 19px, which made a widget carrying
+eight numbers as tall as a twelve-car standings table — the numbers are
+unchanged, only the space around them.
 
 **Displayed fields:**
 - Current fuel level (`nn.nn L`) and laps of running left in the tank at
@@ -283,27 +287,42 @@ EstimateRaceLapsRemaining` for timed races.
   reads comfortably positive; the red "short" state is real code but isn't
   exercised by the demo without editing `SimulatedTelemetrySource`.
 
-### Setup — `SetupWindow` / `SetupViewModel` / `SetupReminderTracker`
+#### Setup strip — `SetupReminderTracker`, rendered by the fuel widget
 
-A reminder widget, not a data widget: it exists to catch the "raced on the
-low-fuel qualifying setup" mistake — forgetting to load the race setup before
-Qualifying or Race starts.
+A reminder, not a data readout: it exists to catch the "raced on the low-fuel
+qualifying setup" mistake — forgetting to load the race setup before Qualifying
+or Race starts.
 
-**Layout:** 260px wide, same borderless/transparent/topmost/draggable
-behaviour as the others. Fixed position on first launch (`Left=80, Top=470`
-— below the fuel widget).
+This **was a widget of its own** (`SetupWindow` / `SetupViewModel`) until it was
+folded into the fuel panel. It spent a whole window's worth of chrome — border,
+shadow, header, connection dot — on two lines of text, and it says the same kind
+of thing the fuel widget does ("what is my car running"), read in the same place
+(the pits, not at speed). `SetupViewModel`'s logic moved into `FuelViewModel`
+verbatim; `SetupReminderTracker` in `Core` is untouched.
 
-**Displayed fields:**
+`WidgetIds` no longer lists `"SetupWindow"`. A `settings.json` written before the
+merge still carries its keys — every per-widget map is read by lookup, so the
+stale entries are simply never consulted.
+
+**Displayed fields** (one line, below the fuel figures, above nothing):
+- A session-type chip (e.g. "RACE", "QUALIFY", "PRACTICE") — amber when the
+  session is a Qualify or Race, neutral grey otherwise, so even without the
+  flash a glance tells you whether the setup matters right now.
 - The currently loaded setup file name (iRacing's `DriverSetupName`, `.sto`
-  extension stripped by `SetupFormat.DisplayName`), shown large.
-- A session-type badge (e.g. "RACE", "QUALIFY", "PRACTICE") — amber
-  when the session is a Qualify or Race, neutral grey otherwise, so even
-  without the flash (below) a glance at the badge tells you whether the
-  setup matters right now.
-- A "MODIFIED" tag when `DriverSetupIsModified` is set — the loaded setup
-  has been changed since it was last loaded/saved.
+  extension stripped by `SetupFormat.DisplayName`).
+- A "MOD" tag when `DriverSetupIsModified` is set — the loaded setup has been
+  changed since it was last loaded/saved. (Was "MODIFIED"; shortened to fit the
+  single line.)
 
-**The flash:** the whole panel pulses a soft amber wash (`#00FFB03D` ↔
+**Switching it off:** `OverlaySettings.ShowSetupReminder` (Settings → Tuning,
+"Show the setup reminder on the fuel widget"). Defaults to **on**, including for
+a settings file written before the property existed, so the merge doesn't
+silently take the reminder away from anyone who had the widget. Off hides the
+strip *and* suppresses the flash — `FuelViewModel.ShouldFlash` is gated on the
+setting as well as the tracker, so switching it off mid-pulse stops the
+animation rather than waiting for the window to expire.
+
+**The flash:** the whole *fuel* panel pulses a soft amber wash (`#00FFB03D` ↔
 `#70FFB03D`, 0.7s each way, looping) for the first 60 seconds of any session
 whose type contains "Race" or "Qualif" (case-insensitive — covers "Race",
 "Heat Race", "Qualify", "Open Qualify", "Lone Qualify"). It does **not**
@@ -450,7 +469,7 @@ ExtremelyWet).
 (`RosterDriver`: car number, display name, iRating, license string,
 class-estimated lap time, class short name, raw class colour from the sim),
 `SessionTypesByNum`, the player's own `PlayerSetupName`/`PlayerSetupIsModified`
-(drives the Setup widget), and `TrackLengthMeters` (parsed from
+(drives the fuel widget's setup strip), and `TrackLengthMeters` (parsed from
 `WeekendInfo:TrackLength`, used by the radar to scale lap-fraction gaps into
 metres). Refreshed whenever the sim re-broadcasts session info. `RelativeRow` carries the same driver fields plus
 the parsed `LicenseTier`, `IRatingTier`, and normalised `ClassColorHex` used
@@ -491,7 +510,7 @@ fire on background threads; all marshalling to the UI thread happens in
   (iRacing's own per-class colour, normalised by `RatingFormat.
   NormalizeHexColor`) for the relative widget's class colouring.
 - Also reads the player's own `DriverInfo.DriverSetupName` and
-  `DriverSetupIsModified` for the Setup widget.
+  `DriverSetupIsModified` for the fuel widget's setup strip.
 
 **`SimulatedTelemetrySource`** (`--demo`): drives the app without iRacing
 running, on a `System.Threading.Timer` ticking at the same ~15Hz as live
@@ -528,7 +547,7 @@ mode.
   The dev panel's "Cycle session" control steps through Practice → Open
   Qualify → Race, each paired with a matching setup file name
   (`practice_setup.sto` / `qualify_setup.sto` / `race_setup.sto`), and bumps
-  the session number each time so the Setup widget's flash re-triggers.
+  the session number each time so the setup reminder's flash re-triggers.
 - The field is a mutable `List<SimDriver>`, not a fixed array — see
   "Dev experience" below for how it's grown/shrunk live. Also implements
   `IDemoControls`, which the app checks for at startup to decide whether to
@@ -560,7 +579,7 @@ stop the app was closing the terminal that launched it.
   resampled 32px bitmap; the runtime-drawn circle it replaced survives as a
   fallback if the resource can't be loaded, because the tray icon is the only
   way to quit the app.
-- Context menu: a **checkbox per widget** (Standings, Relative, Fuel, Setup,
+- Context menu: a **checkbox per widget** (Standings, Relative, Fuel,
   Radar), **Dev Controls** (demo mode only), a **UI Scale** submenu
   (100/125/150/175%), **Settings...**, **Check for updates**, **Exit** — plus a
   **Restart to install update** item that stays hidden until an update has been
@@ -791,8 +810,8 @@ control in live mode and doesn't appear there.
 | **Cycle wetness** | Steps through Dry → Very Lightly Wet → Moderately Wet → Very Wet → (wraps to Dry), to check the relative widget's wetness badge. |
 | **+ Incident** | Increments the player's incident count shown in the relative session strip. |
 | **Toggle player pit** | Flags the player's own row as pitting (surface `InPitStall`), to check the PIT badge and opacity dimming on the player's row specifically. |
-| **Cycle session** | Steps Practice → Open Qualify → Race → (wraps), each with its matching setup file, bumping the session number so the Setup widget's flash re-triggers. Resets the "modified" flag, matching a freshly loaded setup. |
-| **Toggle setup modified** | Flags the loaded setup as modified, to check the Setup widget's "MODIFIED" tag. |
+| **Cycle session** | Steps Practice → Open Qualify → Race → (wraps), each with its matching setup file, bumping the session number so the setup reminder's flash re-triggers. Resets the "modified" flag, matching a freshly loaded setup. |
+| **Toggle setup modified** | Flags the loaded setup as modified, to check the setup strip's "MOD" tag. |
 | **Cycle radar** | Steps Clear → CarLeft → CarRight → CarLeftRight → TwoCarsLeft → TwoCarsRight → (wraps), to check the radar's first-lap spotter fallback (the positional radar itself is driven by the demo track shape, always on once the map is learned). |
 
 Implementation: `SimulatedTelemetrySource` implements `IDemoControls`
@@ -833,7 +852,7 @@ unlimited/negative), `IRating` (`n.nk` above 1000), `Delta` (explicit-sign
 1dp, e.g. `+1.2`/`-0.8`), `Wetness` (short badge text per `TrackWetness`
 level), `Temperature` (rounded whole degrees with `°`), `ResolveSessionType`
 (looks up and upper-cases the display name for a session number, falling
-back to `"SESSION"` — shared by the Relative and Setup widgets).
+back to `"SESSION"` — shared by the relative and the fuel widget's setup strip).
 
 **`SetupFormat`**: `DisplayName` strips the `.sto` extension from a setup
 file name (case-insensitive), or returns the placeholder for a null/blank
@@ -969,7 +988,7 @@ All windows share: `DropShadowEffect` for panel lift, a `6px` `CornerRadius`,
 `BooleanToVisibilityConverter` (`BoolToVis`) for conditional badges, and the
 drag-to-move + right-click-exit interaction pattern. Default (first-run)
 positions are laid out non-overlapping: standings top-left, relative
-bottom-left, fuel/setup/radar in a right column, dev controls far right — but
+bottom-left, fuel/radar in a right column, dev controls far right — but
 after that each widget's position is **restored from saved settings** (see
 Layout persistence below). UI scale is applied per-window via a `ScaleTransform`
 on the content root (see the tray icon section).

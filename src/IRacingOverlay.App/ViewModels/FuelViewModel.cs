@@ -1,6 +1,8 @@
 using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Fuel;
+using IRacingOverlay.Core.Session;
+using IRacingOverlay.Core.Setup;
 using IRacingOverlay.Core.Telemetry;
 
 namespace IRacingOverlay.App.ViewModels;
@@ -9,11 +11,18 @@ namespace IRacingOverlay.App.ViewModels;
 /// Presents the fuel strategy: current fuel and burn, plus fuel-to-finish,
 /// the margin the driver will finish with, fuel to add at the next stop, and
 /// a save target for making it without stopping.
+///
+/// Also carries the setup readout and its start-of-session reminder, which used
+/// to be a widget of its own. Both are "what is my car running", both are read
+/// in the pits rather than at speed, and the standalone panel spent a whole
+/// window's worth of chrome on two lines of text - so it lives here now, as a
+/// strip that <see cref="OverlaySettings.ShowSetupReminder"/> can switch off.
 /// </summary>
 public sealed class FuelViewModel : OverlayViewModelBase
 {
     private readonly FuelCalculator _fuelCalculator;
     private readonly LapTimeTracker _lapTimeTracker;
+    private readonly SetupReminderTracker _setupTracker = new();
 
     private string _fuelLevelText = TelemetryFormat.Placeholder;
     private string _fuelLapsText = TelemetryFormat.Placeholder;
@@ -29,8 +38,17 @@ public sealed class FuelViewModel : OverlayViewModelBase
     private string _saveTargetText = TelemetryFormat.Placeholder;
     private string _fuelUnitLabel = UnitFormat.FuelLabel(FuelUnit.Liters);
 
+    private string _setupNameText = TelemetryFormat.Placeholder;
+    private bool _isSetupModified;
+    private string _sessionTypeText = "SESSION";
+    private bool _isRaceOrQualify;
+    private bool _shouldFlash;
+    private bool _showSetupReminder = true;
+
     private FuelUnit _fuelUnit = FuelUnit.Liters;
     private double _safetyMarginLaps = new WidgetTuning().FuelSafetyMarginLaps;
+    private SessionMetadata? _metadata;
+    private SetupReminderState _setupState = new(string.Empty, false, false, false);
     private TelemetrySnapshot? _lastSnapshot;
 
     public FuelViewModel(
@@ -127,10 +145,56 @@ public sealed class FuelViewModel : OverlayViewModelBase
         private set => SetProperty(ref _fuelUnitLabel, value);
     }
 
+    // ---- Setup strip -------------------------------------------------------
+
+    public string SetupNameText
+    {
+        get => _setupNameText;
+        private set => SetProperty(ref _setupNameText, value);
+    }
+
+    public bool IsSetupModified
+    {
+        get => _isSetupModified;
+        private set => SetProperty(ref _isSetupModified, value);
+    }
+
+    public string SessionTypeText
+    {
+        get => _sessionTypeText;
+        private set => SetProperty(ref _sessionTypeText, value);
+    }
+
+    public bool IsRaceOrQualify
+    {
+        get => _isRaceOrQualify;
+        private set => SetProperty(ref _isRaceOrQualify, value);
+    }
+
+    /// <summary>Whether the setup strip is shown at all - the user's opt-out.</summary>
+    public bool ShowSetupReminder
+    {
+        get => _showSetupReminder;
+        private set => SetProperty(ref _showSetupReminder, value);
+    }
+
+    /// <summary>True for the first minute of a Qualify/Race session - drives the
+    /// panel's pulse. Forced false when the reminder is switched off, so the
+    /// animation can't run against a hidden strip.</summary>
+    public bool ShouldFlash
+    {
+        get => _shouldFlash;
+        private set => SetProperty(ref _shouldFlash, value);
+    }
+
+    public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
+
     public override void ApplySettings(OverlaySettings settings)
     {
         _fuelUnit = settings.Units.Fuel;
         _safetyMarginLaps = settings.Tuning.FuelSafetyMarginLaps;
+        _setupTracker.FlashDurationSeconds = settings.Tuning.SetupFlashSeconds;
+        ShowSetupReminder = settings.ShowSetupReminder;
         FuelUnitLabel = UnitFormat.FuelLabel(_fuelUnit);
 
         // Re-render the last frame rather than waiting up to ~66ms for the next
@@ -142,6 +206,11 @@ public sealed class FuelViewModel : OverlayViewModelBase
         {
             Render(snapshot, _fuelCalculator.Current);
         }
+
+        // The flash is gated on the setting as well as the tracker, so switching
+        // the reminder off stops an already-running pulse rather than waiting for
+        // the window to expire.
+        ShouldFlash = _showSetupReminder && _setupState.ShouldFlash;
     }
 
     public override void ApplyTelemetry(TelemetrySnapshot snapshot)
@@ -150,6 +219,28 @@ public sealed class FuelViewModel : OverlayViewModelBase
 
         _lapTimeTracker.Update(snapshot.Lap, snapshot.SessionTimeSeconds);
         Render(snapshot, _fuelCalculator.Update(snapshot.Lap, snapshot.FuelLevelLiters));
+        RenderSetup(snapshot);
+    }
+
+    /// <summary>Advances the setup reminder. Kept out of <see cref="Render"/>
+    /// because the tracker is a stateful session-change detector and
+    /// <see cref="ApplySettings"/> re-renders the same frame.</summary>
+    private void RenderSetup(TelemetrySnapshot snapshot)
+    {
+        var sessionType = SessionFormat.ResolveSessionType(_metadata?.SessionTypesByNum, snapshot.SessionNum);
+
+        _setupState = _setupTracker.Update(
+            snapshot.SessionNum,
+            sessionType,
+            _metadata?.PlayerSetupName ?? string.Empty,
+            _metadata?.PlayerSetupIsModified ?? false,
+            snapshot.SessionTimeSeconds);
+
+        SetupNameText = SetupFormat.DisplayName(_setupState.SetupName);
+        IsSetupModified = _setupState.IsModified;
+        SessionTypeText = sessionType;
+        IsRaceOrQualify = _setupState.IsRaceOrQualify;
+        ShouldFlash = _showSetupReminder && _setupState.ShouldFlash;
     }
 
     private void Render(TelemetrySnapshot snapshot, FuelEstimate estimate)

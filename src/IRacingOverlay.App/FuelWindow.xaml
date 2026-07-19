@@ -15,6 +15,13 @@
         FontFamily="{StaticResource FontText}"
         MouseLeftButtonDown="OnDragWindow">
 
+    <!--
+        Spacing here is deliberately on the same rhythm as the list widgets: a
+        10px panel inset and 6px between blocks, rather than the 18/12 inset and
+        8-10px gaps this panel used to carry. The old numbers made a widget with
+        eight figures on it as tall as a twelve-car standings table.
+    -->
+
     <Window.ContextMenu>
         <ContextMenu>
             <MenuItem Header="Exit" Click="OnExit" />
@@ -22,8 +29,8 @@
     </Window.ContextMenu>
 
     <Grid Margin="16">
-    <Border Width="330"
-            Padding="18,12,18,13"
+    <Border Width="252"
+            Padding="10,7,10,8"
             CornerRadius="6"
             Background="{StaticResource PanelBackground}"
             BorderBrush="{StaticResource PanelBorder}"
@@ -32,12 +39,46 @@
             <DropShadowEffect BlurRadius="32" ShadowDepth="0" Opacity="0.6" Color="#000000" />
         </Border.Effect>
         <Grid>
-        <Border CornerRadius="6" Margin="-18,-12,-18,-13" Background="{StaticResource PanelSheen}" IsHitTestVisible="False" />
+        <Border CornerRadius="6" Margin="-10,-7,-10,-8" Background="{StaticResource PanelSheen}" IsHitTestVisible="False" />
+
+        <!-- Pulses for the first minute of a Qualify/Race session - a reminder to
+             double-check the loaded setup. Came across with the setup readout
+             when that widget was folded in here; ShouldFlash is already gated on
+             the user's ShowSetupReminder setting. -->
+        <Border CornerRadius="6" Margin="-10,-7,-10,-8" IsHitTestVisible="False">
+            <Border.Background>
+                <SolidColorBrush Color="#00FFB03D" />
+            </Border.Background>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ShouldFlash}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard Name="FlashStoryboard">
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <!-- Targets this Border itself (the implicit target of a
+                                             Style trigger); Storyboard.TargetName can't reach a
+                                             sibling-named brush from inside a Style. -->
+                                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                        To="#70FFB03D"
+                                                        Duration="0:0:0.7" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <StopStoryboard BeginStoryboardName="FlashStoryboard" />
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+        </Border>
+
         <StackPanel>
 
             <!-- header -->
-            <DockPanel Margin="0,0,0,8">
-                <Ellipse Width="8" Height="8" VerticalAlignment="Center" DockPanel.Dock="Left">
+            <DockPanel Margin="0,0,0,5">
+                <Ellipse Width="7" Height="7" VerticalAlignment="Center" DockPanel.Dock="Left">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource Warning}" />
@@ -54,46 +95,43 @@
                            VerticalAlignment="Center"
                            Style="{StaticResource Caption}" />
                 <TextBlock Text="FUEL"
-                           Margin="9,0,0,0"
+                           Margin="7,0,0,0"
                            VerticalAlignment="Center"
-                           FontSize="12"
+                           FontFamily="{StaticResource FontSmall}"
+                           FontSize="11"
                            FontWeight="Bold"
                            Foreground="{StaticResource Accent}" />
             </DockPanel>
 
             <!-- current fuel level, big, with laps of running left -->
-            <DockPanel Margin="0,0,0,10">
+            <DockPanel Margin="0,0,0,6">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Bottom">
                     <TextBlock Text="{Binding FuelLevelText}"
-                               FontFamily="{StaticResource FontDisplay}"
-                               FontSize="34"
+                               FontSize="26"
                                FontWeight="Bold"
                                Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextPrimary}" />
                     <TextBlock Text="{Binding FuelUnitLabel}"
-                               Margin="6,0,0,6"
+                               Margin="4,0,0,4"
                                VerticalAlignment="Bottom"
-                               FontSize="14"
+                               FontSize="12"
                                Foreground="{StaticResource TextMuted}" />
                 </StackPanel>
-                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom">
-                    <TextBlock Text="IN TANK" HorizontalAlignment="Right" Style="{StaticResource Caption}" />
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,1,0,0">
-                        <TextBlock Text="{Binding FuelLapsText}"
-                                   FontSize="19"
-                                   FontWeight="Bold"
-                                   Typography.NumeralAlignment="Tabular"
-                                   Foreground="{StaticResource TextSecondary}" />
-                        <TextBlock Text="laps"
-                                   Margin="5,0,0,2"
-                                   VerticalAlignment="Bottom"
-                                   Style="{StaticResource Caption}" />
-                    </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding FuelLapsText}"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
+                               Foreground="{StaticResource TextSecondary}" />
+                    <TextBlock Text="laps in tank"
+                               Margin="4,0,0,2"
+                               VerticalAlignment="Bottom"
+                               Style="{StaticResource Caption}" />
                 </StackPanel>
             </DockPanel>
 
             <!-- per-lap burn and race length -->
-            <Grid Margin="0,0,0,9">
+            <Grid Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
@@ -101,33 +139,33 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="USED / LAP" Style="{StaticResource Caption}" Margin="0,0,0,2" />
+                    <TextBlock Text="USED / LAP" Style="{StaticResource Caption}" />
                     <TextBlock Text="{Binding AveragePerLapText}" Style="{StaticResource Value}" />
                 </StackPanel>
                 <StackPanel Grid.Column="1">
-                    <TextBlock Text="LAST LAP" Style="{StaticResource Caption}" Margin="0,0,0,2" />
+                    <TextBlock Text="LAST LAP" Style="{StaticResource Caption}" />
                     <TextBlock Text="{Binding LastLapText}" Style="{StaticResource Value}" />
                 </StackPanel>
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="RACE LAPS" Style="{StaticResource Caption}" Margin="0,0,0,2" />
+                    <TextBlock Text="RACE LAPS" Style="{StaticResource Caption}" />
                     <TextBlock Text="{Binding RaceLapsText}" Style="{StaticResource Value}" />
                 </StackPanel>
             </Grid>
 
-            <Border Height="1" Background="{StaticResource Separator}" Margin="0,0,0,9" />
+            <Border Height="1" Background="{StaticResource Separator}" Margin="0,0,0,6" />
 
             <!-- fuel to finish + the headline margin badge -->
-            <DockPanel Margin="0,0,0,8">
-                <StackPanel DockPanel.Dock="Left">
-                    <TextBlock Text="TO FINISH" Style="{StaticResource Caption}" Margin="0,0,0,2" />
+            <DockPanel Margin="0,0,0,6">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBlock Text="TO FINISH" Style="{StaticResource Caption}" />
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding ToFinishText}"
-                                   FontSize="20"
+                                   FontSize="16"
                                    FontWeight="Bold"
                                    Typography.NumeralAlignment="Tabular"
                                    Foreground="{StaticResource TextPrimary}" />
                         <TextBlock Text="{Binding FuelUnitLabel, StringFormat={}{0} needed}"
-                                   Margin="6,0,0,2"
+                                   Margin="4,0,0,2"
                                    VerticalAlignment="Bottom"
                                    Style="{StaticResource Caption}" />
                     </StackPanel>
@@ -136,7 +174,7 @@
                 <Border HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         CornerRadius="3"
-                        Padding="10,4"
+                        Padding="7,2"
                         BorderThickness="1"
                         Visibility="{Binding HasStrategy, Converter={StaticResource BoolToVis}}">
                     <Border.Style>
@@ -151,10 +189,10 @@
                             </Style.Triggers>
                         </Style>
                     </Border.Style>
-                    <StackPanel>
+                    <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding MarginText}"
-                                   HorizontalAlignment="Center"
-                                   FontSize="17"
+                                   VerticalAlignment="Center"
+                                   FontSize="14"
                                    FontWeight="Bold"
                                    Typography.NumeralAlignment="Tabular">
                             <TextBlock.Style>
@@ -169,10 +207,9 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <TextBlock Text="{Binding MarginLabel}"
-                                   HorizontalAlignment="Center"
-                                   FontFamily="{StaticResource FontSmall}"
-                                   FontSize="9"
-                                   FontWeight="Bold"
+                                   Margin="5,0,0,1"
+                                   VerticalAlignment="Bottom"
+                                   Style="{StaticResource Caption}"
                                    Foreground="{StaticResource TextSecondary}" />
                     </StackPanel>
                 </Border>
@@ -186,25 +223,78 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <TextBlock Text="ADD" VerticalAlignment="Bottom" Margin="0,0,6,2" Style="{StaticResource Caption}" />
+                    <TextBlock Text="ADD" VerticalAlignment="Bottom" Margin="0,0,5,1" Style="{StaticResource Caption}" />
                     <TextBlock Text="{Binding AddFuelText}"
-                               FontSize="15"
+                               FontSize="14"
                                FontWeight="Bold"
                                Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource Accent}" />
-                    <TextBlock Text="{Binding FuelUnitLabel}" Margin="3,0,0,2" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
+                    <TextBlock Text="{Binding FuelUnitLabel}" Margin="3,0,0,1" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="SAVE TO" VerticalAlignment="Bottom" Margin="0,0,6,2" Style="{StaticResource Caption}" />
+                    <TextBlock Text="SAVE TO" VerticalAlignment="Bottom" Margin="0,0,5,1" Style="{StaticResource Caption}" />
                     <TextBlock Text="{Binding SaveTargetText}"
-                               FontSize="15"
+                               FontSize="14"
                                FontWeight="Bold"
                                Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextSecondary}" />
-                    <TextBlock Text="/lap" Margin="3,0,0,2" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
+                    <TextBlock Text="/lap" Margin="3,0,0,1" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
                 </StackPanel>
             </Grid>
+
+            <!-- Setup strip: what was a whole widget, reduced to the one line it
+                 was ever worth - session chip, setup name, modified flag. -->
+            <StackPanel Visibility="{Binding ShowSetupReminder, Converter={StaticResource BoolToVis}}">
+                <Border Height="1" Background="{StaticResource Separator}" Margin="0,6,0,6" />
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="#14FFFFFF" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRaceOrQualify}" Value="True">
+                                        <Setter Property="Background" Value="#33FFB03D" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="{Binding SessionTypeText}"
+                                   FontFamily="{StaticResource FontSmall}"
+                                   FontSize="10"
+                                   FontWeight="Bold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRaceOrQualify}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource Warning}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+
+                    <TextBlock DockPanel.Dock="Right"
+                               Text="MOD"
+                               Margin="6,0,0,0"
+                               VerticalAlignment="Center"
+                               FontFamily="{StaticResource FontSmall}"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource Warning}"
+                               Visibility="{Binding IsSetupModified, Converter={StaticResource BoolToVis}}" />
+
+                    <TextBlock Text="{Binding SetupNameText}"
+                               Margin="7,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimary}"
+                               TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+            </StackPanel>
 
         </StackPanel>
         </Grid>

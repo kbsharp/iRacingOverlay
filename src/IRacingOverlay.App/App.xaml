@@ -108,10 +108,14 @@
             <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
         </Style>
 
-        <!-- Primary numeric value -->
+        <!-- Secondary numeric value: the labelled figures in the fuel widget's
+             metric columns. Sized to sit a clear step below the headline readout
+             without competing with it - at the original 19 every figure in the
+             panel was a headline, which is what made the widget sprawl next to
+             the tightly-set list widgets. -->
         <Style x:Key="Value" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource FontText}" />
-            <Setter Property="FontSize" Value="19" />
+            <Setter Property="FontSize" Value="15" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
             <!-- Fixed-width digits: without this, proportional figures make the

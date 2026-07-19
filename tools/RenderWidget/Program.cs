@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using IRacingOverlay.App.ViewModels;
+using IRacingOverlay.Core.Fuel;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Telemetry;
@@ -54,7 +55,7 @@ internal static class Program
         var window = BuildWindow(widget, snapshot!, metadata!);
         if (window is null)
         {
-            Console.Error.WriteLine($"Unknown widget '{widget}'. Known: standings, relative, radar, settings.");
+            Console.Error.WriteLine($"Unknown widget '{widget}'. Known: standings, relative, fuel, radar, settings.");
             return 1;
         }
 
@@ -109,6 +110,19 @@ internal static class Program
                 return new IRacingOverlay.App.RelativeWindow { DataContext = vm };
             }
 
+            case "fuel":
+            {
+                // Fed several frames rather than one: the burn figures come off a
+                // lap-over-lap calculator, so a single snapshot renders a panel of
+                // placeholders and tells you nothing about the layout.
+                var vm = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), "Demo");
+                vm.ApplySessionMetadata(metadata);
+                vm.SetConnectionState(true);
+                vm.ApplySettings(new OverlaySettings());
+                RunLaps(vm);
+                return new IRacingOverlay.App.FuelWindow { DataContext = vm };
+            }
+
             case "settings":
             {
                 // The settings window isn't telemetry-driven, but it does need a
@@ -143,6 +157,20 @@ internal static class Program
             default:
                 return null;
         }
+    }
+
+    /// <summary>Drives the fuel view model through enough demo laps for the burn
+    /// calculator to have a rolling average, so the render shows real figures
+    /// instead of a panel of placeholders. Demo laps are 15s.</summary>
+    private static void RunLaps(FuelViewModel vm)
+    {
+        using var source = new SimulatedTelemetrySource();
+        source.SessionMetadataReceived += (_, m) => vm.ApplySessionMetadata(m);
+        source.TelemetryReceived += (_, s) => vm.ApplyTelemetry(s);
+        source.Start();
+
+        Thread.Sleep(35_000);
+        source.Stop();
     }
 
     /// <summary>Drives the radar view model off the demo source until the track map is

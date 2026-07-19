@@ -1,6 +1,7 @@
 namespace IRacingOverlay.Core.Setup;
 
-/// <summary>Whether the setup widget should currently be flashing, and why.</summary>
+/// <summary>Whether the fuel widget's setup strip should currently be flashing,
+/// and why.</summary>
 public readonly record struct SetupReminderState(
     string SetupName,
     bool IsModified,

@@ -118,7 +118,7 @@ Get-Process IRacingOverlay -ErrorAction SilentlyContinue | Stop-Process -Force
   ```powershell
   dotnet run --project tools/RenderWidget                            # standings.png
   dotnet run --project tools/RenderWidget -- relative out/rel.png    # pick widget + path
-  dotnet run --project tools/RenderWidget -- settings out/set.png    # standings, relative, radar, settings
+  dotnet run --project tools/RenderWidget -- settings out/set.png    # standings, relative, fuel, radar, settings
   ```
 
   It's deliberately **not** in `IRacingOverlay.sln`, so `dotnet build` and CI

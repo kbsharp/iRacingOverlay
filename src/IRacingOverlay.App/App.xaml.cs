@@ -102,7 +102,6 @@ public partial class App : System.Windows.Application
         var standingsViewModel = new StandingsViewModel(connectedLabel);
         var relativeViewModel = new RelativeViewModel(connectedLabel);
         var fuelViewModel = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), connectedLabel);
-        var setupViewModel = new SetupViewModel(connectedLabel);
         var radarViewModel = new RadarViewModel(connectedLabel);
 
         _telemetrySource = demoMode
@@ -110,7 +109,7 @@ public partial class App : System.Windows.Application
             : new IrsdkTelemetrySource();
 
         // The widget registry: one entry per window, replacing what used to be
-        // five view models named individually across four event handlers, a
+        // a set of view models named individually across four event handlers, a
         // window list, and the tray service's parameter list.
         _widgets.AddRange(
         [
@@ -120,8 +119,6 @@ public partial class App : System.Windows.Application
                 new RelativeWindow { DataContext = relativeViewModel }, relativeViewModel),
             new OverlayWidget(WidgetIds.Fuel, "Fuel",
                 new FuelWindow { DataContext = fuelViewModel }, fuelViewModel),
-            new OverlayWidget(WidgetIds.Setup, "Setup",
-                new SetupWindow { DataContext = setupViewModel }, setupViewModel),
             new OverlayWidget(WidgetIds.Radar, "Radar",
                 new RadarWindow { DataContext = radarViewModel }, radarViewModel),
         ]);
