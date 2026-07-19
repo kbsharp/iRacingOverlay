@@ -73,6 +73,7 @@ jobs:
           --mainExe IRacingOverlay.exe
           --packTitle "iRacing Overlay"
           --packAuthors "Kevin Bevan"
+          --icon src/IRacingOverlay.App/Assets/app.ico
 
       - name: Upload to GitHub Releases
         run: >

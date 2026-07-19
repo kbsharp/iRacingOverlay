@@ -174,8 +174,37 @@ public sealed class TrayIconService : IDisposable
         window.Activate();
     }
 
-    // Drawn at runtime so the app doesn't need a shipped .ico asset.
+    /// <summary>
+    /// The shared app icon (<c>Assets/app.ico</c>), at whatever size the current
+    /// tray wants - it varies with DPI, and handing <see cref="NotifyIcon"/> a
+    /// fixed 32px bitmap left it resampled and soft on a scaled display. The .ico
+    /// carries real 16/20/24/32px drawings, so asking for the system size picks
+    /// one rather than shrinking the big one.
+    ///
+    /// Falls back to a drawn circle if the resource can't be loaded: an app that
+    /// won't start because of an icon would be a poor trade, and the tray icon is
+    /// the only way to quit.
+    /// </summary>
     private static Icon CreateIcon()
+    {
+        try
+        {
+            var uri = new Uri("pack://application:,,,/Assets/app.ico", UriKind.Absolute);
+            using var stream = System.Windows.Application.GetResourceStream(uri)?.Stream;
+            if (stream is not null)
+            {
+                return new Icon(stream, SystemInformation.SmallIconSize);
+            }
+        }
+        catch (Exception ex)
+        {
+            UpdateService.Log($"Tray icon resource failed to load, using fallback: {ex}");
+        }
+
+        return CreateFallbackIcon();
+    }
+
+    private static Icon CreateFallbackIcon()
     {
         using var bitmap = new Bitmap(32, 32);
         using (var g = Graphics.FromImage(bitmap))
