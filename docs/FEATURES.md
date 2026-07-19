@@ -1143,9 +1143,19 @@ nothing but colour. They had previously been retyped at each of six call sites
 and had already drifted (the fuel session chip was at radius 3 with different
 padding and no edge).
 
-Tinted chips follow one formula: **`#3D<hue>` fill, `#8A<hue>` edge, full-hue
+Tinted chips follow one formula: **`#3D<hue>` fill, `#66<hue>` edge, full-hue
 text**. A bare tint with no edge has no boundary at this size and just looks
 like text sitting on a smudge.
+
+The edge was `#8A<hue>` until the row hierarchy was audited: on the dark rows a
+bright edge *and* bright text made the license chip out-shout the driver name
+beside it, so a row read chips-first. Dropping the edge alone was enough — the
+chip still reads as a chip, but the row now runs **delta → name → chips**. The
+hue and the text are deliberately untouched: they're iRacing's own licence
+colours and dimming them would cost the tier its instant read. Two chips keep
+the louder `#8A` edge on purpose — **PIT** and the projected-iRating chip are
+event flags rather than steady per-row furniture, and are meant to catch the
+eye when they appear.
 
 **Vertical centring is not `VerticalAlignment="Center"`.** A 10px line box is
 ~13.3 DIP tall but the caps and digits inside it are only ~7 DIP, and the font

@@ -57,33 +57,36 @@ white rows. Four habits transfer to our material; they are the whole pass:
    DNA. Ours are deliberately uniform — right call at MVP, but the fuel
    widget being "a smaller standings" is why it reads flatter than theirs.
 
-## The refinement pass — ordered, one commit each
+## The refinement pass — complete
 
-Every move is small, lands separately, and is verified with
-`.\scripts\render.ps1` before commit (CLAUDE.md's highest-value habit).
-Anything a static PNG can't settle — motion, glow at speed — is flagged for
-a human eye in the sim.
+All five moves shipped, one commit each, render-verified. What landed:
 
-1. ~~**Relative: make the delta the headline.**~~ *Shipped* — delta raised to
-   `16px` Bold against the name's `13px`.
-2. ~~**Standings: solid class name-plates.**~~ *Shipped* — solid plate in the
-   class hue, label darkened/lightened by measured luminance.
-3. ~~**Fuel: a tank gauge bar.**~~ *Shipped* — `6px` bar, fill against usable
-   tank capacity, tick at fuel-to-finish, green/red on clearing it.
-4. ~~**Session strip: give it a headline too.**~~ *Shipped* — remaining figure
-   split out and stepped up; session label dropped to secondary.
-5. **Chip loudness audit.** On the dark rows our license chips — bright
-   edge + bright text — currently out-shout the driver name and the timing
-   figures; RaceLab's chips stay calm because their rows are white. Nudge
-   chip edge/text brightness down (or let moves 1–2 raise the data around
-   them) until the row hierarchy runs: glance-datum → name → chips. Small
-   steps, re-render each.
+1. **Relative: the delta is the headline** — `16px` Bold against the driver
+   name's `13px`, so the eye lands on the one number read at 200kph.
+2. **Standings: solid class name-plates** — the class short name in a filled
+   block of the sim's own class hue, its label darkened or lightened by
+   measured luminance (`RatingFormat.PrefersDarkText`) since class colours are
+   series-defined.
+3. **Fuel: a tank gauge bar** — `6px`, fill against usable tank capacity, tick
+   at fuel-to-finish, green when it clears and red when short.
+4. **Session strip: a headline figure** — time/laps remaining split out of the
+   joined `"RACE · 3:24"` string and stepped up; the label drops to secondary.
+5. **Chip loudness** — one step was enough: the tinted-chip edge went
+   `#8A<hue>` → `#66<hue>` and the row now reads delta → name → chips. Chip
+   **hue and text were left alone deliberately** — they are iRacing's own
+   licence colours, and dimming them would cost the tier its instant read,
+   which the protected list exists to prevent. PIT and the projected-iRating
+   chip keep the louder edge: they are event flags, not steady furniture.
 
-Deliberately **not** in the pass: whole-widget redesigns, the radar (its
+**Still needs a human eye in the sim** (a static render can't settle these):
+the fuel bar and the delta emphasis at racing speed, and chip contrast over
+moving scenery rather than a flat backdrop.
+
+Deliberately **not** taken in this pass: whole-widget redesigns, the radar (its
 density question is a roadmap item), the settings window (already its own
 kind of window), any new data fields (that's the roadmap's business).
 
-## Workflow
+## Workflow for the next pass
 
 - One move per commit, `render.ps1` before and after, PNGs eyeballed
   against this file's intent.
