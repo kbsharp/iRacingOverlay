@@ -111,9 +111,14 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   between 600 and `Bold`. Numeric columns need `Typography.NumeralAlignment="Tabular"`
   or the digits jitter as they tick. See docs/FEATURES.md § Typography.
 - Keep colour **purposeful, not decorative**: each hue should mean one thing
-  (class, license tier, iRating tier, lap status, "this is you"). Don't reach
-  for the same accent colour for everything — that's what made the first pass
-  at the relative widget feel flat ("too much blue") before this rework.
+  (class, license tier, projected-iRating direction, lap status, "this is you").
+  Don't reach for the same accent colour for everything — that's what made the
+  first pass at the relative widget feel flat ("too much blue") before this
+  rework. The corollary is that a hue must **earn** its meaning: the iRating
+  badge was banded into four colours and they were removed again, because
+  nothing in the sim colours iRating that way, so the bands had to be learned
+  before they meant anything. A number that reads fine as a number doesn't need
+  a palette.
 - **Packaging is Velopack → GitHub Releases** (self-contained, no runtime install
   for users; CI in `.github/workflows/release.yml` fires on a `v*` git tag). The
   app owns its entry point (`App.Main`, which runs `VelopackApp.Build().Run()`

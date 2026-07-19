@@ -146,7 +146,6 @@ public static class StandingsCalculator
             License: license,
             LicenseTier: RatingFormat.ParseLicenseTier(license),
             IRating: irating,
-            IRatingTier: RatingFormat.ClassifyIRating(irating),
             ClassShortName: className,
             ClassColorHex: RatingFormat.NormalizeHexColor(driver?.ClassColorRaw),
             Manufacturer: ManufacturerResolver.Resolve(driver?.CarPath),

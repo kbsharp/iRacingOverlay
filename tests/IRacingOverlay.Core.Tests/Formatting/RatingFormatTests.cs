@@ -22,17 +22,21 @@ public class RatingFormatTests
     }
 
     [Theory]
-    [InlineData(0, IRatingTier.Low)]
-    [InlineData(1499, IRatingTier.Low)]
-    [InlineData(1500, IRatingTier.Mid)]
-    [InlineData(2499, IRatingTier.Mid)]
-    [InlineData(2500, IRatingTier.High)]
-    [InlineData(3999, IRatingTier.High)]
-    [InlineData(4000, IRatingTier.Elite)]
-    [InlineData(9000, IRatingTier.Elite)]
-    public void ClassifyIRating_UsesInclusiveLowerBoundaries(int irating, IRatingTier expected)
+    [InlineData(42, RatingTrend.Up)]
+    [InlineData(-42, RatingTrend.Down)]
+    [InlineData(0, RatingTrend.Flat)]
+    public void ClassifyTrend_ReadsTheSign(int delta, RatingTrend expected)
     {
-        Assert.Equal(expected, RatingFormat.ClassifyIRating(irating));
+        Assert.Equal(expected, RatingFormat.ClassifyTrend(delta));
+    }
+
+    [Theory]
+    [InlineData(42, "42")]
+    [InlineData(-42, "42")]
+    [InlineData(0, "0")]
+    public void DeltaMagnitude_DropsTheSign_TheArrowCarriesIt(int delta, string expected)
+    {
+        Assert.Equal(expected, RatingFormat.DeltaMagnitude(delta));
     }
 
     [Theory]

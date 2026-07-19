@@ -34,7 +34,6 @@ public sealed class StandingsRowViewModel : ObservableObject
     private string _license = string.Empty;
     private LicenseTier _licenseTier;
     private string _iRatingText = string.Empty;
-    private IRatingTier _iRatingTier;
     private Brush _classColorBrush = Brushes.Gray;
     private bool _hasManufacturer;
     private string _manufacturerText = string.Empty;
@@ -137,12 +136,6 @@ public sealed class StandingsRowViewModel : ObservableObject
         private set => SetProperty(ref _iRatingText, value);
     }
 
-    public IRatingTier IRatingTier
-    {
-        get => _iRatingTier;
-        private set => SetProperty(ref _iRatingTier, value);
-    }
-
     public Brush ClassColorBrush
     {
         get => _classColorBrush;
@@ -242,7 +235,6 @@ public sealed class StandingsRowViewModel : ObservableObject
         License = row.License;
         LicenseTier = row.LicenseTier;
         IRatingText = row.IRating > 0 ? SessionFormat.IRating(row.IRating) : string.Empty;
-        IRatingTier = row.IRatingTier;
         ClassColorBrush = ViewModels.ClassColorBrush.Resolve(row.ClassColorHex);
         HasManufacturer = ManufacturerBadge.Has(row.Manufacturer);
         ManufacturerText = ManufacturerBadge.Abbrev(row.Manufacturer);

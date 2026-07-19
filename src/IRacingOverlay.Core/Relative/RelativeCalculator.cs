@@ -144,7 +144,6 @@ public static class RelativeCalculator
             License: license,
             LicenseTier: RatingFormat.ParseLicenseTier(license),
             IRating: irating,
-            IRatingTier: RatingFormat.ClassifyIRating(irating),
             ClassShortName: driver?.ClassShortName ?? string.Empty,
             ClassColorHex: RatingFormat.NormalizeHexColor(driver?.ClassColorRaw),
             DeltaSeconds: deltaSeconds,

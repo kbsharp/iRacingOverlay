@@ -29,7 +29,6 @@ public sealed class RelativeRowViewModel : ObservableObject
     private string _license = string.Empty;
     private LicenseTier _licenseTier;
     private string _iRatingText = string.Empty;
-    private IRatingTier _iRatingTier;
     private string _classShortName = string.Empty;
     private Brush _classColorBrush = FallbackClassBrush;
     private string _deltaText = string.Empty;
@@ -97,12 +96,6 @@ public sealed class RelativeRowViewModel : ObservableObject
         private set => SetProperty(ref _iRatingText, value);
     }
 
-    public IRatingTier IRatingTier
-    {
-        get => _iRatingTier;
-        private set => SetProperty(ref _iRatingTier, value);
-    }
-
     public string ClassShortName
     {
         get => _classShortName;
@@ -142,7 +135,6 @@ public sealed class RelativeRowViewModel : ObservableObject
         License = row.License;
         LicenseTier = row.LicenseTier;
         IRatingText = row.IRating > 0 ? SessionFormat.IRating(row.IRating) : string.Empty;
-        IRatingTier = row.IRatingTier;
         ClassShortName = row.ClassShortName;
         ClassColorBrush = ParseClassColor(row.ClassColorHex);
         DeltaText = row.IsPlayer ? string.Empty : SessionFormat.Delta(row.DeltaSeconds);
@@ -160,7 +152,6 @@ public sealed class RelativeRowViewModel : ObservableObject
         License = string.Empty;
         LicenseTier = LicenseTier.Unknown;
         IRatingText = string.Empty;
-        IRatingTier = IRatingTier.Low;
         ClassShortName = string.Empty;
         ClassColorBrush = FallbackClassBrush;
         DeltaText = string.Empty;

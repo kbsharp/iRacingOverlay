@@ -15,7 +15,6 @@ public sealed record StandingsRow(
     string License,
     LicenseTier LicenseTier,
     int IRating,
-    IRatingTier IRatingTier,
     string ClassShortName,
     string? ClassColorHex,
     Manufacturer Manufacturer,

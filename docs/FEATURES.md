@@ -35,8 +35,8 @@ translucent wash of the sim's `CarClassColor`) with the class short name, its
 and a car count. Under it, its cars ordered by position, each with a
 full-height class-colour bar flush to the panel's left edge, and alternating
 (zebra) row shading. Each car row: class position, car number, a
-**manufacturer badge**, driver name, a license badge and iRating badge (the
-same tier-coloured chips as the relative), then **Int** (interval to the car
+**manufacturer badge**, driver name, a license badge and a neutral iRating
+badge (the same chips as the relative), then **Int** (interval to the car
 ahead), **Gap** (to the class
 leader), **Fastest** (best lap, purple when session-best), and **Last**
 (last-lap delta to that car's own best, red when slower).
@@ -49,7 +49,7 @@ an unrecognised car resolves to `Manufacturer.Unknown` and the badge is simply
 omitted (the cell collapses for that row, never a placeholder glyph). The badge
 is deliberately **neutral/monochrome**, not another coloured tier, so it reads
 as iconography in the panel material rather than competing with the class /
-license / iRating hues — it takes its colour from the theme, not from the mark.
+license hues — it takes its colour from the theme, not from the mark.
 
 Marks are the single-path 24×24 glyphs from [Simple Icons](https://simpleicons.org)
 (CC0), embedded as WPF path geometry in `ManufacturerMarks` (App) and parsed
@@ -185,10 +185,14 @@ badge specifically):
   orange, C yellow, B green, A blue, Pro gold. `RatingFormat.
   ParseLicenseTier` reads the leading letter of the sim's `LicString` (e.g.
   `"B 3.44"` → `LicenseTier.B`).
-- **iRating badge**: a filled chip in a separate cool/vivid colour family
-  (grey → teal → violet → magenta) so it's never confused with the license
-  badge next to it, banded by `RatingFormat.ClassifyIRating`: Low `<1500`,
-  Mid `<2500`, High `<4000`, Elite `4000+`.
+- **iRating badge**: a filled chip in a single neutral tone (`IRatingText`).
+  It was briefly banded into four tiers (grey/teal/violet/magenta by rating);
+  that was dropped. Nothing in the sim colours iRating that way, so the bands
+  had to be learned before they meant anything, and they spent four hues on a
+  number that is already perfectly legible as a number. Colour now goes to the
+  tiers a driver reads at a glance — class, license, "this is you" — and to the
+  [projected-change chip](#projected-irating--iratingchipviewmodel--corerating),
+  where green and red mean exactly one thing.
 - Both badges are **tint fill + a 1px edge in the same hue**. The edge is what
   makes them read as chips: at 16px tall a bare tint fill has no boundary and
   just looks like the text is sitting on a smudge. **On the player row** the
@@ -552,7 +556,7 @@ written as either a number or the word "unlimited" in the YAML;
 `SessionFormat.ParseLimit` turns them into an `int?`, and "unlimited" simply
 means the corresponding readout drops its `/total` half. Refreshed whenever
 the sim re-broadcasts session info. `RelativeRow` carries the same driver fields plus
-the parsed `LicenseTier`, `IRatingTier`, and normalised `ClassColorHex` used
+the parsed `LicenseTier` and normalised `ClassColorHex` used
 for the relative widget's colour coding (see the Relative widget section
 above).
 
@@ -987,8 +991,6 @@ field.
 testable in `Core` even though the actual brushes live in `App.xaml`.
 - `ParseLicenseTier(license)` → `LicenseTier` (Unknown/Rookie/D/C/B/A/Pro) by
   reading the leading letter of the sim's `LicString`.
-- `ClassifyIRating(irating)` → `IRatingTier` (Low `<1500` / Mid `<2500` /
-  High `<4000` / Elite `4000+`).
 - `ClassifyTrend(delta)` → `RatingTrend` (Up/Down/Flat) and
   `DeltaMagnitude(delta)` → the unsigned points, for the projected-iRating chip;
   the arrow beside it carries the sign, so repeating it as a `+` reads as noise.
@@ -1002,7 +1004,7 @@ testable in `Core` even though the actual brushes live in `App.xaml`.
 Shared resources used by every window — the single source of truth for the
 visual style. Deliberately not blue-dominated: `Accent` is reserved for
 branding (window header labels) and the A-license badge specifically; every
-other colour carries a distinct meaning (class, license tier, iRating tier,
+other colour carries a distinct meaning (class, license tier, projected-iRating direction,
 lap status, "this is you").
 - `PanelBackground` — a neutral graphite/charcoal vertical gradient
   (`#242A34` → `#1A1D23` → `#0E0F13`) at **~94% alpha** (`F0`): near-opaque, the
@@ -1013,7 +1015,7 @@ lap status, "this is you").
   see-through and was dialled back; a still-earlier near-flat `#1B1D21`→`#121316`
   fill read as "terminal".) The material stays a low-saturation neutral so
   colour is reserved for things that carry meaning — class, license tier,
-  iRating tier, lap status, "this is you".
+  lap status, "this is you".
 - The look has **depth without being glassy**: panels use a `CornerRadius` of
   `6px` (softened from an earlier near-square `3px`), and the once-neutralised
   `PanelSheen` (a faint specular highlight concentrated at the top third) and
@@ -1030,15 +1032,14 @@ lap status, "this is you").
   (amber) — status colours.
 - `PlayerHighlight` / `PlayerBorder` — the relative widget's "this is you"
   row wash and outline; warm amber, intentionally not `Accent`, so it doesn't
-  compete with the license/iRating/class colours now on every row.
+  compete with the license/class colours now on every row.
 - `LicenseRookie`/`LicenseD`/`LicenseC`/`LicenseB`/`LicenseA`/`LicensePro` —
   iRacing's real license-class colours (red/orange/yellow/green/blue/gold),
   driving the `LicenseBadgeBackground`/`LicenseBadgeText` styles via
   `DataTrigger`s on `RelativeRowViewModel.LicenseTier`.
-- `IRatingLow`/`IRatingMid`/`IRatingHigh`/`IRatingElite` — a separate
-  grey/teal/violet/magenta family for the iRating badge
-  (`IRatingBadgeBackground`/`IRatingBadgeText`), so it's never confused with
-  the license badge next to it.
+- `IRatingText` — one neutral tone for the iRating badge
+  (`IRatingBadgeBackground`/`IRatingBadgeText`). Deliberately not a colour
+  scale; see the [relative widget's badge notes](#relative--relativewindow--relativeviewmodel--relativecalculator).
 - `TextPrimary`/`TextSecondary`/`TextMuted` — text hierarchy, three clearly
   separated steps. `TextMuted` is deliberately kept well clear of the panel
   material: an earlier dimmer value (`#7C8CAB`) made captions read as grey
@@ -1134,7 +1135,7 @@ on the content root (see the tray icon section).
 
 ## Test coverage
 
-424 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+422 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -1143,7 +1144,7 @@ on the content root (see the tray icon section).
 | `Fuel/FuelCalculatorTests.cs` | Rolling burn average, refuel detection, lap jumps/resets, window trimming |
 | `Fuel/FuelStrategyCalculatorTests.cs` | Fuel-to-finish, margin, add-fuel, save target, race-laps estimation (lap-limited and timed) |
 | `Fuel/LapTimeTrackerTests.cs` | Rolling lap-time average, jump/reset handling |
-| `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging, license/iRating tier and class colour propagation |
+| `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging, license tier and class colour propagation |
 | `Standings/StandingsCalculatorTests.cs` | Class grouping/ordering, within-class ordering, class-leader gaps + interval, time-based laps-down (+ lap-count fallback), last-lap delta, per-class SoF, best/last nulls, session-fastest flag, per-class truncation keeping the player, no-metadata fallback, filtering |
 | `Standings/StrengthOfFieldTests.cs` | SoF formula (uniform field, empty, non-positive filtering, sub-mean weighting) |
 | `Rating/IRatingCalculatorTests.cs` | Elo model: even-field win/loss symmetry, expected-finish ≈ zero change, zero-sum across the field, stronger-field win pays more, underdog vs favourite, pairwise probabilities summing to every pairing once, small-field and out-of-range guards |
@@ -1151,7 +1152,7 @@ on the content root (see the tray icon section).
 | `Setup/SetupReminderTrackerTests.cs` | Race/Qualify type detection, flash window timing and boundary, session-change restart, first-frame-mid-session behaviour |
 | `Formatting/SessionFormatTests.cs` | Time/IRating/delta/wetness/temperature formatting |
 | `Formatting/TelemetryFormatTests.cs` | Gear, kph conversion, liters/laps placeholders |
-| `Formatting/RatingFormatTests.cs` | License tier parsing, iRating tier boundaries, CarClassColor normalisation (decimal-packed and hex forms) |
+| `Formatting/RatingFormatTests.cs` | License tier parsing, projected-change trend + magnitude, CarClassColor normalisation (decimal-packed and hex forms) |
 | `Formatting/SetupFormatTests.cs` | Setup file name display formatting |
 | `Formatting/RadarFormatTests.cs` | CarLeftRight classification into the four proximity booleans (radar fallback) |
 | `Radar/TrackMapTests.cs` | Heading-bucket fill/coverage/readiness, gap-fill between samples (incl. across the line), teleport guard, nearest-bucket lookup |
