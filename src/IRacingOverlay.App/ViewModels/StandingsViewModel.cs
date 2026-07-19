@@ -30,6 +30,9 @@ public sealed class StandingsViewModel : OverlayViewModelBase
 
     public ObservableCollection<StandingsRowViewModel> Items { get; } = [];
 
+    /// <summary>Projected iRating change; hides itself outside a race.</summary>
+    public IRatingChipViewModel IRating { get; } = new();
+
     public string SessionText
     {
         get => _sessionText;
@@ -108,6 +111,8 @@ public sealed class StandingsViewModel : OverlayViewModelBase
                 : sessionType;
 
         LapCounterText = SessionFormat.LapCounter(snapshot.Lap, _metadata?.LapsForSession(snapshot.SessionNum));
+
+        IRating.Update(snapshot, _metadata);
 
         var carCount = 0;
         foreach (var car in snapshot.Cars)

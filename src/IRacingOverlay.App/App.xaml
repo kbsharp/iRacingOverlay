@@ -277,6 +277,50 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Projected iRating chip (session strip). Green up / red down reuses the
+             Positive/Negative pair already meaning "gaining" and "losing" elsewhere,
+             so it needs no learning. Once the flag is out the chip fills in rather
+             than changing hue: the result is the same news, just settled. -->
+        <Style x:Key="RatingDeltaChipBackground" TargetType="Border" BasedOn="{StaticResource Chip}">
+            <Setter Property="Background" Value="#14FFFFFF" />
+            <Setter Property="BorderBrush" Value="#26FFFFFF" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Trend}" Value="Up">
+                    <Setter Property="BorderBrush" Value="#8A33D689" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Trend}" Value="Down">
+                    <Setter Property="BorderBrush" Value="#8AFF5C6C" />
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsFinal}" Value="True" />
+                        <Condition Binding="{Binding Trend}" Value="Up" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="#3D33D689" />
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsFinal}" Value="True" />
+                        <Condition Binding="{Binding Trend}" Value="Down" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="#3DFF5C6C" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="RatingDeltaChipText" TargetType="TextBlock" BasedOn="{StaticResource ChipText}">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Trend}" Value="Up">
+                    <Setter Property="Foreground" Value="{StaticResource Positive}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Trend}" Value="Down">
+                    <Setter Property="Foreground" Value="{StaticResource Negative}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- Manufacturer badge chip. Deliberately neutral/monochrome, not another
              coloured tier: the class bar, license and iRating chips already carry
              hue-as-meaning, so the manufacturer mark reads as iconography sitting in

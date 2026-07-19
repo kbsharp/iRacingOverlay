@@ -22,7 +22,9 @@ styled after RaceLab/iOverlay/LMU standings. Default position top-left
 (`Left=24, Top=24`), then restored from
 saved settings. No widget-name label — the class banners and columns identify
 it; the top strip carries session type + time/laps remaining + the same
-`Ln/total` lap counter as the relative widget + car count.
+`Ln/total` lap counter as the relative widget + the
+[projected-iRating chip](#projected-irating--iratingchipviewmodel--corerating)
++ car count.
 Under that strip, the column captions sit on a full-bleed **header band**
 (`HeaderBand` fill, `Separator` underline) so the table reads as having a head
 rather than a floating row of grey labels.
@@ -146,6 +148,9 @@ widget-name label — the session strip heads it.
   read as `YELLOW`. The plain green bit stays set for a whole green-flag run,
   so it shows nothing on its own — only the green-held/start-go bits raise a
   `GREEN` chip. Hidden when nothing is flying.
+- [Projected iRating chip](#projected-irating--iratingchipviewmodel--corerating)
+  — arrow + points at stake. Hidden outside a race and until the player's first
+  completed lap; captured once the flag is out.
 - Brake bias (`nn.n`, prefixed by a stroked brake-disc mark rather than a "BB"
   label) — hidden entirely when the car has no adjustable bias (value is 0).
 - Track temp / air temp (`TRK n° / AIR n°`).
@@ -231,6 +236,56 @@ NotInWorld`, e.g. not yet spawned) are excluded per-frame.
   re-broadcasts session info; mid-session driver swaps may lag briefly.
 - No car manufacturer badge here yet — the standings has one (placeholder
   stage); extending it to the relative is a roadmap item.
+
+### Projected iRating — `IRatingChipViewModel` / `Core.Rating`
+
+A chip in the session strip of **both** the standings and the relative: an
+arrow and the points currently at stake (`▲ 42` / `▼ 18`). The standings —
+being wider — also shows where the rating lands (`▲ 42  2042`); the relative
+stays compact. Green for a gain, red for a loss, reusing the existing
+`Positive`/`Negative` pair rather than inventing a hue.
+
+**The maths** (`IRatingCalculator`) is the community-reconstructed Elo model
+iRacing is understood to use. Each driver's race performance is a draw from an
+exponential distribution scaled by their rating, which gives a closed form for
+one driver beating another:
+
+```
+f(R) = 2^(-R/1600)
+P(i beats j) = (1 - f_i)·f_j / (f_i + f_j - 2·f_i·f_j)
+```
+
+Summed over the field, that is how many drivers you were *expected* to beat;
+the surplus over how many you actually beat, scaled by 200/n, is the change.
+Both sums equal `n(n-1)/2`, so the field's changes are **zero-sum** — rating is
+transferred, never minted. Treat the output as an estimate good to a few
+points, not a guarantee.
+
+**The behaviour** (`IRatingTracker`) is the part that matters in a real race:
+
+- **Race sessions only.** Practice and qualifying never move iRating, so the
+  chip is absent there entirely.
+- **Your class only.** iRacing rates each class separately; a lone entry in its
+  class has no field to be rated against and shows nothing.
+- **Nothing before your first completed lap** (`Pending`). Grid order is a
+  qualifying result — projecting off it reports on a race that hasn't happened.
+- **The field is sticky.** A driver who disconnects stays in the field at their
+  rating and is classified behind everyone still circulating, ordered by laps
+  completed, which is how iRacing classifies a DNF. Inheriting their position is
+  correct and *is* worth points; what would be wrong is the field silently
+  shrinking to the survivors, because winning a 10-car race pays more than
+  winning a 7-car one.
+- **The value is captured at the flag** (`Final`). Once the player crosses the
+  line under the checkered — or leaves the world after it — the projection
+  freezes and the chip fills in. Within a minute of a race ending most of the
+  grid has disconnected; a still-live number would drift towards a fantasy
+  result long after the real one was settled.
+- A session-number change resets everything.
+
+**Limitations:** the constant (200 points per driver of surplus) is calibrated,
+not official, so the figure can differ from the sim's by a handful of points;
+iRacing's own protections (the reduced change for very new accounts, and
+whatever it does with disconnects at the margin) aren't modelled.
 
 ### Fuel — `FuelWindow` / `FuelViewModel` / `FuelCalculator` + `FuelStrategyCalculator` + `LapTimeTracker`
 
@@ -934,6 +989,9 @@ testable in `Core` even though the actual brushes live in `App.xaml`.
   reading the leading letter of the sim's `LicString`.
 - `ClassifyIRating(irating)` → `IRatingTier` (Low `<1500` / Mid `<2500` /
   High `<4000` / Elite `4000+`).
+- `ClassifyTrend(delta)` → `RatingTrend` (Up/Down/Flat) and
+  `DeltaMagnitude(delta)` → the unsigned points, for the projected-iRating chip;
+  the arrow beside it carries the sign, so repeating it as a `+` reads as noise.
 - `NormalizeHexColor(raw)` → `"#RRGGBB"` or null. Handles iRacing's real
   `CarClassColor` format (a decimal-packed `0xRRGGBB` int, e.g. `"16750899"`)
   and, defensively, an already-hex value (`"FFCC00"`, `"#ffcc00"`, or an
@@ -1076,7 +1134,7 @@ on the content root (see the tray icon section).
 
 ## Test coverage
 
-321 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+424 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -1088,6 +1146,8 @@ on the content root (see the tray icon section).
 | `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging, license/iRating tier and class colour propagation |
 | `Standings/StandingsCalculatorTests.cs` | Class grouping/ordering, within-class ordering, class-leader gaps + interval, time-based laps-down (+ lap-count fallback), last-lap delta, per-class SoF, best/last nulls, session-fastest flag, per-class truncation keeping the player, no-metadata fallback, filtering |
 | `Standings/StrengthOfFieldTests.cs` | SoF formula (uniform field, empty, non-positive filtering, sub-mean weighting) |
+| `Rating/IRatingCalculatorTests.cs` | Elo model: even-field win/loss symmetry, expected-finish ≈ zero change, zero-sum across the field, stronger-field win pays more, underdog vs favourite, pairwise probabilities summing to every pairing once, small-field and out-of-range guards |
+| `Rating/IRatingTrackerTests.cs` | Race behaviour: practice/qualifying suppressed, grid-order suppressed until a lap is complete, own-class-only field, disconnects held in the field size while positions are inherited, retirements ordered by laps completed, live under the checkered until the player crosses the line, capture at the flag surviving an emptying grid, capture on leaving the world, session-change reset, stability across repeated frames |
 | `Setup/SetupReminderTrackerTests.cs` | Race/Qualify type detection, flash window timing and boundary, session-change restart, first-frame-mid-session behaviour |
 | `Formatting/SessionFormatTests.cs` | Time/IRating/delta/wetness/temperature formatting |
 | `Formatting/TelemetryFormatTests.cs` | Gear, kph conversion, liters/laps placeholders |

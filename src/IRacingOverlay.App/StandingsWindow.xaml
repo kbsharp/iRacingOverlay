@@ -67,6 +67,25 @@
                                FontWeight="Bold"
                                Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextSecondary}" />
+                    <!-- projected iRating. The wider widget has room for where the
+                         rating actually lands, which the relative strip doesn't. -->
+                    <Border Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            DataContext="{Binding IRating}"
+                            Style="{StaticResource RatingDeltaChipBackground}"
+                            Visibility="{Binding HasValue, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Arrow}" Style="{StaticResource RatingDeltaChipText}" />
+                            <TextBlock Text="{Binding DeltaText}"
+                                       Margin="3,0,0,0"
+                                       Style="{StaticResource RatingDeltaChipText}" />
+                            <TextBlock Text="{Binding Projected}"
+                                       Margin="7,0,0,0"
+                                       Style="{StaticResource ChipText}"
+                                       Typography.NumeralAlignment="Tabular"
+                                       Foreground="{StaticResource TextSecondary}" />
+                        </StackPanel>
+                    </Border>
                     <TextBlock Text="{Binding CarCountText}"
                                Margin="12,0,0,0"
                                VerticalAlignment="Center"
