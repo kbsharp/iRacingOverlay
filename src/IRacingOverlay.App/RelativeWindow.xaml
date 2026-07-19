@@ -218,7 +218,9 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="44" />
                                         <ColumnDefinition Width="42" />
-                                        <ColumnDefinition Width="52" />
+                                        <!-- Collapses to 0 when the catch/defend column is
+                                             switched off, so the name column reclaims it. -->
+                                        <ColumnDefinition Width="{Binding TrendColumnWidth}" />
                                         <ColumnDefinition Width="70" />
                                     </Grid.ColumnDefinitions>
 
@@ -280,7 +282,14 @@
                                                    Style="{StaticResource IRatingBadgeText}" />
                                     </Border>
 
-                                    <!-- Catch/defend forecast: which way the gap is moving
+                                    <!-- Catch/defend forecast - OFF BY DEFAULT, opt-in via
+                                         settings. The maths holds up but the presentation
+                                         doesn't: a bare "▲ 0.2" never says seconds per lap,
+                                         or toward what, so it has to be taught before it
+                                         reads. Staged here until it says what it is on its
+                                         own; see OverlaySettings.ShowPaceTrend.
+
+                                         Which way the gap is moving
                                          (▼ shrinking, ▲ growing), how fast in s/lap, and -
                                          only when the battle actually lands before the flag -
                                          how many laps until it does. The arrow carries the
@@ -294,7 +303,8 @@
                                                 Orientation="Horizontal"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"
-                                                Margin="0,0,10,0">
+                                                Margin="0,0,10,0"
+                                                Visibility="{Binding ShowPaceTrend, Converter={StaticResource BoolToVis}}">
                                         <StackPanel.Resources>
                                             <Style x:Key="TrendTone" TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="{StaticResource TextMuted}" />

@@ -72,6 +72,31 @@ public class OverlaySettingsTests
         Assert.True(OverlaySettingsSerializer.Deserialize(json).ShowManufacturerBadges);
     }
 
+    // The catch/defend column is staged the same way: the maths is sound but the
+    // readout has to be explained before it reads, so it's opt-in until it doesn't.
+
+    [Fact]
+    public void ShowPaceTrend_DefaultsToOff()
+        => Assert.False(new OverlaySettings().ShowPaceTrend);
+
+    /// <summary>The column shipped on by default once. Anyone carrying a settings file
+    /// from that build must come back to the new default, not keep the old column.</summary>
+    [Fact]
+    public void ShowPaceTrend_AbsentFromExistingFile_StaysOff()
+    {
+        var restored = OverlaySettingsSerializer.Deserialize("""{ "scale": 1.0 }""");
+
+        Assert.False(restored.ShowPaceTrend);
+    }
+
+    [Fact]
+    public void ShowPaceTrend_SwitchedOn_RoundTrips()
+    {
+        var json = OverlaySettingsSerializer.Serialize(new OverlaySettings { ShowPaceTrend = true });
+
+        Assert.True(OverlaySettingsSerializer.Deserialize(json).ShowPaceTrend);
+    }
+
     [Fact]
     public void WidgetIds_NoLongerListsTheStandaloneSetupWidget()
     {

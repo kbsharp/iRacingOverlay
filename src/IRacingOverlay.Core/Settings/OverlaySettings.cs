@@ -63,6 +63,13 @@ public sealed record OverlaySettings
     /// inconsistent. Opt-in until every car iRacing ships has a mark.</summary>
     public bool ShowManufacturerBadges { get; init; }
 
+    /// <summary>Whether the relative shows the catch/defend trend column. Off by
+    /// default: the maths is sound but the presentation isn't legible - a bare
+    /// "▲ 0.2" doesn't say seconds per lap, or toward what, so it has to be
+    /// taught before it means anything. Opt-in until the readout says what it is
+    /// on its own. See the roadmap entry for what a legible version needs.</summary>
+    public bool ShowPaceTrend { get; init; }
+
     /// <summary>Whether widgets stay hidden while iRacing isn't running. On by
     /// default: with <see cref="RunAtStartup"/> set, the alternative is a set of
     /// always-on-top panels sitting over the desktop all day. Turn it off to
