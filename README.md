@@ -35,6 +35,12 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   range. iRacing exposes no position for other cars, so the radar learns the track's shape
   from your own driving over the first lap; until it's learned, it falls back to iRacing's
   coarse left/right spotter signal.
+- **Delta**: how far up or down the lap you're on is against your best of the session —
+  a signed number and a bar growing from the centre, green when you're up, red when
+  you're down. It uses iRacing's own delta rather than a second opinion, but adds the
+  part the sim doesn't: it **holds the finished lap's number for five seconds at the
+  line**, where the sim resets it to zero just as it becomes worth reading, and shows
+  nothing at all in the pits or before you have a lap to compare against.
 
 **Full docs:** [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, commands, debugging,
 and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) for exactly what's
@@ -164,10 +170,9 @@ one test — *does it change a decision the driver makes in the car?* — with a
 July 2026 market snapshot against RaceLab and iOverlay and the judgement
 behind each call. The short version:
 
-- **Core pass:** finish the widgets we have — a delta bar, and the
-  carried-over polish list (radar density
-  pass, manufacturer badge on the relative, drag-to-resize, a speed readout,
-  configurable refresh rate, tray-icon pinning).
+- **Core pass:** finish the widgets we have — the radar density pass, and the
+  carried-over polish list (manufacturer badge on the relative, drag-to-resize,
+  a speed readout, configurable refresh rate, tray-icon pinning).
 - **The strategy layer** (nobody has these): **pit-exit position
   projection** ("pit now and you rejoin P8, 1.8s behind #12"), a
   push-vs-save fuel tradeoff readout, and a multiclass **traffic

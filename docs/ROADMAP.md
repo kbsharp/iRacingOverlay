@@ -62,10 +62,18 @@ extends an existing widget rather than adding a new one.
   persisted as a 2000-corner window. Still answers the
   drive-carefully-or-push question; still unique; just doesn't lie about a
   number it can't know. See [FEATURES.md](FEATURES.md#safety--cpi--safetychipviewmodel--corerating).
-- **Delta bar** (lap delta to session/all-time best) — the one *new* widget
-  in this bucket, and it earns it: self-pacing against your own best is a
-  core in-car decision tool, present in every serious overlay, and was
-  already on the roadmap here.
+- ~~**Delta bar**~~ — **done**, though narrower than written. It was scoped as
+  "lap delta to session/all-time best"; the sim has no cross-session personal
+  best and the app keeps no lap store, so an all-time reference would have had
+  to be approximated and isn't offered. Session-fastest was dropped for a
+  different reason: it needs a control to choose between references, and one
+  number is the product. So it ships as **one reference — your own best this
+  session** — using iRacing's own `LapDeltaToBestLap` rather than a second
+  opinion reconstructed from lap distance. What the app adds is the part the sim
+  doesn't: it **holds the finished lap's number for five seconds at the line**,
+  where the sim resets it to zero exactly as it becomes worth reading, and it
+  shows nothing in the pits, on an in-lap, or before there's a lap to compare
+  against. See [FEATURES.md](FEATURES.md#delta--deltawindow--deltaviewmodel--coredeltadeltacalculator).
 - **Radar density pass** — the last widget not audited against the shared
   spacing rhythm; the question is the 150×240 field size and blip scale.
 - Carried-over polish: manufacturer badge on the relative, drag-to-resize
@@ -158,7 +166,7 @@ Revisit only once the core above is strong:
 | Positions gained vs the grid | ✅ | ✅ (column) | ✅ per class |
 | Proximity radar | ✅ (radar + bars) | spotter indicator | ✅ corner-angled, learned geometry |
 | Track map | ✅ | ✅ (2 forms) | ❌ → mid-term (no track DB needed) |
-| Delta bar | ✅ | via columns | ❌ → core pass |
+| Delta bar | ✅ | via columns | ✅ vs your session best, held at the line |
 | Projected iRating | gain shown | gain shown | ✅ full zero-sum model |
 | Safety direction (CPI vs your baseline) | ❌ | ❌ | ✅ **(unique)** |
 | Battle catch/defend forecast | ❌ | ❌ | ✅ rate + laps-to-contact **(unique)** |

@@ -389,6 +389,14 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         var litersPerLap = BaseLitersPerLap * (1f + 0.06f * MathF.Sin(player.Lap * 1.7f));
         _fuel = Math.Clamp(_fuel - litersPerLap * (float)(TickSeconds / PlayerLapSeconds), 0f, TankCapacityLiters);
 
+        // A plausible lap delta: it accumulates across the lap towards a per-lap
+        // outcome, with a little wobble through the corners, and lands on that
+        // outcome at the line (the wobble term is zero at pct 0 and 1) - which is
+        // what the calculator banks and holds. No reference lap exists until the
+        // player has completed one, so lap 1 reports "not valid" like the sim does.
+        var lapOutcome = 0.9 * Math.Sin(player.Lap * 1.9);
+        var lapDelta = lapOutcome * playerPct + 0.12 * Math.Sin(playerPct * Math.PI * 6);
+
         var speed = 45.0 + 22.0 * Math.Sin(playerPct * Math.PI * 4); // two straights per lap
         var gear = speed switch
         {
@@ -419,6 +427,8 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             Flags = FlagCycle[_flagIndex],
             CarLeftRight = _carLeftRight,
             PlayerYawRad = DemoHeading(playerPct),
+            LapDeltaToBestSeconds = lapDelta,
+            LapDeltaToBestValid = player.Lap > 1 && !_playerInPits,
             Cars = cars,
         };
     }

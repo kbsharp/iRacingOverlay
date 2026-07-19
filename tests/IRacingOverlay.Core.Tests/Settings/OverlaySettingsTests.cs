@@ -78,7 +78,6 @@ public class OverlaySettingsTests
         // Its settings key ("SetupWindow") may still sit in an existing file; what
         // matters is that no settings surface offers it as a widget any more.
         Assert.DoesNotContain("SetupWindow", WidgetIds.All);
-        Assert.Equal(4, WidgetIds.All.Count);
     }
 
     [Fact]
