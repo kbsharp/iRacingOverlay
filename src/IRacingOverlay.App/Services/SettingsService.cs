@@ -7,12 +7,16 @@ namespace IRacingOverlay.App.Services;
 
 /// <summary>
 /// Loads and persists the user's <see cref="OverlaySettings"/> (UI scale + per-
-/// widget window positions) to <c>%LocalAppData%\IRacingOverlay\settings.json</c>.
+/// widget window positions) to <c>%LocalAppData%\IRacingOverlay\</c>.
 ///
 /// That path sits in the Velopack install root, above the versioned
 /// <c>current\</c> folder, so it survives auto-updates (which only replace
 /// <c>current\</c>) and is removed on uninstall - exactly the lifetime a layout
 /// preference should have.
+///
+/// The file name depends on whether this is the installed copy - see
+/// <see cref="SettingsLocation"/>. A source build must not write over the layout
+/// the user arranged for real racing.
 ///
 /// Writes are debounced: dragging a window fires a flurry of position changes, so
 /// each change resets a short timer and only the settled value is written, rather
@@ -26,12 +30,14 @@ public sealed class SettingsService
     private readonly Dictionary<string, WindowPosition> _windows;
     private OverlaySettings _current;
 
-    public SettingsService()
+    /// <param name="isInstalled">Whether this is the Velopack-installed copy
+    /// (<c>UpdateService.IsInstalled</c>). Decides which file is used.</param>
+    public SettingsService(bool isInstalled)
     {
         _path = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "IRacingOverlay",
-            "settings.json");
+            SettingsLocation.FolderName,
+            SettingsLocation.FileNameFor(isInstalled));
 
         _current = Load();
         _windows = new Dictionary<string, WindowPosition>(_current.Windows);
