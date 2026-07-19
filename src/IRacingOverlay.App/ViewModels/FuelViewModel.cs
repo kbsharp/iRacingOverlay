@@ -3,6 +3,7 @@ using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Fuel;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Setup;
+using IRacingOverlay.Core.Strategy;
 using IRacingOverlay.Core.Telemetry;
 using GridLength = System.Windows.GridLength;
 using GridUnitType = System.Windows.GridUnitType;
@@ -25,6 +26,7 @@ public sealed class FuelViewModel : OverlayViewModelBase
     private readonly FuelCalculator _fuelCalculator;
     private readonly LapTimeTracker _lapTimeTracker;
     private readonly SetupReminderTracker _setupTracker = new();
+    private readonly PitLossTracker _pitLossTracker = new();
 
     private string _fuelLevelText = TelemetryFormat.Placeholder;
     private string _fuelLapsText = TelemetryFormat.Placeholder;
@@ -47,6 +49,12 @@ public sealed class FuelViewModel : OverlayViewModelBase
     private GridLength _gaugeEmptyWeight = new(1, GridUnitType.Star);
     private GridLength _gaugeTickWeight = new(0, GridUnitType.Star);
     private GridLength _gaugeTickRestWeight = new(1, GridUnitType.Star);
+
+    private bool _hasPitExit;
+    private string _pitExitPositionText = TelemetryFormat.Placeholder;
+    private string _pitExitLostText = string.Empty;
+    private string _pitExitCostText = string.Empty;
+    private string _pitExitNeighboursText = string.Empty;
 
     private string _setupNameText = TelemetryFormat.Placeholder;
     private bool _isSetupModified;
@@ -250,6 +258,45 @@ public sealed class FuelViewModel : OverlayViewModelBase
         private set => SetProperty(ref _shouldFlash, value);
     }
 
+    /// <summary>
+    /// Whether the pit-exit projection is shown at all. False outside a race, and
+    /// false until enough stops have been observed to know what the lane costs -
+    /// the strip is absent rather than showing a guessed figure.
+    /// </summary>
+    public bool HasPitExit
+    {
+        get => _hasPitExit;
+        private set => SetProperty(ref _hasPitExit, value);
+    }
+
+    /// <summary>Projected class position on rejoining, e.g. "P4".</summary>
+    public string PitExitPositionText
+    {
+        get => _pitExitPositionText;
+        private set => SetProperty(ref _pitExitPositionText, value);
+    }
+
+    /// <summary>Class places the stop gives up, e.g. "▼2"; empty when it costs none.</summary>
+    public string PitExitLostText
+    {
+        get => _pitExitLostText;
+        private set => SetProperty(ref _pitExitLostText, value);
+    }
+
+    /// <summary>The learned pit loss the projection spent, e.g. "costs 29s".</summary>
+    public string PitExitCostText
+    {
+        get => _pitExitCostText;
+        private set => SetProperty(ref _pitExitCostText, value);
+    }
+
+    /// <summary>Who you'd land between, e.g. "5.0s behind #12 · 8.0s clear of #7".</summary>
+    public string PitExitNeighboursText
+    {
+        get => _pitExitNeighboursText;
+        private set => SetProperty(ref _pitExitNeighboursText, value);
+    }
+
     public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
 
     public override void ApplySettings(OverlaySettings settings)
@@ -281,6 +328,11 @@ public sealed class FuelViewModel : OverlayViewModelBase
         _lastSnapshot = snapshot;
 
         _lapTimeTracker.Update(snapshot.Lap, snapshot.SessionTimeSeconds);
+
+        // Stateful, like the lap-time tracker: it watches for pit-road edges, so
+        // it belongs here rather than in Render, which replays the same frame.
+        _pitLossTracker.Update(snapshot);
+
         Render(snapshot, _fuelCalculator.Update(snapshot.Lap, snapshot.FuelLevelLiters));
         RenderSetup(snapshot);
     }
@@ -335,6 +387,23 @@ public sealed class FuelViewModel : OverlayViewModelBase
         MarginLabel = strategy.WillFinish ? "LAPS SPARE" : "LAPS SHORT";
 
         RenderGauge(fuel, strategy.FuelToFinishLiters);
+        RenderPitExit(snapshot);
+    }
+
+    /// <summary>
+    /// The projection is pure, so it re-renders happily with the rest of the frame -
+    /// only the tracker feeding it a pit loss is stateful.
+    /// </summary>
+    private void RenderPitExit(TelemetrySnapshot snapshot)
+    {
+        var projection = PitExitProjector.Compute(
+            snapshot, _metadata, _pitLossTracker.MedianLossSeconds);
+
+        HasPitExit = projection.HasProjection;
+        PitExitPositionText = PitExitFormat.Position(projection);
+        PitExitLostText = PitExitFormat.PositionsLost(projection);
+        PitExitCostText = PitExitFormat.Cost(projection);
+        PitExitNeighboursText = PitExitFormat.Neighbours(projection);
     }
 
     private void RenderGauge(double fuelLiters, double? fuelToFinishLiters)

@@ -20,7 +20,10 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   (`2x/17x`, warming to amber then red as you approach it).
 - **Fuel**: a strategy calculator — fuel level and laps in tank, average/last-lap burn,
   and the numbers you act on: fuel to finish, the margin you'll finish with (green spare
-  / red short), fuel to add at the next stop, and a save-per-lap target. A strip along
+  / red short), fuel to add at the next stop, and a save-per-lap target. In a race it also
+  projects **where a stop would put you back on track** — "if you pit now: P12 ▼6, 19.4s
+  behind #63, 33.9s clear of #33" — using the pit-lane cost it learns by watching the
+  whole field stop, and it shows that cost so you can see what the answer assumed. A strip along
   the bottom shows the **loaded setup file** and pulses the panel for the first minute of
   Qualifying or Race — a reminder to catch the classic "raced on the qualifying setup"
   mistake before it costs you a fuel-short race. Switch the strip off in Settings if you
@@ -166,13 +169,14 @@ one test — *does it change a decision the driver makes in the car?* — with a
 July 2026 market snapshot against RaceLab and iOverlay and the judgement
 behind each call. The short version:
 
-- **Core pass:** finish the widgets we have — the radar density pass, and the
-  carried-over polish list (manufacturer badge on the relative, drag-to-resize,
-  a speed readout, configurable refresh rate, tray-icon pinning).
-- **The strategy layer** (nobody has these): **pit-exit position
-  projection** ("pit now and you rejoin P8, 1.8s behind #12"), a
-  push-vs-save fuel tradeoff readout, and a multiclass **traffic
-  meeting-point forecast** — race-engineer calls no current overlay makes.
+- **Core pass:** finish the widgets we have — the carried-over polish list
+  (drag-to-resize, a speed readout, configurable refresh rate, tray-icon
+  pinning). The manufacturer badge on the relative is parked behind a couple of
+  open questions.
+- **The strategy layer** (nobody has these): the **pit-exit position
+  projection** has landed on the fuel widget; still to come are a push-vs-save
+  fuel tradeoff readout and a multiclass **traffic meeting-point forecast** —
+  race-engineer calls no current overlay makes.
 - **Mid-term:** a **track map** built from the shape the radar already
   learns (no track database), a weather forecast strip, per-session-type
   settings profiles.

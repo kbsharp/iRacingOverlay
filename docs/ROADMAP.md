@@ -205,14 +205,49 @@ suites. All three answer the same kind of question — the one a solo racer
 has no engineer for — and they share plumbing: field gaps, pace trends, and
 the learned track shape.
 
-- **Pit-exit position projection** (the flagship bet). Answer, live: *"if
-  you pit this lap, you rejoin P8, 1.8s behind #12, clear of the GTD
-  pack"*. The inputs exist — `CarIdxF2Time` field gaps, pit-lane time loss
-  (learned from prior stops, or estimated from lane length + speed limit),
-  fuel-fill time from the fuel calculator. RaceLab's "Pitbox Helper" finds
-  your stall and iOverlay's helper covers entry/exit lines — neither
-  projects where you *come out*. This turns the fuel widget from a
-  calculator into a strategist.
+The flagship has landed; the two below are what's left. Building it moved the
+common ground on a bit: `Core.Strategy` now exists, and with it the habit these
+three share — when the sim won't tell you a number, measure it off the field
+rather than modelling it from a constant nobody can check.
+
+- ~~**Pit-exit position projection**~~ — **done**, and it turned out to hinge on
+  one input rather than three. It ships as a strip on the fuel widget:
+
+  ```
+  IF YOU PIT NOW   P12 ▼6                       costs 29s
+  19.4s behind #63 · 33.9s clear of #33
+  ```
+
+  The "estimated from lane length + speed limit" half of the plan was dropped:
+  iRacing publishes the speed limit but **not** the lane length, and the loss also
+  depends on where entry and exit rejoin the racing line. So the cost is measured
+  instead — and measured off the **whole field**, not just the player, because a
+  figure that only arrives after your own first stop arrives after the decision it
+  was meant to inform. The measurement is a car's growth in `F2Time` across its
+  pit-road visit, which is already "how far back did that drop them" in the
+  currency the projection spends, with racing pace netted off by the cars that
+  stayed out.
+
+  Fuel-fill time was dropped too, for a roadmap reason rather than a technical
+  one. Splitting the loss into transit plus your own service time needs a fill
+  rate the sim never publishes, so the service half would be a constant nobody
+  could check — the second test's failure mode exactly. Reporting the observed
+  total keeps every part measured, and the strip **states the loss it used**
+  ("costs 29s") so the projection is falsifiable rather than oracular.
+
+  Working in `F2Time` throughout is what makes lapped traffic behave: a car a lap
+  down already carries a lap time in its `F2Time`, so it sorts correctly without
+  laps being counted separately — the same time-based reasoning that keeps the
+  standings' laps-down from flickering.
+
+  **The honest limitation**, stated on the widget's own terms in
+  [FEATURES.md](FEATURES.md): it projects against the field as it stands *now*,
+  and can't know who else is about to stop. Every pit-exit tool has this; showing
+  the gaps rather than only a position is what lets the driver correct for it.
+
+  **Needs a human eye in the sim**: whether the strip earns its space for the
+  whole race or only near a stop — it's live from the third observed stop onward,
+  which is always-true information but not always a live decision.
 - **Push-vs-save fuel tradeoff**. The fuel widget already computes a
   "save to" burn target; pair it with the lap-time cost of driving to that
   number (learned from laps where burn was lower) and the catch/defend
@@ -288,7 +323,7 @@ Revisit only once the core above is strong:
 | Projected iRating | gain shown | gain shown | ✅ full zero-sum model |
 | Safety direction (CPI vs your baseline) | ❌ | ❌ | built, then removed — see above |
 | Battle catch/defend forecast | ❌ | ❌ | built **(unique)**, off by default — legibility, see above |
-| Pit-exit position projection | ❌ | ❌ | → bet **(unique)** |
+| Pit-exit position projection | ❌ | ❌ | ✅ **(unique)** — learned lane cost, stated on the strip |
 | Traffic meeting-point forecast | ❌ | behind-only warning | → bet **(unique)** |
 | Setup-file reminder | ❌ | ❌ | ✅ **(unique)** |
 | Per-session profiles | auto layouts | ✅ | ❌ → mid-term |

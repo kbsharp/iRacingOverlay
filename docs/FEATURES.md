@@ -642,6 +642,94 @@ running.
   panel's "Cycle session" button to see Practice → Qualify → Race
   transitions and re-trigger it on demand.
 
+### Pit-exit projection — `Core.Strategy` (`PitLossTracker` + `PitExitProjector`)
+
+A strip at the bottom of the fuel widget answering the question the rest of that
+widget can't: not *can I reach the finish*, but *what does stopping cost me*.
+
+```
+IF YOU PIT NOW   P12 ▼6                       costs 29s
+19.4s behind #63 · 33.9s clear of #33
+```
+
+**`PitLossTracker` — learning what a stop costs here.** The figure can't be
+computed: iRacing publishes a pit speed limit but no pit-lane length, and the
+loss also depends on where entry and exit rejoin the racing line. So it's
+measured — and measured from **the whole field, not just the player**, because a
+number that only arrives after your own first stop arrives after the decision it
+was meant to inform.
+
+The measurement is a car's growth in `F2Time` (time behind the session leader)
+across its visit to pit road, which is exactly "how far back did the stop drop
+them" in the same currency the projection then spends. Wall-clock time in the
+lane would need the racing-pace time for that stretch subtracted back off;
+`F2Time` has already done that subtraction, because it's measured against cars
+that stayed out.
+
+- A stop is only counted when **both** pit-road edges were seen. A car already in
+  the lane when the app started watching has no "before", and measuring from the
+  first in-lane frame would report a fraction of the real loss — the stop would
+  look cheap, the one direction the error must not go.
+- Entry is the last `F2Time` seen **on track**, not the first in-lane value:
+  `F2Time` is already climbing by then.
+- Median of the last 12 stops, not a mean — one stop ruined by a queue or a slow
+  release must not move the number the driver acts on.
+- Losses outside 5–120 s are discarded as drive-throughs, pit-road cuts, damage
+  repairs or a car sat out a session. The bounds are wide on purpose: they reject
+  non-stops, they don't nudge the figure toward what a stop "should" cost.
+- Needs **3 stops** before it reports anything, and resets on session change — a
+  practice lane and a race lane are not the same measurement.
+- A disconnect mid-stop drops that car's history rather than banking a
+  half-measured stop when it reappears.
+- `F2Time` of 0 is kept, not treated as missing: that's the leader, who pits like
+  everyone else. Negative means "no classified gap yet" and is ignored.
+
+**What it deliberately doesn't do** is split the drive-through from the time
+stood still. That split needs a fuel fill rate the sim never publishes, so the
+service half would be a constant nobody could check — and the projection's whole
+claim is that every part of it is measured. Instead the observed total is
+reported, and **shown on the widget** ("costs 29s") so the driver can see the one
+learned number the answer is scaled by.
+
+**`PitExitProjector` — reading off where you land.** Adds the pit loss to the
+player's `F2Time` and counts who ends up on each side. Because every car's
+`F2Time` is its time behind the leader, the difference between two cars' `F2Time`
+is the gap between them — the same derivation the standings uses for every gap
+and interval it shows.
+
+Working in `F2Time` rather than lap counts is what makes lapped traffic behave: a
+car a lap down already carries a whole lap time in its `F2Time`, so it sorts
+behind the player without laps ever being counted separately. That's the same
+time-based reasoning that keeps the standings' laps-down from flickering.
+
+**Displayed fields:**
+- **Projected class position** ("P12") — your class is your race; the overall
+  position is computed too but isn't shown, to keep the line to one figure.
+- **Places given up** ("▼6"), amber — the same hue the relative uses for a place
+  you lose. Absent when the stop costs nothing, because "▼0" is a figure to read
+  and then dismiss.
+- **The pit loss spent** ("costs 29s"), whole seconds — a learned median quoted to
+  a tenth would claim a precision it doesn't have.
+- **Who you'd land between** ("19.4s behind #63 · 33.9s clear of #33"), each gap
+  with its unit and the car it's measured against. Degrades to "still leads the
+  class", to just one side, or to "clear track".
+
+**Known limitations:**
+- **It projects against the field as it stands right now.** It can't know who else
+  is about to stop, and everyone's stop moves everyone else. This is the same
+  limitation every pit-exit tool has, and it's why the strip reports the gaps it
+  used rather than only a position.
+- Race sessions only. Outside a race `F2Time` carries a best lap time rather than
+  a gap to the leader, which would project nonsense — so the strip is absent.
+- Nothing is shown until 3 stops have been observed. Early in a race, or in a
+  small field where nobody has stopped, the strip simply isn't there.
+- Service time is whatever the field has been taking, not what *your* stop will
+  take. A splash-and-dash when the field is changing tyres will beat the
+  projection; a tyre change when the field is splashing will miss it.
+- The demo can't produce it (its one pitted car never leaves the box), so
+  `render.ps1 fuel-pit-exit` stages three real pit-road crossings on a warmed-up
+  demo frame and runs them through the real tracker, projector and bindings.
+
 ### Radar — `RadarWindow` / `RadarViewModel` + `Core.Radar`
 
 A top-down proximity radar, LMU-style: the player car sits dead centre facing
@@ -1486,7 +1574,7 @@ on the content root (see the tray icon section).
 
 ## Test coverage
 
-537 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+585 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -1522,17 +1610,21 @@ on the content root (see the tray icon section).
 | `Settings/UnitPreferencesTests.cs` | Metric defaults, valid choices preserved, undefined enum value → metric |
 | `Formatting/UnitFormatTests.cs` | Fuel L/gal, temperature °C/°F, speed kph/mph conversion; placeholders; equal precision across units; agreement with `TelemetryFormat.ToKph` |
 | `Settings/LayoutGuardTests.cs` | Scale sanitizing (band + non-finite), on-screen validation across a multi-monitor virtual desktop |
+| `Strategy/PitLossTrackerTests.cs` | Learning the lane cost: both-edges-required measurement, entry taken from the last on-track frame, already-in-lane and disconnect cases ignored, median over samples, implausible stops rejected, rolling window, session reset |
+| `Strategy/PitExitProjectorTests.cs` | Rejoin projection: no-loss/non-race suppression, position and places lost, empty road behind, car ahead/behind naming and gaps, class vs overall counting, lapped cars sorting by time, unclassified gaps and pace cars ignored |
+| `Formatting/PitExitFormatTests.cs` | Projection as a sentence: position, suppressed zero-loss arrow, whole-second cost vs one-decimal gaps, class-leader and last-place degradations, clear track |
 
 ## Not yet implemented
 
 Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
-[README](../README.md#roadmap)): the radar density pass, extending the
-manufacturer badge to the relative, drag-to-resize widgets,
-a speed readout for the existing km/h / mph preference, a configurable
-telemetry refresh rate, per-car/track settings profiles, and pinning the tray
-icon — plus the items from the July 2026 competitive review (track map,
-pit-exit projection), with
-the parked list and non-goals recorded there too.
+[README](../README.md#roadmap)): drag-to-resize widgets, a speed readout for the
+existing km/h / mph preference, a configurable telemetry refresh rate,
+per-car/track settings profiles, and pinning the tray icon — plus the remaining
+items from the July 2026 competitive review (track map, push-vs-save fuel
+tradeoff, multiclass traffic forecast). Extending the manufacturer badge to the
+relative is parked behind open research questions; the radar density pass and the
+pit-exit projection have since landed. The parked list and non-goals are recorded
+there too.
 
 (Click-through, running at Windows startup, and the settings surface itself have
 since landed — see [Settings](#settings--settingswindow--settingsviewmodel--coresettings).)
