@@ -79,7 +79,8 @@ public static class RadarCalculator
                 ClassColorHex: RatingFormat.NormalizeHexColor(driver?.ClassColorRaw)));
         }
 
-        return new RadarResult(blips, MapReady: true);
+        var danger = RadarDanger.Compute(blips);
+        return new RadarResult(blips, MapReady: true, LeftDanger: danger.Left, RightDanger: danger.Right);
     }
 
     private static bool TryFindPlayer(TelemetrySnapshot snapshot, out CarTelemetry player)

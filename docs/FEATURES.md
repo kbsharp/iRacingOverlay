@@ -337,14 +337,17 @@ running.
 ### Radar — `RadarWindow` / `RadarViewModel` + `Core.Radar`
 
 A top-down proximity radar, LMU-style: the player car sits dead centre facing
-up, with the nearby field drawn as class-coloured car icons at their real
-positions relative to you — **angled to match the track**, so a car alongside
-through a corner leans the way the corner does. The whole widget **hides itself
-when nobody is near** and reappears the instant a car comes into range.
+up, with the nearby field drawn as car icons at their real positions relative to
+you — **angled to match the track**, so a car alongside through a corner leans
+the way the corner does. The whole widget **hides itself when nobody is near**
+and reappears the instant a car comes into range.
 
-**Layout:** a fixed 150×240 "scope" (`RadarLayout`) with faint centre axes,
-auto-sized panel, same borderless/topmost/draggable/soft-cornered behaviour as the
-others. **No header label** — a radar is self-evident. Fixed position on first
+**Layout:** a fixed 150×240 field (`RadarLayout`). Unlike every other widget the
+radar is **chrome-free** — no panel, no border, no background, just marks floating
+over the track — because it lives in the driver's forward view where a box would
+occlude more than it explains. Its one piece of furniture is a dashed line level
+with the player's axles, to judge overlap against. Still borderless/topmost/
+draggable. **No header label** — a radar is self-evident. Fixed position on first
 launch (`Left=600, Top=470`, right column).
 
 **How it works — reconstructing positions iRacing won't give you.** iRacing's
@@ -365,7 +368,7 @@ reuses it to place everyone else. Pure, tested logic lives in `Core.Radar`:
   off to the side and rotated.
 - **`RadarCalculator`** builds the `RadarBlip` list for every rostered car within
   range (`DefaultRangeMeters` = 60 m along the track), excluding pit and
-  pace/spectator cars, tagging each with its class colour.
+  pace/spectator cars, then grading each side's danger (see below).
 - **`TrackLengthParser`** turns iRacing's `WeekendInfo:TrackLength` (`"3.70 km"`,
   occasionally miles) into the metres the geometry needs.
 
@@ -376,18 +379,31 @@ canvas pixels in `RadarBlipViewModel` (fixed-size icons, positions scaled at
 the number of nearby cars changes.
 
 **Visual behaviour:**
-- The panel is visible only when there's something to show: the positional radar
+- The widget is visible only when there's something to show: the positional radar
   once the track is mapped and a car is in range, the spotter fallback (below)
   during the first lap, or a small "radar" placeholder before the sim reports (so
   the auto-hiding widget can still be dragged into place).
-- Icons are class-coloured (iRacing's own `CarClassColor`); the player car is
-  white with an accent nose showing "up".
+- **Traffic is white, you are green, danger is red** — three colours, one meaning
+  each. Opponents are deliberately *not* class-coloured here (they are in the
+  standings and relative widgets): at a blind-spot glance "is that me or them"
+  beats "what class is that", and a green-class opponent next to a green player
+  mark was genuinely ambiguous.
+
+**Proximity glow.** The thing you actually read at speed is a red glow off the
+door on the side a car is on, fading with how much it matters rather than blinking
+on and off at a threshold. `RadarDanger` (pure, tested) grades each side 0–1 from
+the blips: intensity peaks with a car level and close alongside, and falls to zero
+past 9 m lateral or 7 m longitudinal. Crucially it ignores cars within
+`MinLateralMeters` (1.2 m) of your own line — a train running nose-to-tail on the
+racing line is queued traffic, not a side-by-side, and grading it as danger lit
+both glows solid for whole laps in the first pass.
 
 **First-lap fallback.** Until `TrackMap.IsReady`, there's no shape to place cars
 against, so the widget falls back to iRacing's coarse `CarLeftRight` spotter
-signal — the same left/right blocks the widget used before this rework, shown via
-`RadarFormat`'s `HasCarLeft`/`HasCarRight` classifiers — turning red when a car is
-alongside. Once the lap is mapped, the positional radar takes over.
+signal, via `RadarFormat`'s `HasCarLeft`/`HasCarRight` classifiers. It drives the
+same glow at full strength with no blips — same visual language, less detail —
+rather than a separate set of blocks. Once the lap is mapped, the positional radar
+takes over.
 
 **Known limitations:**
 - **Needs ~one lap to learn the track** (per session / track). Before then it's

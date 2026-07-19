@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using IRacingOverlay.Core.Radar;
-using Brush = System.Windows.Media.Brush;
 
 namespace IRacingOverlay.App.ViewModels;
 
@@ -16,7 +15,6 @@ public sealed class RadarBlipViewModel : ObservableObject
     private double _canvasTop;
     private double _angleDegrees;
     private string _number = string.Empty;
-    private Brush _fill = System.Windows.Media.Brushes.Gray;
 
     public double CanvasLeft
     {
@@ -42,12 +40,6 @@ public sealed class RadarBlipViewModel : ObservableObject
         private set => SetProperty(ref _number, value);
     }
 
-    public Brush Fill
-    {
-        get => _fill;
-        private set => SetProperty(ref _fill, value);
-    }
-
     public void Update(RadarBlip blip)
     {
         // Metres -> canvas pixels: forward (+) is up the screen, right (+) is right.
@@ -61,6 +53,5 @@ public sealed class RadarBlipViewModel : ObservableObject
         // clockwise because the canvas Y axis points down, so negate.
         AngleDegrees = -blip.RelativeAngleRad * 180.0 / System.Math.PI;
         Number = blip.CarNumber;
-        Fill = ClassColorBrush.Resolve(blip.ClassColorHex);
     }
 }
