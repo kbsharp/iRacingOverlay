@@ -70,9 +70,8 @@ a human eye in the sim.
    class hue, label darkened/lightened by measured luminance.
 3. ~~**Fuel: a tank gauge bar.**~~ *Shipped* — `6px` bar, fill against usable
    tank capacity, tick at fuel-to-finish, green/red on clearing it.
-4. **Session strip: give it a headline too.** The primary figure (time/laps
-   remaining) steps up a size so the strip stops reading as a row of
-   equal-weight tokens; the chips (flag, iRating, temps) stay as they are.
+4. ~~**Session strip: give it a headline too.**~~ *Shipped* — remaining figure
+   split out and stepped up; session label dropped to secondary.
 5. **Chip loudness audit.** On the dark rows our license chips — bright
    edge + bright text — currently out-shout the driver name and the timing
    figures; RaceLab's chips stay calm because their rows are white. Nudge

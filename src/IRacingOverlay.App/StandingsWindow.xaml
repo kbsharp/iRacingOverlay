@@ -53,10 +53,26 @@
                                DockPanel.Dock="Right"
                                VerticalAlignment="Center"
                                Style="{StaticResource Caption}" />
-                    <TextBlock Text="{Binding SessionText}"
+                    <!-- Session label stays quiet; the figure beside it is the
+                         strip's headline. See RelativeWindow.xaml for why these
+                         are two TextBlocks rather than one joined string. -->
+                    <TextBlock Text="{Binding SessionTypeText}"
                                Margin="9,0,0,0"
                                VerticalAlignment="Center"
                                FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource TextSecondary}" />
+                    <TextBlock Text="·"
+                               Margin="7,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource TextMuted}"
+                               Visibility="{Binding HasSessionRemaining, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding SessionRemainingText}"
+                               Margin="7,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="17"
                                FontWeight="Bold"
                                Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextPrimary}" />

@@ -5,6 +5,43 @@ namespace IRacingOverlay.Core.Tests.Formatting;
 
 public class SessionFormatTests
 {
+    [Fact]
+    public void Header_TimedSession_PutsTheClockInTheFigure()
+    {
+        var header = SessionFormat.Header("RACE", 204, 0);
+
+        Assert.Equal("RACE", header.TypeText);
+        Assert.Equal("3:24", header.RemainingText);
+    }
+
+    [Fact]
+    public void Header_LapLimitedSession_FallsBackToLaps()
+    {
+        // Unlimited time, but a real lap count: the laps are the headline.
+        var header = SessionFormat.Header("RACE", 604000, 12);
+
+        Assert.Equal("RACE", header.TypeText);
+        Assert.Equal("12 LAPS", header.RemainingText);
+    }
+
+    [Fact]
+    public void Header_TimePreferredOverLaps()
+    {
+        var header = SessionFormat.Header("RACE", 204, 12);
+
+        Assert.Equal("3:24", header.RemainingText);
+    }
+
+    [Fact]
+    public void Header_UnlimitedWithNoLaps_HasNoFigure()
+    {
+        // The strip shows the label alone rather than a stray separator.
+        var header = SessionFormat.Header("PRACTICE", 604000, 0);
+
+        Assert.Equal("PRACTICE", header.TypeText);
+        Assert.Equal(string.Empty, header.RemainingText);
+    }
+
     [Theory]
     [InlineData(0, "0:00")]
     [InlineData(59, "0:59")]

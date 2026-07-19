@@ -24,7 +24,13 @@ saved settings. No widget-name label — the class banners and columns identify
 it; the top strip carries session type + time/laps remaining + the same
 `Ln/total` lap counter as the relative widget + the
 [projected-iRating chip](#projected-irating--iratingchipviewmodel--corerating)
-+ car count.
++ car count. Within that strip the **remaining figure is the headline**
+(`17px` here, `15px` on the relative) against the session label's quieter
+`13px`/`12px` secondary tone — `SessionFormat.Header` splits the two so they
+can be typeset separately, since a single `"RACE · 3:24"` string could only
+ever carry one size and left the strip reading as a row of equal-weight
+tokens. The separator hides when the session is unlimited and has no lap
+count, so no stray `·` is left behind.
 Under that strip, the column captions sit on a full-bleed **header band**
 (`HeaderBand` fill, `Separator` underline) so the table reads as having a head
 rather than a floating row of grey labels.
