@@ -267,9 +267,9 @@ both `RelativeCalculator.Compute` and `RelativeViewModel`). Rows are updated
 in place each frame rather than rebuilt, so the list is allocation-free and
 the layout doesn't jump. Each row shows: race position, a class-colour bar,
 car number, driver name, a license badge and iRating badge, a PIT badge when
-the car is on pit road or in a pit stall, and a signed time delta (`+n.n` /
-`-n.n`). Zebra striping is fixed per slot (`RelativeRowViewModel.IsAltRow`) so
-it stays stable as rows update in place.
+the car is on pit road or in a pit stall, a [catch/defend trend](#catchdefend-pace-trend--corerelativepacetrendtracker),
+and a signed time delta (`+n.n` / `-n.n`). Zebra striping is fixed per slot
+(`RelativeRowViewModel.IsAltRow`) so it stays stable as rows update in place.
 
 **Row hierarchy:** the delta is the headline — `16px` Bold, a clear step above
 the driver name at `13px`, with the position and car number recessive at
@@ -324,6 +324,71 @@ side of the line from the player; `RelativeCalculator.ComputeDelta` detects a
 >0.5-lap `LapDistPct` gap and corrects by ±one lap time. Lap time comes from
 the roster's `ClassEstLapTimeSeconds` when available, else a 120s fallback
 (`FallbackLapTimeSeconds`).
+
+### Catch/defend pace trend — `Core.Relative.PaceTrendTracker`
+
+A delta says where someone is; the trend says where they will be. Each
+non-player row carries a compact forecast to the left of the delta:
+
+| Element | Meaning |
+|---|---|
+| `▼` / `▲` | The gap is shrinking / growing |
+| `0.4` | How fast, in **seconds per lap** (unsigned; the arrow carries the sign) |
+| `3L` | Laps until the gap runs out — only when it's closing *and* lands before the flag |
+
+**Rate:** a **least-squares slope** of gap magnitude against session time over
+a rolling 45s window (`WindowSeconds`), multiplied by the class lap time to
+give seconds per lap. It is deliberately not a two-frame difference: deltas
+jitter by tenths corner to corner (traffic, a lift, `EstTime` granularity), and
+a two-point rate reads "closing 4s/lap" one frame and "pulling away" the next.
+`RateSecondsPerLap` is signed so **positive means closing**, which is the
+direction a driver cares about.
+
+**Reported only when the window earns it:** at least 6 samples
+(`MinSamples`) spanning at least 12s (`MinSpanSeconds`). A guess from three
+frames is worse than no number.
+
+**Noise floor:** under 0.05 s/lap (`HoldingThresholdPerLap`) the gap is
+`Holding` and nothing is drawn — that's inside the range a driver can't act on.
+
+**Laps to contact:** `gap ÷ closing rate`, floored to a whole lap (a promised
+6 that turns out to be 5 is a worse promise than one that turns out to be 7),
+and suppressed beyond 40 laps (`MaxLapsToContact`) where it is arithmetic
+rather than a forecast. `ArrivesBeforeFlag` compares it against
+`FuelStrategyCalculator.EstimateRaceLapsRemaining` — the same estimate the fuel
+widget uses, so it works for timed races as well as lap-limited ones. A battle
+that misses the flag shows **no lap count and no colour**: it isn't a decision.
+
+**Colour** (`PaceTrendFormat.Tone`) reports what the trend means for the
+player, independently of the arrow's gap direction:
+- **Green** (`Gain`) — you're catching a car ahead, and you get there in time.
+- **Amber** (`Threat`) — a car behind is catching you, and they get there in time.
+- **Muted grey** — everything else. Only a battle that actually lands earns a
+  hue, so the one row worth looking at is the one that lights up.
+
+The laps figure stays muted even on a coloured row: the rate is the signal,
+the countdown is the detail. The whole group sits **left** of the delta so the
+eye still lands on the delta first — where they are now outranks where they'll be.
+
+**History is discarded on discontinuity**, never regressed across:
+- Either car entering the pits (the gap is then running away at pit-lane speed).
+- A single-frame gap jump over 3s (`DiscontinuitySeconds`) — a tow, a reset,
+  an off.
+- Session time running backwards (session restart, replay scrub), or the
+  session number changing.
+- A car dropping out of the relative for longer than the window (pruned, so it
+  doesn't reappear laps later with a rate regressed across the absence).
+
+A frame replayed at the same session time (a settings change re-renders the
+last snapshot) is ignored rather than double-weighted.
+
+**Known limitations:**
+- The rate is pace-only in aggregate — it can't tell a genuinely faster car
+  from one that just had a clean lap through traffic. Over a 45s window that
+  mostly averages out, but a single big traffic loss will briefly read as
+  "closing".
+- Both cars are assumed to keep their current pace. A forecast doesn't know
+  about the pit stop either of you is about to make.
 
 **Lapped/lapping colour coding:** `RelativeCalculator.Classify` compares
 total race progress (`lap + lapDistPct`) between the two cars; >0.5 laps
@@ -1311,6 +1376,7 @@ on the content root (see the tray icon section).
 | `Fuel/FuelGaugeCalculatorTests.cs` | Tank-gauge fill/tick fractions, missing capacity, clamping, the clears-tick boundary |
 | `Fuel/LapTimeTrackerTests.cs` | Rolling lap-time average, jump/reset handling |
 | `Relative/RelativeCalculatorTests.cs` | Row ordering, start/finish wrap correction, lap-ahead/behind classification, roster filtering, pit flagging, license tier and class colour propagation |
+| `Relative/PaceTrendTrackerTests.cs` | Closing/pulling/holding classification, sample and span minimums, noise floor, laps-to-contact projection, before-the-flag arrival, discontinuity + pit + session resets, replayed-frame handling |
 | `Standings/StandingsCalculatorTests.cs` | Class grouping/ordering, within-class ordering, class-leader gaps + interval, time-based laps-down (+ lap-count fallback), last-lap delta, per-class SoF, best/last nulls, session-fastest flag, per-class truncation keeping the player, no-metadata fallback, filtering |
 | `Standings/StrengthOfFieldTests.cs` | SoF formula (uniform field, empty, non-positive filtering, sub-mean weighting) |
 | `Rating/IRatingCalculatorTests.cs` | Elo model: even-field win/loss symmetry, expected-finish ≈ zero change, zero-sum across the field, stronger-field win pays more, underdog vs favourite, pairwise probabilities summing to every pairing once, small-field and out-of-range guards |
@@ -1318,6 +1384,7 @@ on the content root (see the tray icon section).
 | `Setup/SetupReminderTrackerTests.cs` | Race/Qualify type detection, flash window timing and boundary, session-change restart, first-frame-mid-session behaviour |
 | `Formatting/SessionFormatTests.cs` | Time/IRating/delta/wetness/temperature formatting |
 | `Formatting/TelemetryFormatTests.cs` | Gear, kph conversion, liters/laps placeholders |
+| `Formatting/PaceTrendFormatTests.cs` | Gap-direction arrow, unsigned rate, laps-to-contact rounding and suppression, gain/threat/neutral tone |
 | `Formatting/RatingFormatTests.cs` | License tier parsing, projected-change trend + magnitude, CarClassColor normalisation (decimal-packed and hex forms) |
 | `Formatting/SetupFormatTests.cs` | Setup file name display formatting |
 | `Formatting/RadarFormatTests.cs` | CarLeftRight classification into the four proximity booleans (radar fallback) |

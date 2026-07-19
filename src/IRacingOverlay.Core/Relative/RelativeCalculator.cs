@@ -29,7 +29,7 @@ public static class RelativeCalculator
             return [];
         }
 
-        var lapTime = ResolveLapTime(metadata, snapshot.PlayerCarIdx);
+        var lapTime = ResolveLapTimeSeconds(metadata, snapshot.PlayerCarIdx);
         var entries = new List<(CarTelemetry Car, double Delta)>();
 
         foreach (var car in snapshot.Cars)
@@ -82,7 +82,12 @@ public static class RelativeCalculator
         return false;
     }
 
-    private static double ResolveLapTime(SessionMetadata? metadata, int playerCarIdx)
+    /// <summary>
+    /// The player's class lap time, or a neutral fallback. Shared with
+    /// <see cref="PaceTrendTracker"/>, which converts gap rates into the
+    /// per-lap units this widget already speaks in.
+    /// </summary>
+    public static double ResolveLapTimeSeconds(SessionMetadata? metadata, int playerCarIdx)
     {
         if (metadata is not null
             && metadata.DriversByCarIdx.TryGetValue(playerCarIdx, out var driver)

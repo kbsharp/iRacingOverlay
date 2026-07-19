@@ -45,11 +45,12 @@ extends an existing widget rather than adding a new one.
   the standings too, taking over the Int column while a car is in the lane — Int
   is meaningless for a car in its box, and Gap, which tells you where they
   rejoin, is preserved.
-- **Relative: catch/defend pace trend** *(unique — neither competitor has
-  it)*. Each row already shows a delta; track its per-lap trend and show
-  "closing 0.3s/lap — on you in 6 laps" (or "caught before the flag: no").
-  A *forecast* of whether the battle actually arrives is a decision input —
-  push now, or bank fuel — not another readout.
+- ~~**Relative: catch/defend pace trend**~~ — **done** *(unique — neither
+  competitor has it)*. Every row now carries a regressed per-lap gap rate
+  (`▼ 0.4`) and, when the battle actually lands before the flag, the laps until
+  it does (`3L`). Colour reports what it means for you — green a place you take,
+  amber a place you lose — and a catch that misses the flag stays grey, because
+  it isn't a decision.
 - **Session strip: projected Safety Rating chip** *(unique)*. The companion
   to the projected-iRating chip: live SR delta for this race from corners
   driven versus incident points (`WeekendInfo:TrackNumTurns` × laps vs
@@ -156,7 +157,7 @@ Revisit only once the core above is strong:
 | Delta bar | ✅ | via columns | ❌ → core pass |
 | Projected iRating | gain shown | gain shown | ✅ full zero-sum model |
 | Projected Safety Rating | ❌ | ❌ | → core pass **(unique)** |
-| Battle catch/defend forecast | ❌ | ❌ | → core pass **(unique)** |
+| Battle catch/defend forecast | ❌ | ❌ | ✅ rate + laps-to-contact **(unique)** |
 | Pit-exit position projection | ❌ | ❌ | → bet **(unique)** |
 | Traffic meeting-point forecast | ❌ | behind-only warning | → bet **(unique)** |
 | Setup-file reminder | ❌ | ❌ | ✅ **(unique)** |
