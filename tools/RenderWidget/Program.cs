@@ -43,7 +43,7 @@ internal static class Program
     /// rather than a separate widget - see <see cref="RenderRadarDanger"/>.
     /// </summary>
     private static readonly string[] AllTargets =
-        ["standings", "relative", "fuel", "radar", "radar-danger", "radar-unresolved", "delta",
+        ["standings", "relative", "fuel", "fuel-pit-exit", "radar", "radar-danger", "radar-unresolved", "delta",
          "settings"];
 
     [STAThread]
@@ -256,7 +256,127 @@ internal static class Program
             results.Add(("radar-unresolved", RenderRadarUnresolved()));
         }
 
+        if (targets.Contains("fuel-pit-exit"))
+        {
+            results.Add(("fuel-pit-exit", RenderFuelPitExit()));
+        }
+
         return results;
+    }
+
+    /// <summary>
+    /// Renders the fuel widget with its pit-exit projection showing.
+    ///
+    /// The plain "fuel" target can't produce it, and correctly so: the demo field
+    /// parks one car in its box for the whole session and never cycles anyone
+    /// through the lane, so <c>PitLossTracker</c> never sees a pit-road crossing
+    /// and never learns what a stop costs - which means the strip stays hidden
+    /// rather than guessing. That is the behaviour, not a gap in the demo.
+    ///
+    /// So this stages the missing input the only honest way: it takes a real warmed
+    /// -up demo frame and replays it with three cars actually crossing in and back
+    /// out of the lane, each losing about half a minute. Everything downstream is
+    /// the real tracker, the real projector and the real bindings - only the pit
+    /// stops are staged, because the demo has none to offer.
+    /// </summary>
+    private static Window RenderFuelPitExit()
+    {
+        var vm = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), "Demo");
+        vm.ApplySettings(new OverlaySettings());
+
+        using var source = new SimulatedTelemetrySource();
+
+        TelemetrySnapshot? latest = null;
+        source.SessionMetadataReceived += (_, m) => vm.ApplySessionMetadata(m);
+        source.TelemetryReceived += (_, s) =>
+        {
+            latest = s;
+            vm.ApplyTelemetry(s);
+        };
+        vm.SetConnectionState(true);
+        source.Start();
+
+        // Same warm-up the fuel widget always needs: the burn figures come off a
+        // lap-over-lap calculator, so without laps the panel is placeholders.
+        var started = DateTime.UtcNow;
+        while (!vm.HasStrategy && DateTime.UtcNow - started < WarmupCap)
+        {
+            Thread.Sleep(100);
+        }
+
+        source.Stop();
+
+        if (latest is not { } frame)
+        {
+            Console.Error.WriteLine("Warning: fuel-pit-exit never received a demo frame.");
+            return new IRacingOverlay.App.FuelWindow { DataContext = vm };
+        }
+
+        // Three stops, because that is the tracker's threshold for trusting the
+        // figure - one stop is anyone's bad day.
+        foreach (var carIdx in PitStopCarIndexes(frame))
+        {
+            var before = FindF2(frame, carIdx);
+
+            vm.ApplyTelemetry(WithCar(frame, carIdx, inLane: false, f2: before));
+            vm.ApplyTelemetry(WithCar(frame, carIdx, inLane: true, f2: before));
+            vm.ApplyTelemetry(WithCar(frame, carIdx, inLane: false, f2: before + 29));
+        }
+
+        // A last clean frame so the projection is computed against a settled field.
+        vm.ApplyTelemetry(frame);
+
+        if (!vm.HasPitExit)
+        {
+            Console.Error.WriteLine(
+                "Warning: fuel-pit-exit expected a projection, got none - "
+                + "the staged stops were not learned from.");
+        }
+
+        return new IRacingOverlay.App.FuelWindow { DataContext = vm };
+    }
+
+    /// <summary>Three cars that aren't the player and aren't already in the lane.</summary>
+    private static List<int> PitStopCarIndexes(TelemetrySnapshot frame) =>
+        frame.Cars
+            .Where(c => c.CarIdx != frame.PlayerCarIdx
+                && !c.OnPitRoad
+                && c.Surface == CarTrackSurface.OnTrack)
+            .Take(3)
+            .Select(c => c.CarIdx)
+            .ToList();
+
+    private static float FindF2(TelemetrySnapshot frame, int carIdx)
+    {
+        foreach (var car in frame.Cars)
+        {
+            if (car.CarIdx == carIdx)
+            {
+                return Math.Max(car.F2TimeSeconds, 1f);
+            }
+        }
+
+        return 1f;
+    }
+
+    /// <summary>The same frame with one car moved in or out of the pit lane.</summary>
+    private static TelemetrySnapshot WithCar(
+        TelemetrySnapshot frame, int carIdx, bool inLane, float f2)
+    {
+        var cars = new List<CarTelemetry>(frame.Cars.Count);
+        foreach (var car in frame.Cars)
+        {
+            cars.Add(car.CarIdx == carIdx
+                ? car with
+                {
+                    OnPitRoad = inLane,
+                    Surface = inLane ? CarTrackSurface.InPitStall : CarTrackSurface.OnTrack,
+                    F2TimeSeconds = f2,
+                }
+                : car);
+        }
+
+        return frame with { Cars = cars };
     }
 
     /// <summary>

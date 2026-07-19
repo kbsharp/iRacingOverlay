@@ -294,6 +294,59 @@
                 </StackPanel>
             </Grid>
 
+            <!-- Pit-exit projection: what stopping actually costs, which is the
+                 decision being made. Everything above answers "can I reach the
+                 finish"; this answers "and where does that leave me".
+
+                 Written as a sentence on purpose. A bare "P4" among the other
+                 figures here would be one more number to decode - the failure that
+                 switched the catch/defend column off - so the position carries a
+                 label, the gaps carry their unit and the car they're measured
+                 against, and the learned pit loss is stated so the driver can see
+                 what the answer was scaled by. Absent entirely outside a race, or
+                 before enough stops have been seen to know the lane. -->
+            <StackPanel Visibility="{Binding HasPitExit, Converter={StaticResource BoolToVis}}">
+                <Border Height="1" Background="{StaticResource Separator}" Margin="0,6,0,6" />
+
+                <DockPanel Margin="0,0,0,3">
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="IF YOU PIT NOW"
+                               VerticalAlignment="Bottom"
+                               Margin="0,0,6,1"
+                               Style="{StaticResource Caption}" />
+
+                    <TextBlock DockPanel.Dock="Right"
+                               Text="{Binding PitExitCostText}"
+                               VerticalAlignment="Bottom"
+                               Margin="6,0,0,1"
+                               Style="{StaticResource Caption}" />
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding PitExitPositionText}"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Typography.NumeralAlignment="Tabular"
+                                   Foreground="{StaticResource TextPrimary}" />
+                        <!-- Amber, not red: losing places to a stop you had to make
+                             is the cost of racing, not a warning. Red here is the
+                             fuel margin's, and it means "you do not finish". -->
+                        <TextBlock Text="{Binding PitExitLostText}"
+                                   Margin="5,0,0,1"
+                                   VerticalAlignment="Bottom"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Typography.NumeralAlignment="Tabular"
+                                   Foreground="{StaticResource Warning}" />
+                    </StackPanel>
+                </DockPanel>
+
+                <TextBlock Text="{Binding PitExitNeighboursText}"
+                           FontFamily="{StaticResource FontSmall}"
+                           FontSize="11"
+                           Foreground="{StaticResource TextSecondary}"
+                           TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
             <!-- Setup strip: what was a whole widget, reduced to the one line it
                  was ever worth - session chip, setup name, modified flag. -->
             <StackPanel Visibility="{Binding ShowSetupReminder, Converter={StaticResource BoolToVis}}">

@@ -118,8 +118,8 @@ of seconds, so it hasn't been worth adding.
   .\scripts\render.ps1 fuel relative    # just these two
   ```
 
-  Targets: `standings`, `relative`, `fuel`, `radar`, `radar-danger`,
-  `radar-unresolved`, `delta`, `settings`.
+  Targets: `standings`, `relative`, `fuel`, `fuel-pit-exit`, `radar`,
+  `radar-danger`, `radar-unresolved`, `delta`, `settings`.
   **Rendering everything is the default** and costs barely more than rendering
   one — all the view models are fed from a single demo session, and the slow part
   is wall-clock demo laps (the fuel burn average needs ~35 s of them), not the
@@ -137,6 +137,14 @@ of seconds, so it hasn't been worth adding.
   pack is exactly the stacked-on-the-centreline case, so the render shows what the
   radar does when the geometry can't name a side — faded blips plus a graded glow,
   rather than a confident placement or an empty mirror.
+
+  `fuel-pit-exit` is the fuel widget with its pit-exit projection showing. The
+  plain `fuel` target can't produce it, correctly: the demo parks one car in its
+  box all session and never cycles anyone through the lane, so `PitLossTracker`
+  never sees a pit-road crossing and the strip stays hidden rather than guessing.
+  So this target stages the missing input — it takes a warmed-up demo frame and
+  replays it with three cars actually crossing in and back out of the lane. Only
+  the stops are staged; the tracker, projector and bindings downstream are real.
 
   **What a render still can't settle** — say so rather than claiming it looks
   right: the *graded* glow (a car fading out as it drifts away) needs real

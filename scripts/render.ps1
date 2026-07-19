@@ -22,7 +22,8 @@
 #>
 [CmdletBinding(PositionalBinding = $false)]
 param(
-    # Targets: standings, relative, fuel, radar, radar-danger, settings.
+    # Targets: standings, relative, fuel, fuel-pit-exit, radar, radar-danger,
+    # radar-unresolved, delta, settings.
     # Omit to render all of them - it costs barely more than rendering one.
     [Parameter(Position = 0, ValueFromRemainingArguments)]
     [string[]] $Targets,
