@@ -33,6 +33,7 @@ public partial class App : System.Windows.Application
     private UpdateService? _updateService;
     private SettingsService? _settingsService;
     private SettingsWindow? _settingsWindow;
+    private SingleInstanceGuard? _instanceGuard;
     private bool _isExiting;
 
     /// <summary>
@@ -75,7 +76,27 @@ public partial class App : System.Windows.Application
         // becomes so when iRacing is actually running.
         _isSimConnected = demoMode;
 
-        _settingsService = new SettingsService();
+        // Built first: whether this is the installed copy decides both which
+        // settings file is ours and which single-instance slot we claim, and both
+        // must be settled before anything reads settings or creates a window.
+        _updateService = new UpdateService();
+        var isInstalled = _updateService.IsInstalled;
+
+        // A second copy of the same flavour would give the user two tray icons,
+        // two stacks of widgets, and two writers on one settings file. Exit before
+        // any of that exists - and before the guard is stored, so OnExit's dispose
+        // can't release the running instance's mutex.
+        var guard = SingleInstanceGuard.TryAcquire(isInstalled);
+        if (guard is null)
+        {
+            _isExiting = true;
+            Shutdown();
+            return;
+        }
+
+        _instanceGuard = guard;
+
+        _settingsService = new SettingsService(isInstalled);
         var settings = _settingsService.Current;
 
         var standingsViewModel = new StandingsViewModel(connectedLabel);
@@ -180,7 +201,6 @@ public partial class App : System.Windows.Application
 
         _settingsService.Changed += (_, updated) => ApplySettings(updated);
 
-        _updateService = new UpdateService();
         _trayIcon = new TrayIconService(
             _widgets,
             _settingsService,
@@ -218,27 +238,30 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        if (!_updateService.IsInstalled)
-        {
-            if (manual)
-            {
-                _trayIcon?.Notify(
-                    "iRacing Overlay",
-                    "Auto-update runs in the installed app - this looks like a dev or portable build.");
-            }
+        var result = await _updateService.CheckAndDownloadAsync();
 
+        if (result is { Status: UpdateCheckStatus.Ready, Update: { } update })
+        {
+            _trayIcon?.ShowUpdateReady(update.TargetFullRelease.Version.ToString(), () => ApplyUpdate(update));
             return;
         }
 
-        var update = await _updateService.CheckAndDownloadAsync();
-        if (update is not null)
+        // Everything else is only worth interrupting the user for when they asked.
+        // A failed check in particular must say so rather than reporting "latest":
+        // a silently broken feed is indistinguishable from being up to date, which
+        // is how this app shipped three releases nobody could receive.
+        if (!manual)
         {
-            _trayIcon?.ShowUpdateReady(update.TargetFullRelease.Version.ToString(), () => ApplyUpdate(update));
+            return;
         }
-        else if (manual)
+
+        _trayIcon?.Notify("iRacing Overlay", result.Status switch
         {
-            _trayIcon?.Notify("iRacing Overlay", "You're on the latest version.");
-        }
+            UpdateCheckStatus.UpToDate => "You're on the latest version.",
+            UpdateCheckStatus.NotInstalled =>
+                "Auto-update runs in the installed app - this looks like a dev or portable build.",
+            _ => "Couldn't check for updates - see update.log in %LocalAppData%\\IRacingOverlay.",
+        });
     }
 
     /// <summary>Installs a downloaded update and restarts the app. Ends the
@@ -385,6 +408,7 @@ public partial class App : System.Windows.Application
         _settingsService?.SaveNow();
         _trayIcon?.Dispose();
         _telemetrySource?.Dispose();
+        _instanceGuard?.Dispose();
         base.OnExit(e);
     }
 }
