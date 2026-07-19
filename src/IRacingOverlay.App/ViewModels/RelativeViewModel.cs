@@ -15,6 +15,8 @@ namespace IRacingOverlay.App.ViewModels;
 /// </summary>
 public sealed class RelativeViewModel : OverlayViewModelBase
 {
+    private readonly PaceTrendTracker _trends = new();
+
     private SessionMetadata? _metadata;
     private IReadOnlyList<RelativeRowViewModel> _rows = [];
     private int _slotsPerSide = new WidgetTuning().RelativeSlotsPerSide;
@@ -247,6 +249,7 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     private void UpdateRows(TelemetrySnapshot snapshot)
     {
         var computed = RelativeCalculator.Compute(snapshot, _metadata, _slotsPerSide);
+        _trends.Update(snapshot, _metadata, computed);
 
         var playerIndex = -1;
         for (var i = 0; i < computed.Count; i++)
@@ -275,7 +278,8 @@ public sealed class RelativeViewModel : OverlayViewModelBase
 
             if (sourceIndex >= 0 && sourceIndex < computed.Count)
             {
-                Rows[slot].Show(computed[sourceIndex]);
+                var row = computed[sourceIndex];
+                Rows[slot].Show(row, _trends.For(row.CarIdx));
             }
             else
             {

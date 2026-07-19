@@ -218,6 +218,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="44" />
                                         <ColumnDefinition Width="42" />
+                                        <ColumnDefinition Width="52" />
                                         <ColumnDefinition Width="70" />
                                     </Grid.ColumnDefinitions>
 
@@ -279,10 +280,63 @@
                                                    Style="{StaticResource IRatingBadgeText}" />
                                     </Border>
 
+                                    <!-- Catch/defend forecast: which way the gap is moving
+                                         (▼ shrinking, ▲ growing), how fast in s/lap, and -
+                                         only when the battle actually lands before the flag -
+                                         how many laps until it does. The arrow carries the
+                                         gap's direction and the colour carries what that
+                                         means for you, so neither has to do both jobs: green
+                                         is a place you take, amber is a place you lose, and
+                                         everything else stays quiet. It sits left of the
+                                         delta so the eye still lands on the delta first -
+                                         where they are now outranks where they'll be. -->
+                                    <StackPanel Grid.Column="6"
+                                                Orientation="Horizontal"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,10,0">
+                                        <StackPanel.Resources>
+                                            <Style x:Key="TrendTone" TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TrendTone}" Value="Gain">
+                                                        <Setter Property="Foreground" Value="{StaticResource Positive}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding TrendTone}" Value="Threat">
+                                                        <Setter Property="Foreground" Value="{StaticResource Warning}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Resources>
+                                        <TextBlock Text="{Binding TrendArrow}"
+                                                   VerticalAlignment="Center"
+                                                   FontFamily="{StaticResource FontSmall}"
+                                                   FontSize="8"
+                                                   Style="{StaticResource TrendTone}" />
+                                        <TextBlock Text="{Binding TrendRateText}"
+                                                   Margin="2,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   FontFamily="{StaticResource FontSmall}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   Typography.NumeralAlignment="Tabular"
+                                                   Style="{StaticResource TrendTone}" />
+                                        <!-- Laps-to-contact stays muted even on a coloured row:
+                                             the rate is the signal, the countdown is the detail. -->
+                                        <TextBlock Text="{Binding TrendLapsText}"
+                                                   Margin="4,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   FontFamily="{StaticResource FontSmall}"
+                                                   FontSize="10"
+                                                   FontWeight="Bold"
+                                                   Typography.NumeralAlignment="Tabular"
+                                                   Foreground="{StaticResource TextMuted}" />
+                                    </StackPanel>
+
                                     <!-- 8px, not 2: on the player row the amber wash draws a
                                          real edge here, and the delta sat all but touching
                                          it. On a transparent row the old 2px was invisible. -->
-                                    <StackPanel Grid.Column="6"
+                                    <StackPanel Grid.Column="7"
                                                 Orientation="Horizontal"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"

@@ -33,6 +33,10 @@ public sealed class RelativeRowViewModel : ObservableObject
     private Brush _classColorBrush = FallbackClassBrush;
     private string _deltaText = string.Empty;
     private LapDifference _lapDifference;
+    private string _trendArrow = string.Empty;
+    private string _trendRateText = string.Empty;
+    private string _trendLapsText = string.Empty;
+    private PaceTrendTone _trendTone;
 
     public bool IsVisible
     {
@@ -122,7 +126,35 @@ public sealed class RelativeRowViewModel : ObservableObject
         private set => SetProperty(ref _lapDifference, value);
     }
 
-    public void Show(RelativeRow row)
+    /// <summary>Which way the gap is moving: "▼" shrinking, "▲" growing.</summary>
+    public string TrendArrow
+    {
+        get => _trendArrow;
+        private set => SetProperty(ref _trendArrow, value);
+    }
+
+    /// <summary>How fast, in seconds per lap; <see cref="TrendArrow"/> carries the sign.</summary>
+    public string TrendRateText
+    {
+        get => _trendRateText;
+        private set => SetProperty(ref _trendRateText, value);
+    }
+
+    /// <summary>Laps until the battle arrives, shown only when it arrives before the flag.</summary>
+    public string TrendLapsText
+    {
+        get => _trendLapsText;
+        private set => SetProperty(ref _trendLapsText, value);
+    }
+
+    /// <summary>Drives the trend's colour: a catch you make, a catch made on you, or neither.</summary>
+    public PaceTrendTone TrendTone
+    {
+        get => _trendTone;
+        private set => SetProperty(ref _trendTone, value);
+    }
+
+    public void Show(RelativeRow row, PaceTrend trend)
     {
         IsVisible = true;
         IsPlayer = row.IsPlayer;
@@ -139,6 +171,7 @@ public sealed class RelativeRowViewModel : ObservableObject
         ClassColorBrush = ParseClassColor(row.ClassColorHex);
         DeltaText = row.IsPlayer ? string.Empty : SessionFormat.Delta(row.DeltaSeconds);
         LapDifference = row.LapDifference;
+        ShowTrend(row.IsPlayer ? PaceTrend.None : trend, isAhead: row.DeltaSeconds > 0);
     }
 
     public void Hide()
@@ -156,6 +189,15 @@ public sealed class RelativeRowViewModel : ObservableObject
         ClassColorBrush = FallbackClassBrush;
         DeltaText = string.Empty;
         LapDifference = LapDifference.SameLap;
+        ShowTrend(PaceTrend.None, isAhead: false);
+    }
+
+    private void ShowTrend(PaceTrend trend, bool isAhead)
+    {
+        TrendArrow = PaceTrendFormat.Arrow(trend);
+        TrendRateText = PaceTrendFormat.Rate(trend);
+        TrendLapsText = PaceTrendFormat.LapsToContact(trend);
+        TrendTone = PaceTrendFormat.Tone(trend, isAhead);
     }
 
     private static Brush ParseClassColor(string? hex)
