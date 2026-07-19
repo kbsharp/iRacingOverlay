@@ -15,7 +15,7 @@ Initialize-Dotnet
 Stop-RunningOverlay
 Invoke-Dotnet build src/IRacingOverlay.App --nologo --verbosity quiet
 
-$exe = Join-Path $RepoRoot 'src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.exe'
+$exe = Join-Path $RepoRoot 'src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.Dev.exe'
 Start-Process -FilePath $exe -ArgumentList '--demo'
 
 Write-Host "Overlay started in demo mode. This terminal can be closed safely." -ForegroundColor Green
