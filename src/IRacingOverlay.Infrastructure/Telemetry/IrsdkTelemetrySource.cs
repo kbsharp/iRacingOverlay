@@ -11,9 +11,11 @@ namespace IRacingOverlay.Infrastructure.Telemetry;
 /// </summary>
 public sealed class IrsdkTelemetrySource : ITelemetrySource
 {
-    // iRacing broadcasts 60 data frames per second; processing every 4th
-    // (~15 Hz) is plenty for the overlay and keeps CPU usage negligible.
-    private const int FramesPerUpdate = 4;
+    // iRacing broadcasts 60 data frames per second; we process every 2nd (~30 Hz).
+    // The text widgets would be happy at 15, but the radar is not: its blips move
+    // continuously, and at 15 Hz a car alongside visibly steps rather than slides.
+    // 30 Hz is the cheapest rate at which that reads as motion.
+    private const int FramesPerUpdate = 2;
 
     private const int MaxCars = 64;
 

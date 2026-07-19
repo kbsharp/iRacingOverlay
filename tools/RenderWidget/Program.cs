@@ -74,7 +74,13 @@ internal static class Program
         foreach (var (name, window) in windows)
         {
             var path = Path.Combine(outDir, $"{name}.png");
-            RenderToPng((FrameworkElement)window.Content, path);
+            // The borderless widgets size themselves to their content, so they
+            // render at their natural size. A window that declares a Width/Height
+            // (the settings window) is rendered at that size instead - measured
+            // unconstrained, its columns sprawl to the width of the longest hint
+            // string and the PNG says nothing about how it actually looks.
+            RenderToPng((FrameworkElement)window.Content, path,
+                new Size(window.Width, window.Height));
             Console.WriteLine($"Wrote {path}");
         }
 
@@ -356,10 +362,18 @@ internal static class Program
         };
     }
 
-    private static void RenderToPng(FrameworkElement content, string outPath)
+    private static void RenderToPng(FrameworkElement content, string outPath, Size declared)
     {
-        content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        content.Arrange(new Rect(content.DesiredSize));
+        // A NaN dimension means the window declared none, so that axis measures
+        // against infinity and the content decides its own size.
+        var available = new Size(
+            double.IsNaN(declared.Width) ? double.PositiveInfinity : declared.Width,
+            double.IsNaN(declared.Height) ? double.PositiveInfinity : declared.Height);
+
+        content.Measure(available);
+        content.Arrange(new Rect(new Size(
+            double.IsInfinity(available.Width) ? content.DesiredSize.Width : available.Width,
+            double.IsInfinity(available.Height) ? content.DesiredSize.Height : available.Height)));
         content.UpdateLayout();
 
         var width = (int)Math.Ceiling(content.ActualWidth);

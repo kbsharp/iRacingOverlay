@@ -169,7 +169,7 @@ Still open:
   resizing a widget by its corner is the natural next step
 - A speed readout somewhere, so the (already implemented) km/h / mph preference
   has something to act on
-- Configurable telemetry refresh rate (currently fixed at ~15Hz)
+- Configurable telemetry refresh rate (currently fixed at ~30Hz)
 - Settings profiles per car/track, so a wet oval layout differs from a road one
 - Pin the tray icon
 
