@@ -5,6 +5,7 @@ using IRacingOverlay.Core.Standings;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
 using Geometry = System.Windows.Media.Geometry;
+using GridLength = System.Windows.GridLength;
 
 namespace IRacingOverlay.App.ViewModels;
 
@@ -35,6 +36,7 @@ public sealed class StandingsRowViewModel : ObservableObject
     private LicenseTier _licenseTier;
     private string _iRatingText = string.Empty;
     private Brush _classColorBrush = Brushes.Gray;
+    private bool _showManufacturer;
     private bool _hasManufacturer;
     private string _manufacturerText = string.Empty;
     private Geometry? _manufacturerMark;
@@ -142,7 +144,17 @@ public sealed class StandingsRowViewModel : ObservableObject
         private set => SetProperty(ref _classColorBrush, value);
     }
 
-    /// <summary>True when the car's manufacturer is known, so the badge shows.</summary>
+    /// <summary>
+    /// Width of the badge column. Collapses to zero when the badges are switched
+    /// off so the driver name reclaims the space, rather than leaving a 30px
+    /// hole between the car number and the name. The column captions bind to the
+    /// matching property on <see cref="StandingsViewModel"/>.
+    /// </summary>
+    public GridLength ManufacturerColumnWidth
+        => _showManufacturer ? new GridLength(30) : new GridLength(0);
+
+    /// <summary>True when the badges are on <i>and</i> the car's manufacturer is
+    /// known, so the badge shows.</summary>
     public bool HasManufacturer
     {
         get => _hasManufacturer;
@@ -220,8 +232,10 @@ public sealed class StandingsRowViewModel : ObservableObject
         HeaderColorBrush = ViewModels.ClassColorBrush.Resolve(group.ClassColorHex);
     }
 
-    public void ShowRow(StandingsRow row, bool isAltRow)
+    public void ShowRow(StandingsRow row, bool isAltRow, bool showManufacturer)
     {
+        _showManufacturer = showManufacturer;
+
         IsHeader = false;
         IsRow = true;
         IsPlayer = row.IsPlayer;
@@ -236,11 +250,12 @@ public sealed class StandingsRowViewModel : ObservableObject
         LicenseTier = row.LicenseTier;
         IRatingText = row.IRating > 0 ? SessionFormat.IRating(row.IRating) : string.Empty;
         ClassColorBrush = ViewModels.ClassColorBrush.Resolve(row.ClassColorHex);
-        HasManufacturer = ManufacturerBadge.Has(row.Manufacturer);
+        HasManufacturer = showManufacturer && ManufacturerBadge.Has(row.Manufacturer);
         ManufacturerText = ManufacturerBadge.Abbrev(row.Manufacturer);
         ManufacturerMark = ManufacturerBadge.Mark(row.Manufacturer);
-        // Computed from the two above, so it needs its own notification.
+        // Both computed from fields above, so they need their own notifications.
         OnPropertyChanged(nameof(UsesManufacturerText));
+        OnPropertyChanged(nameof(ManufacturerColumnWidth));
         BestText = StandingsFormat.LapTime(row.BestLapSeconds);
         IsSessionBest = row.IsSessionBestLap;
         LastDeltaText = row.LastDeltaSeconds is { } d ? SessionFormat.Delta(d) : TelemetryFormat.Placeholder;

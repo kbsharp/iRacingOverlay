@@ -587,6 +587,22 @@
                         <TextBlock Grid.Column="2" Style="{StaticResource TuningValue}"
                                    Text="{Binding StandingsMaxPerClass}" />
                     </Grid>
+
+                    <CheckBox IsChecked="{Binding ShowManufacturerBadges}" Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Manufacturer badges in the standings" VerticalAlignment="Center" />
+                            <Border Background="{StaticResource Warning}" Opacity="0.85"
+                                    CornerRadius="2" Padding="4,0" Margin="6,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="EXPERIMENTAL"
+                                           FontFamily="{StaticResource FontSmall}"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="#101010" />
+                            </Border>
+                        </StackPanel>
+                    </CheckBox>
+                    <TextBlock Style="{StaticResource Hint}"
+                               Text="Adds a car-maker column to the standings. Off by default: only some makes have a logo, so the rest fall back to a short text abbreviation (DAL, LIG, RAD, RUF) and the column reads as a mix." />
                 </StackPanel>
             </Border>
 

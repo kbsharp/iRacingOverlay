@@ -5,6 +5,7 @@ using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Standings;
 using IRacingOverlay.Core.Telemetry;
+using GridLength = System.Windows.GridLength;
 
 namespace IRacingOverlay.App.ViewModels;
 
@@ -17,6 +18,7 @@ namespace IRacingOverlay.App.ViewModels;
 public sealed class StandingsViewModel : OverlayViewModelBase
 {
     private int _maxPerClass = new WidgetTuning().StandingsMaxPerClass;
+    private bool _showManufacturerBadges = new OverlaySettings().ShowManufacturerBadges;
 
     private SessionMetadata? _metadata;
     private string _sessionText = "SESSION";
@@ -53,8 +55,26 @@ public sealed class StandingsViewModel : OverlayViewModelBase
 
     public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
 
+    /// <summary>Width of the badge column in the caption band, kept in step with
+    /// the rows' own <see cref="StandingsRowViewModel.ManufacturerColumnWidth"/>.</summary>
+    public GridLength ManufacturerColumnWidth
+        => _showManufacturerBadges ? new GridLength(30) : new GridLength(0);
+
+    /// <summary>Whether the "CAR" caption above the badge column is shown.</summary>
+    public bool ShowManufacturerBadges => _showManufacturerBadges;
+
     public override void ApplySettings(OverlaySettings settings)
-        => _maxPerClass = settings.Tuning.StandingsMaxPerClass;
+    {
+        _maxPerClass = settings.Tuning.StandingsMaxPerClass;
+        _showManufacturerBadges = settings.ShowManufacturerBadges;
+        OnPropertyChanged(nameof(ManufacturerColumnWidth));
+        OnPropertyChanged(nameof(ShowManufacturerBadges));
+
+        // The rows themselves pick the change up on the next telemetry frame
+        // (~66ms) - there's no cached snapshot to re-render here, and a stale
+        // frame replayed through the standings would fight the in-place slot
+        // updates.
+    }
 
     public override void ApplyTelemetry(TelemetrySnapshot snapshot)
     {
@@ -93,7 +113,7 @@ public sealed class StandingsViewModel : OverlayViewModelBase
             }
             else
             {
-                Items[i].ShowRow(plan[i].Row!, isAltRow: carRowIndex % 2 == 1);
+                Items[i].ShowRow(plan[i].Row!, isAltRow: carRowIndex % 2 == 1, _showManufacturerBadges);
                 carRowIndex++;
             }
         }

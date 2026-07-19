@@ -35,13 +35,24 @@ translucent wash of the sim's `CarClassColor`) with the class short name, its
 and a car count. Under it, its cars ordered by position, each with a
 full-height class-colour bar flush to the panel's left edge, and alternating
 (zebra) row shading. Each car row: class position, car number, a
-**manufacturer badge**, driver name, a license badge and a neutral iRating
+an optional **manufacturer badge**, driver name, a license badge and a neutral iRating
 badge (the same chips as the relative), then **Int** (interval to the car
 ahead), **Gap** (to the class
 leader), **Fastest** (best lap, purple when session-best), and **Last**
 (last-lap delta to that car's own best, red when slower).
 
-**Manufacturer badge:** each car row carries a badge for the car's make,
+**Manufacturer badge — off by default, opt-in.** `OverlaySettings.ShowManufacturerBadges`
+(Settings → Tuning, "Manufacturer badges in the standings", tagged EXPERIMENTAL)
+gates the whole column. It defaults to **off**, including for an existing
+settings file, because the mark set is incomplete: a mixed field renders some
+cars as a vector logo and others as a text abbreviation (see below), which reads
+as inconsistent rather than as a deliberate scheme. Switching it off collapses
+the column to zero width — the "CAR" caption and the 30px cell both go, and the
+driver name reclaims the space, so there's no empty gutter left behind. The rows
+pick the change up on the next telemetry frame (~66ms); the caption band updates
+immediately. Turn it on to get everything described below.
+
+Each car row then carries a badge for the car's make,
 derived from the sim's roster. iRacing exposes no manufacturer field — only a
 `CarPath` folder token (`ferrari296gt3`) and `CarScreenName` — so
 `ManufacturerResolver` (Core) brand-matches those strings to a `Manufacturer`;
@@ -804,9 +815,13 @@ makes these numbers choosable.
 |---|---|
 | **Widgets** | Per widget: on/off, a scale override (100/125/150/175%), and click-through. |
 | **Units** | Fuel litres/gallons, temperature °C/°F, speed km/h / mph. |
-| **Tuning** | Fuel safety margin (0–5 laps), setup flash (5–300 s), radar range (15–200 m), relative cars each side (1–8), standings cars per class (5–60). |
+| **Tuning** | Fuel safety margin (0–5 laps), the setup reminder toggle + its flash (5–300 s), radar range (15–200 m), relative cars each side (1–8), standings cars per class (5–60), manufacturer badges (experimental, off by default). |
 | **General** | Start with Windows; only show widgets while iRacing is running; **Reset widget positions**. |
 
+- **An amber `EXPERIMENTAL` chip** marks a setting that's off by default because
+  the feature behind it is incomplete rather than merely optional — currently
+  just the manufacturer badges. The hint line under it must say *what* is
+  unfinished, so the tag is information rather than a warning label.
 - **Per-widget scale** overrides the shared tray scale for that widget only — a
   standings table and a radar rarely want the same size. Absent override = follow
   the shared scale.
