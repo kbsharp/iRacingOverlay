@@ -12,7 +12,7 @@ namespace IRacingOverlay.Infrastructure.Telemetry;
 /// </summary>
 public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
 {
-    private const double TickSeconds = 1.0 / 15; // match the live source's ~15 Hz
+    private const double TickSeconds = 1.0 / 30; // match the live source's ~30 Hz
     private const int PlayerIdx = 0;
     private const double PlayerLapSeconds = 15;  // short laps so estimates appear fast
     private const float StartingFuelLiters = 45f;

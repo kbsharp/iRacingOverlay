@@ -1,26 +1,40 @@
 <Window x:Class="IRacingOverlay.App.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="iRacing Overlay — Settings"
         Icon="Assets/app.ico"
-        Height="640" Width="520"
-        MinHeight="420" MinWidth="460"
+        Height="820" Width="880"
+        MinHeight="460" MinWidth="620"
         WindowStartupLocation="CenterScreen"
-        Background="#161A21"
+        Background="#12161C"
         FontFamily="{StaticResource FontText}"
         FontSize="13"
         Foreground="{StaticResource TextPrimary}">
 
     <!--
-        Deliberately a NORMAL window: standard chrome, a taskbar entry, and no
+        Deliberately a NORMAL window: a taskbar entry, real resize/snap, and no
         AllowsTransparency. The overlay widgets are borderless and transparent
         because they sit over the sim, but that also costs them ClearType. This
-        one is used alt-tabbed in the pits, so it gets proper text rendering and
-        a title bar you can close.
+        one is used alt-tabbed in the pits, so it gets proper text rendering.
+
+        The caption is drawn by us rather than by Windows. WindowChrome (not
+        WindowStyle="None") is what makes that possible without giving up snap,
+        Aero drag or sane maximised bounds: it keeps the real window frame and
+        just extends the client area up over the title bar, so the header below
+        can wear the same panel material as the widgets. Anything clickable up
+        there needs IsHitTestVisibleInChrome, or the chrome swallows the click
+        and starts a window drag instead.
 
         There is no OK/Apply: every control writes through immediately so the
         overlay reacts while you adjust it.
     -->
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="38" ResizeBorderThickness="6"
+                            GlassFrameThickness="0" CornerRadius="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
 
     <Window.Resources>
         <Style x:Key="SectionHeading" TargetType="TextBlock">
@@ -31,13 +45,61 @@
             <Setter Property="Margin" Value="0,0,0,8" />
         </Style>
 
+        <!-- Same material as a widget panel: the top-lit gradient, the 1px
+             highlight along the top edge and the 6px corners. That is the whole
+             point of the restyle - a settings card should look like a standings
+             panel, not like a generic dialog groupbox. -->
         <Style x:Key="SectionCard" TargetType="Border">
-            <Setter Property="Background" Value="#1E242E" />
-            <Setter Property="BorderBrush" Value="{StaticResource Separator}" />
+            <Setter Property="Background" Value="{StaticResource PanelBackground}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="Padding" Value="14" />
             <Setter Property="Margin" Value="0,0,0,14" />
+        </Style>
+
+        <!-- Minimise/close. Flat until hovered; close goes red on hover the way
+             every Windows title bar does, because that one is muscle memory. -->
+        <Style x:Key="CaptionButton" TargetType="Button">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="Transparent" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#1FFFFFFF" />
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CloseButton" TargetType="Button" BasedOn="{StaticResource CaptionButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="Transparent" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#D8202B" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="Hint" TargetType="TextBlock">
@@ -296,8 +358,57 @@
         </Style>
     </Window.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18">
-        <StackPanel>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Title bar. Wears the widget header band so the top of the window
+             reads as part of the same app as the panels below it. -->
+        <Border Grid.Row="0" Background="{StaticResource PanelBackground}"
+                BorderBrush="{StaticResource Separator}" BorderThickness="0,0,0,1">
+            <Grid Height="38">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 1px lit edge along the very top, as on every widget panel. -->
+                <Border Grid.ColumnSpan="3" Height="1" VerticalAlignment="Top"
+                        Background="{StaticResource PanelTopHighlight}" />
+
+                <Image Grid.Column="0" Source="Assets/app.ico" Width="16" Height="16"
+                       Margin="12,0,0,0" VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
+
+                <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"
+                           FontFamily="{StaticResource FontSmall}" FontSize="11" FontWeight="Bold"
+                           Foreground="{StaticResource TextSecondary}"
+                           Text="IRACING OVERLAY — SETTINGS" />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,4,0"
+                            VerticalAlignment="Center">
+                    <Button Style="{StaticResource CaptionButton}" Content="&#xE921;"
+                            ToolTip="Minimise" Click="MinimiseClick" />
+                    <Button Style="{StaticResource CloseButton}" Content="&#xE8BB;"
+                            ToolTip="Close" Click="CloseClick" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Two columns so the whole settings set fits without scrolling at the
+             default size; the ScrollViewer is the fallback for a small window,
+             and "Auto" means its bar is absent entirely when nothing overflows. -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="18,16,18,4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="330" />
+                    <ColumnDefinition Width="*" MinWidth="330" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,7,0">
 
             <!-- Widgets -->
             <Border Style="{StaticResource SectionCard}">
@@ -395,6 +506,10 @@
                                Text="No widget shows a speed readout yet — the preference is here for when one does." />
                 </StackPanel>
             </Border>
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="7,0,0,0">
 
             <!-- Tuning -->
             <Border Style="{StaticResource SectionCard}">
@@ -498,6 +613,8 @@
                 </StackPanel>
             </Border>
 
-        </StackPanel>
-    </ScrollViewer>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
 </Window>

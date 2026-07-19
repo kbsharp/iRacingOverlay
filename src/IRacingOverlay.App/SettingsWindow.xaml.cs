@@ -14,6 +14,12 @@ public partial class SettingsWindow : Window
         InitializeComponent();
     }
 
+    // The caption is drawn in XAML rather than by Windows, so its two buttons
+    // have to do by hand what the native ones did for free.
+    private void MinimiseClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void CloseClick(object sender, RoutedEventArgs e) => Close();
+
     protected override void OnClosed(EventArgs e)
     {
         // The window is rebuilt each time it's opened, so its view model must let

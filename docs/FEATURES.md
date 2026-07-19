@@ -484,8 +484,11 @@ fire on background threads; all marshalling to the UI thread happens in
 ## Infrastructure adapters
 
 **`IrsdkTelemetrySource`** (live): wraps IRSDKSharper's `IRacingSdk`.
-- Throttles the sim's 60Hz data frames to ~15Hz (`UpdateInterval = 4`) —
-  plenty for a human-readable overlay, negligible CPU.
+- Throttles the sim's 60Hz data frames to ~30Hz (`UpdateInterval = 2`).
+  The text widgets would read fine at 15Hz, but the radar would not: its blips
+  move continuously, and at 15Hz a car drawing alongside visibly steps rather
+  than slides. 30Hz is the cheapest rate at which that reads as motion; CPU cost
+  is still negligible.
 - Reuses fixed-size buffers (`MaxCars = 64`) for the `CarIdx*` array reads
   every frame — no per-frame array allocation.
 - SDK variables read: `SessionTime`, `SessionNum`, `SessionTimeRemain`,
@@ -513,7 +516,7 @@ fire on background threads; all marshalling to the UI thread happens in
   `DriverSetupIsModified` for the fuel widget's setup strip.
 
 **`SimulatedTelemetrySource`** (`--demo`): drives the app without iRacing
-running, on a `System.Threading.Timer` ticking at the same ~15Hz as live
+running, on a `System.Threading.Timer` ticking at the same ~30Hz as live
 mode.
 - Builds its field from a selectable **race preset** (`RacePresets`,
   `Core/Demo`) modelled on a real iRacing series — its classes, class colours,
@@ -678,12 +681,33 @@ The user-facing control surface for everything that doesn't fit in a tray menu.
 Opened from the tray's **Settings...**; created lazily, since most sessions never
 open it.
 
-**It is deliberately a normal window** — standard chrome, a taskbar entry, and no
-`AllowsTransparency`. Every other window here is a borderless transparent overlay
-because it sits over the sim, but that also costs it ClearType (see Typography).
-The settings window is used alt-tabbed, in the pits, so it gets proper subpixel
-text rendering and a title bar you can close. Reusing the overlay panel material
-here would inherit the greyscale-AA problem for no benefit.
+**It is deliberately a normal window** — a taskbar entry, real resize and snap,
+and no `AllowsTransparency`. Every other window here is a borderless transparent
+overlay because it sits over the sim, but that also costs it ClearType (see
+Typography). The settings window is used alt-tabbed, in the pits, so it gets
+proper subpixel text rendering.
+
+**Its caption is drawn by the app, not by Windows.** A stock light title bar sat
+above the dark panels looking like a different application, so the window uses
+`WindowChrome` (`CaptionHeight="38"`, `GlassFrameThickness="0"`,
+`UseAeroCaptionButtons="False"`) to extend the client area up over the title bar
+and draws its own header there — same `PanelBackground` gradient, same 1px
+`PanelTopHighlight` along the top edge, same `Separator` underline as a widget
+panel. `WindowChrome` rather than `WindowStyle="None"` specifically: the latter
+would cost snap layouts, Aero drag and correct maximised bounds. Anything
+clickable in the caption needs `WindowChrome.IsHitTestVisibleInChrome="True"`, or
+the chrome swallows the click and starts a window drag instead — that attached
+property is on the `CaptionButton` style, so new caption controls get it by
+inheriting from it. Minimise and close are wired in code-behind, since without
+the native buttons nothing else does that.
+
+Note this is the caption only: the *cards* now use the shared panel material, but
+the window itself still isn't transparent, so the text keeps ClearType.
+
+**The layout is two columns** (`880x820`) sized so the whole settings set fits
+without scrolling at the default size. The `ScrollViewer` is still there for a
+resized-down window, and `VerticalScrollBarVisibility="Auto"` means its bar is
+absent entirely when nothing overflows rather than sitting there greyed out.
 
 **There is no OK/Apply.** Every control writes straight through to
 `SettingsService`, which raises `Changed`, which makes `App.ApplySettings` push

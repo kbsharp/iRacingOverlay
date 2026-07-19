@@ -155,6 +155,13 @@ of seconds, so it hasn't been worth adding.
     `Application.Current.Resources`.
   - It needs the same `Color`/`Brush`/`Size` alias workaround as `App` (see
     CLAUDE.md), because it also sets `UseWindowsForms`.
+  - **A window that declares a `Width`/`Height` is measured at that size**, not
+    against infinity. The borderless widgets size themselves to their content, so
+    infinity is right for them; the settings window is a fixed-size window, and
+    measured unconstrained its two columns sprawled to the width of the longest
+    hint string — the PNG looked plausible and told you nothing about the real
+    window. The declared size is passed down to `RenderToPng`; `NaN` on an axis
+    means "no declared size", so that axis still measures against infinity.
 - **Live iRacing not connecting:** confirm `irsdkEnableMem=1` in iRacing's
   `app.ini` (on by default) and that the sim is running in windowed or
   borderless mode — overlays don't draw over exclusive fullscreen.
@@ -179,7 +186,8 @@ default. This means:
   widget windows are borderless/topmost with no taskbar entry — they can get lost
   behind a fullscreen game with no way back except the tray.
 - **The settings window is the exception to all of the above.** It's a normal
-  chromed window with a taskbar entry, it isn't in `_widgets`, and it genuinely
+  resizable window with a taskbar entry (though it draws its own caption via
+  `WindowChrome` — see FEATURES), it isn't in `_widgets`, and it genuinely
   closes rather than hiding (it's rebuilt on next open). Its view model subscribes
   to `SettingsService.Changed`, so `SettingsWindow.OnClosed` must call
   `SettingsViewModel.Detach()` — otherwise every open leaks a live handler onto a
