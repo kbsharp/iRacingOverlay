@@ -155,9 +155,12 @@ bottom opposite the top-left standings, then restored from saved settings. No
 widget-name label — the session strip heads it.
 
 **Session strip (top):**
-- Session type (from the sim's session-info YAML, e.g. "RACE") + either time
-  remaining (`m:ss` / `h:mm:ss`) or laps remaining, whichever the session
-  reports — `RelativeViewModel.UpdateHeader`.
+- Either time remaining (`m:ss` / `h:mm:ss`) or laps remaining, whichever the
+  session reports — `RelativeViewModel.UpdateHeader`. **No session-type label
+  here**, unlike the standings: this strip has no room for one (see *Strip width
+  budget* below), and it is the least load-bearing token on it — you know which
+  session you are in, and the flag chip beside the clock carries the race state
+  that actually changes what you do.
 - Lap counter (`SessionFormat.LapCounter`) — `Ln/total` when the session has a
   scheduled lap count (from `Session: SessionLaps` in the session-info YAML,
   carried on `SessionMetadata.SessionLapsByNum`), or just `Ln` for a timed
@@ -184,6 +187,35 @@ widget-name label — the session strip heads it.
   `WeekendOptions: IncidentLimit`), falling back to `Nx` when the session is
   unlimited. Colour-graded by `SessionFormat.IncidentLevel`: amber from 70% of
   the limit, red from 90%, so it warns before the limit rather than after.
+
+**Strip width budget.** The strip is a `Grid`, and deliberately not a
+`DockPanel`. Under a `DockPanel` the left-hand tokens claimed width first and
+the right-hand telemetry group — being the last child — got whatever remained,
+which at 470px was routinely nothing: it collapsed to zero width and drew
+straight *over* the flag chip. Now the right group sits in an `Auto` column,
+which `Grid` measures **before** the star column, so it always reserves its real
+width and nothing can overlap it — including any chip added to the strip later.
+
+All columns are `Auto` with a single trailing `*` spacer, so the tokens pack
+left. **Do not make the label column a star** — even a capped one. A star column
+claims its whole width for a short label like `RACE` and shoves every token after
+it toward the middle of the strip.
+
+The relative carries no session-type label at all, because at 470px it does not
+fit one alongside the flag chip, the projected-iRating chip, brake bias, both
+temps, wetness and incidents. Three alternatives were tried and rejected, each
+worse than omitting it:
+- `TextTrimming` on its own renders a `..` stub — it costs width and conveys
+  nothing.
+- A capped star column fixes the overflow but causes the centre-drift above.
+- Collapsing the label below a legibility threshold needs an `ActualWidth`
+  binding, which latches at zero: a `Collapsed` element reports `ActualWidth` 0,
+  so it can never measure its way back to visible.
+
+The standings keeps its label — at 560px it has the room — and shortens it with
+`SessionFormat.ShortType`, which reduces the session to one word ("Open Qualify"
+and "Lone Qualify" both read `QUALIFY`, "Heat Race" reads `RACE`). An
+unrecognised name passes through uppercased rather than being dropped.
 
 **Row list:** fixed 3-ahead / player / 3-behind slots (`slotsPerSide = 3` in
 both `RelativeCalculator.Compute` and `RelativeViewModel`). Rows are updated
