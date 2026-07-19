@@ -172,4 +172,46 @@ public class SessionFormatTests
     {
         Assert.Equal(string.Empty, SessionFormat.LapCounter(lap, 25));
     }
+
+    // ShortType exists to keep the session strip inside its width budget - the
+    // long names are what pushed the flag chip into the telemetry group.
+    [Theory]
+    [InlineData("Open Qualify", "QUALIFY")]
+    [InlineData("Lone Qualify", "QUALIFY")]
+    [InlineData("Qualify", "QUALIFY")]
+    [InlineData("Practice", "PRACTICE")]
+    [InlineData("Race", "RACE")]
+    [InlineData("Heat Race", "RACE")]
+    [InlineData("Warmup", "WARMUP")]
+    [InlineData("Offline Testing", "TESTING")]
+    public void ShortType_ReducesTheSessionToOneWord(string sessionType, string expected)
+    {
+        Assert.Equal(expected, SessionFormat.ShortType(sessionType));
+    }
+
+    [Fact]
+    public void ShortType_UnknownSession_PassesThroughUppercasedRatherThanBlank()
+    {
+        // A name we don't recognise is still worth showing - dropping it would
+        // leave the strip with no session label at all.
+        Assert.Equal("FEATURE EVENT", SessionFormat.ShortType("Feature Event"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void ShortType_NoSession_IsEmpty(string? sessionType)
+    {
+        Assert.Equal(string.Empty, SessionFormat.ShortType(sessionType!));
+    }
+
+    [Fact]
+    public void Header_ShortensTheSessionLabel()
+    {
+        var header = SessionFormat.Header("Open Qualify", 183, 0);
+
+        Assert.Equal("QUALIFY", header.TypeText);
+        Assert.Equal("3:03", header.RemainingText);
+    }
 }

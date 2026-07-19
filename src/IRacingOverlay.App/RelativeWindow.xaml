@@ -34,86 +34,121 @@
             </Border.Effect>
             <StackPanel>
 
-                <!-- session strip: session/time/lap · flag | brake bias · temps · wetness · incidents -->
-                <DockPanel Margin="0,0,0,7">
-                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" DockPanel.Dock="Left">
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Setter Property="Fill" Value="{StaticResource Warning}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                        <Setter Property="Fill" Value="{StaticResource Positive}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
-                    <!-- Session label stays quiet; the figure beside it is the
-                         strip's headline. Split into two TextBlocks (rather than
-                         one "RACE · 3:24" string) precisely so they can carry
-                         different sizes - joined, the strip read as a row of
-                         equal-weight tokens. -->
-                    <TextBlock Text="{Binding SessionTypeText}"
-                               Margin="9,0,0,0"
-                               VerticalAlignment="Center"
-                               FontSize="12"
-                               FontWeight="Bold"
-                               Foreground="{StaticResource TextSecondary}" />
-                    <TextBlock Text="·"
-                               Margin="6,0,0,0"
-                               VerticalAlignment="Center"
-                               FontSize="12"
-                               FontWeight="Bold"
-                               Foreground="{StaticResource TextMuted}"
-                               Visibility="{Binding HasSessionRemaining, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding SessionRemainingText}"
-                               Margin="6,0,0,0"
-                               VerticalAlignment="Center"
-                               FontSize="15"
-                               FontWeight="Bold"
-                               Typography.NumeralAlignment="Tabular"
-                               Foreground="{StaticResource TextPrimary}" />
-                    <TextBlock Text="{Binding LapCounterText}"
-                               Margin="8,0,0,0"
-                               VerticalAlignment="Center"
-                               FontSize="12"
-                               FontWeight="Bold"
-                               Typography.NumeralAlignment="Tabular"
-                               Foreground="{StaticResource TextSecondary}" />
-                    <Border Margin="8,0,0,0"
-                            Style="{StaticResource FlagChipBackground}"
-                            Visibility="{Binding HasFlag, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="{Binding FlagText}" Style="{StaticResource FlagChipText}" />
-                    </Border>
-                    <!-- projected iRating: arrow + points at stake, hidden until a
-                         racing lap is complete and captured once the flag is out. -->
-                    <Border Margin="8,0,0,0"
-                            DataContext="{Binding IRating}"
-                            Style="{StaticResource RatingDeltaChipBackground}"
-                            Visibility="{Binding HasValue, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Arrow}" Style="{StaticResource RatingDeltaChipText}" />
-                            <TextBlock Text="{Binding DeltaText}"
-                                       Margin="3,0,0,0"
-                                       Style="{StaticResource RatingDeltaChipText}" />
-                        </StackPanel>
-                    </Border>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- session strip: session/time/lap · flag | brake bias · temps · wetness · incidents
+
+                     A Grid, not a DockPanel, and deliberately so. Under a DockPanel
+                     the left-docked tokens claimed width first and the right-hand
+                     telemetry group - being the last child - was left with whatever
+                     remained, which at 470px was routinely nothing: the group
+                     collapsed to zero width and drew straight over the flag chip.
+                     Adding one more chip to the left made it worse, so every future
+                     chip would have re-broken it. Here the right group sits in an
+                     Auto column, which Grid measures *before* the star column, so it
+                     always reserves its real width; the left group takes the
+                     remainder and the session label (below) absorbs the squeeze. -->
+                <Grid Margin="0,0,0,7">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.Column="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <!-- trailing spacer: keeps the tokens packed left rather than
+                                 letting a star column push them toward the middle. -->
+                            <ColumnDefinition Width="*" MinWidth="0" />
+                        </Grid.ColumnDefinitions>
+                        <Ellipse Grid.Column="0" Width="8" Height="8" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{StaticResource Warning}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                            <Setter Property="Fill" Value="{StaticResource Positive}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <!-- No session-type label here, unlike the standings. This strip
+                             cannot fit one: with the flag chip, the projected-iRating
+                             chip, brake bias, both temps, wetness and incidents all up,
+                             470px is already full, and every attempt to make the label
+                             yield was worse than omitting it - trimming renders a ".."
+                             stub that costs width and says nothing, and a capped star
+                             column shoves the whole strip toward the middle whenever the
+                             label is short. The information is not lost: the standings
+                             carries the session type, and the flag chip beside the clock
+                             carries the race state that actually changes what you do. -->
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding SessionRemainingText}"
+                                   Margin="9,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="15"
+                                   FontWeight="Bold"
+                                   Typography.NumeralAlignment="Tabular"
+                                   Foreground="{StaticResource TextPrimary}" />
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding LapCounterText}"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Typography.NumeralAlignment="Tabular"
+                                   Foreground="{StaticResource TextSecondary}" />
+                        <Border Grid.Column="3"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource FlagChipBackground}"
+                                Visibility="{Binding HasFlag, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding FlagText}" Style="{StaticResource FlagChipText}" />
+                        </Border>
+                        <!-- projected iRating: arrow + points at stake, hidden until a
+                             racing lap is complete and captured once the flag is out. -->
+                        <Border Grid.Column="4"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                DataContext="{Binding IRating}"
+                                Style="{StaticResource RatingDeltaChipBackground}"
+                                Visibility="{Binding HasValue, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Arrow}" Style="{StaticResource RatingDeltaChipText}" />
+                                <TextBlock Text="{Binding DeltaText}"
+                                           Margin="3,0,0,0"
+                                           Style="{StaticResource RatingDeltaChipText}" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- VerticalAlignment on the group, not on its children: a
+                         horizontal StackPanel stretches its children to full height,
+                         so the centred brake glyph and the top-rendered text beside
+                         it disagreed by a couple of pixels. Centring the group keeps
+                         glyph and text on one line. -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- brake bias, marked with a disc rather than a "BB" prefix:
                              the glyph is read at a glance where two letters aren't. -->
                         <StackPanel Orientation="Horizontal"
                                     Margin="10,0,0,0"
+                                    VerticalAlignment="Center"
                                     Visibility="{Binding HasBrakeBias, Converter={StaticResource BoolToVis}}">
                             <Path Style="{StaticResource BrakeDiscMark}" />
                             <TextBlock Text="{Binding BrakeBiasText}"
                                        Margin="4,0,0,0"
+                                       VerticalAlignment="Center"
                                        Style="{StaticResource Caption}"
                                        Typography.NumeralAlignment="Tabular" />
                         </StackPanel>
-                        <TextBlock Text="{Binding TrackTempText}" Margin="10,0,0,0" Style="{StaticResource Caption}" />
-                        <TextBlock Text="{Binding AirTempText}" Margin="10,0,0,0" Style="{StaticResource Caption}" />
+                        <TextBlock Text="{Binding TrackTempText}" Margin="10,0,0,0" VerticalAlignment="Center" Style="{StaticResource Caption}" />
+                        <TextBlock Text="{Binding AirTempText}" Margin="10,0,0,0" VerticalAlignment="Center" Style="{StaticResource Caption}" />
                         <TextBlock Text="{Binding WetnessText}"
                                    Margin="10,0,0,0"
+                                   VerticalAlignment="Center"
                                    FontSize="10"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource Warning}"
@@ -122,6 +157,7 @@
                              nears, so it's a signal rather than a static number. -->
                         <TextBlock Text="{Binding IncidentsText}"
                                    Margin="10,0,0,0"
+                                   VerticalAlignment="Center"
                                    Typography.NumeralAlignment="Tabular">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
@@ -138,7 +174,7 @@
                             </TextBlock.Style>
                         </TextBlock>
                     </StackPanel>
-                </DockPanel>
+                </Grid>
 
                 <Border Height="1" Background="{StaticResource Separator}" Margin="0,0,0,3" />
 
@@ -243,11 +279,14 @@
                                                    Style="{StaticResource IRatingBadgeText}" />
                                     </Border>
 
+                                    <!-- 8px, not 2: on the player row the amber wash draws a
+                                         real edge here, and the delta sat all but touching
+                                         it. On a transparent row the old 2px was invisible. -->
                                     <StackPanel Grid.Column="6"
                                                 Orientation="Horizontal"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"
-                                                Margin="0,0,2,0">
+                                                Margin="0,0,8,0">
                                         <Border Margin="0,0,6,0"
                                                 Style="{StaticResource PitBadgeBackground}"
                                                 Visibility="{Binding InPits, Converter={StaticResource BoolToVis}}">

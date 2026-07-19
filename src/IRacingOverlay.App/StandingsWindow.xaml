@@ -35,78 +35,118 @@
 
             <StackPanel>
 
-                <!-- session strip (no widget-name label - the content identifies it) -->
-                <DockPanel Margin="0,0,0,8">
-                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" DockPanel.Dock="Left">
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Setter Property="Fill" Value="{StaticResource Warning}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                        <Setter Property="Fill" Value="{StaticResource Positive}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
-                    <TextBlock Text="{Binding ConnectionStatus}"
-                               DockPanel.Dock="Right"
-                               VerticalAlignment="Center"
-                               Style="{StaticResource Caption}" />
-                    <!-- Session label stays quiet; the figure beside it is the
-                         strip's headline. See RelativeWindow.xaml for why these
-                         are two TextBlocks rather than one joined string. -->
-                    <TextBlock Text="{Binding SessionTypeText}"
-                               Margin="9,0,0,0"
-                               VerticalAlignment="Center"
-                               FontSize="13"
-                               FontWeight="Bold"
-                               Foreground="{StaticResource TextSecondary}" />
-                    <TextBlock Text="·"
-                               Margin="7,0,0,0"
-                               VerticalAlignment="Center"
-                               FontSize="13"
-                               FontWeight="Bold"
-                               Foreground="{StaticResource TextMuted}"
-                               Visibility="{Binding HasSessionRemaining, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding SessionRemainingText}"
-                               Margin="7,0,0,0"
-                               VerticalAlignment="Center"
-                               FontSize="17"
-                               FontWeight="Bold"
-                               Typography.NumeralAlignment="Tabular"
-                               Foreground="{StaticResource TextPrimary}" />
-                    <TextBlock Text="{Binding LapCounterText}"
-                               Margin="9,0,0,0"
-                               VerticalAlignment="Center"
-                               FontSize="13"
-                               FontWeight="Bold"
-                               Typography.NumeralAlignment="Tabular"
-                               Foreground="{StaticResource TextSecondary}" />
-                    <!-- projected iRating. The wider widget has room for where the
-                         rating actually lands, which the relative strip doesn't. -->
-                    <Border Margin="12,0,0,0"
-                            VerticalAlignment="Center"
-                            DataContext="{Binding IRating}"
-                            Style="{StaticResource RatingDeltaChipBackground}"
-                            Visibility="{Binding HasValue, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Arrow}" Style="{StaticResource RatingDeltaChipText}" />
-                            <TextBlock Text="{Binding DeltaText}"
-                                       Margin="3,0,0,0"
-                                       Style="{StaticResource RatingDeltaChipText}" />
-                            <TextBlock Text="{Binding Projected}"
-                                       Margin="7,0,0,0"
-                                       Style="{StaticResource ChipText}"
-                                       Typography.NumeralAlignment="Tabular"
-                                       Foreground="{StaticResource TextSecondary}" />
-                        </StackPanel>
-                    </Border>
-                    <TextBlock Text="{Binding CarCountText}"
+                <!-- session strip (no widget-name label - the content identifies it).
+                     Grid rather than DockPanel, for the reason documented at length
+                     in RelativeWindow.xaml: the right-hand group must reserve its
+                     width before the left tokens claim theirs, or it collapses and
+                     overlaps them. This strip has more room to spare at 560px, but
+                     it is the same structure and gets the same treatment so the two
+                     can't drift apart. -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.Column="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <!-- Auto, so the label takes exactly its own width and the
+                                 tokens after it stay packed left. A star column (even a
+                                 capped one) claims its whole width for a short label like
+                                 "RACE" and shoves everything after it toward the middle
+                                 of the strip. At 560px this widget has the room to spare,
+                                 so it does not need the overflow handling the relative
+                                 does. -->
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <!-- trailing spacer: keeps the tokens packed left. -->
+                            <ColumnDefinition Width="*" MinWidth="0" />
+                        </Grid.ColumnDefinitions>
+                        <Ellipse Grid.Column="0" Width="8" Height="8" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{StaticResource Warning}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                            <Setter Property="Fill" Value="{StaticResource Positive}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <!-- Session label stays quiet; the figure beside it is the
+                             strip's headline. See RelativeWindow.xaml for why these
+                             are two TextBlocks rather than one joined string. -->
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding SessionTypeText}"
+                                   Margin="9,0,0,0"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   FontSize="13"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextSecondary}" />
+                        <TextBlock Grid.Column="2"
+                                   Text="·"
+                                   Margin="7,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="13"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextMuted}"
+                                   Visibility="{Binding HasSessionRemaining, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Grid.Column="3"
+                                   Text="{Binding SessionRemainingText}"
+                                   Margin="7,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="17"
+                                   FontWeight="Bold"
+                                   Typography.NumeralAlignment="Tabular"
+                                   Foreground="{StaticResource TextPrimary}" />
+                        <TextBlock Grid.Column="4"
+                                   Text="{Binding LapCounterText}"
+                                   Margin="9,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="13"
+                                   FontWeight="Bold"
+                                   Typography.NumeralAlignment="Tabular"
+                                   Foreground="{StaticResource TextSecondary}" />
+                        <!-- projected iRating. The wider widget has room for where the
+                             rating actually lands, which the relative strip doesn't. -->
+                        <Border Grid.Column="5"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                DataContext="{Binding IRating}"
+                                Style="{StaticResource RatingDeltaChipBackground}"
+                                Visibility="{Binding HasValue, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Arrow}" Style="{StaticResource RatingDeltaChipText}" />
+                                <TextBlock Text="{Binding DeltaText}"
+                                           Margin="3,0,0,0"
+                                           Style="{StaticResource RatingDeltaChipText}" />
+                                <TextBlock Text="{Binding Projected}"
+                                           Margin="7,0,0,0"
+                                           Style="{StaticResource ChipText}"
+                                           Typography.NumeralAlignment="Tabular"
+                                           Foreground="{StaticResource TextSecondary}" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Grid.Column="6"
+                                   Text="{Binding CarCountText}"
+                                   Margin="12,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource Caption}" />
+                    </Grid>
+
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding ConnectionStatus}"
                                Margin="12,0,0,0"
                                VerticalAlignment="Center"
                                Style="{StaticResource Caption}" />
-                </DockPanel>
+                </Grid>
 
                 <!-- column captions, on a full-bleed header band so the table has a
                      visible head rather than a floating row of grey labels -->
@@ -137,7 +177,10 @@
                         <TextBlock Grid.Column="7" Text="INT" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
                         <TextBlock Grid.Column="8" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
                         <TextBlock Grid.Column="9" Text="FASTEST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
-                        <TextBlock Grid.Column="10" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
+                        <!-- 6px to match FASTEST: the last column sat flush against the
+                             row edge, which only reads as wrong once the player row's
+                             amber wash draws a visible boundary there. -->
+                        <TextBlock Grid.Column="10" Text="LAST" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
                     </Grid>
                 </Border>
 
@@ -350,6 +393,7 @@
 
                                         <TextBlock Grid.Column="10"
                                                    Text="{Binding LastDeltaText}"
+                                                   Margin="0,0,6,0"
                                                    FontSize="12"
                                                    FontWeight="SemiBold">
                                             <TextBlock.Style>

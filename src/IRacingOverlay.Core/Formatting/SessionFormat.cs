@@ -111,19 +111,79 @@ public static class SessionFormat
     public readonly record struct SessionHeader(string TypeText, string RemainingText);
 
     /// <summary>
+    /// The session type reduced to the one word that identifies it.
+    ///
+    /// iRacing's session names carry a qualifier the driver does not need in the
+    /// strip: "Open Qualify" and "Lone Qualify" are both, to the person in the
+    /// car, QUALIFY - the distinction changes nothing they do. The full names are
+    /// what put the session strip over its width budget: at 470px the relative
+    /// cannot fit "OPEN QUALIFY" alongside the clock, lap counter, flag chip,
+    /// projected-iRating chip and the whole right-hand telemetry group, and the
+    /// alternatives to shortening are all worse - trimming renders a meaningless
+    /// ".." stub, and hiding the label outright loses it even when there was room.
+    ///
+    /// Matching on a substring rather than an exact name deliberately: iRacing
+    /// fields several variants ("Heat Race", "Offline Testing") and an unknown
+    /// name passes through uppercased rather than being dropped.
+    /// </summary>
+    public static string ShortType(string sessionType)
+    {
+        if (string.IsNullOrWhiteSpace(sessionType))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = sessionType.Trim();
+
+        // Order matters: "Heat Race" must match RACE, and it contains neither
+        // "practice" nor "qualif", so the race check can sit after them safely.
+        if (trimmed.Contains("qualif", StringComparison.OrdinalIgnoreCase))
+        {
+            return "QUALIFY";
+        }
+
+        if (trimmed.Contains("practice", StringComparison.OrdinalIgnoreCase))
+        {
+            return "PRACTICE";
+        }
+
+        if (trimmed.Contains("warmup", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Contains("warm up", StringComparison.OrdinalIgnoreCase))
+        {
+            return "WARMUP";
+        }
+
+        if (trimmed.Contains("race", StringComparison.OrdinalIgnoreCase))
+        {
+            return "RACE";
+        }
+
+        if (trimmed.Contains("test", StringComparison.OrdinalIgnoreCase))
+        {
+            return "TESTING";
+        }
+
+        return trimmed.ToUpperInvariant();
+    }
+
+    /// <summary>
     /// Splits a session into its label and its primary figure. Prefers the
     /// clock; falls back to a lap count; falls back again to no figure at all.
+    /// The label is shortened by <see cref="ShortType"/> so the strip stays
+    /// inside its width budget.
     /// </summary>
     public static SessionHeader Header(string sessionType, double timeRemainSeconds, int lapsRemain)
     {
+        var label = ShortType(sessionType);
+
         if (TimeRemaining(timeRemainSeconds) is { } time)
         {
-            return new SessionHeader(sessionType, time);
+            return new SessionHeader(label, time);
         }
 
         return lapsRemain > 0
-            ? new SessionHeader(sessionType, lapsRemain.ToString(CultureInfo.InvariantCulture) + " LAPS")
-            : new SessionHeader(sessionType, string.Empty);
+            ? new SessionHeader(label, lapsRemain.ToString(CultureInfo.InvariantCulture) + " LAPS")
+            : new SessionHeader(label, string.Empty);
     }
 
     /// <summary>
