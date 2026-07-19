@@ -24,6 +24,30 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <!-- A source build must not claim to BE the released app. Until this, a local
+       Debug build produced an assembly whose identity was byte-identical to the
+       installed release - same AssemblyName, Product, Company and Version, right
+       down to the same git hash in InformationalVersion - but with different
+       bytes and no signature. That is indistinguishable from a tampered copy of a
+       known application, and Windows' reputation-based Application Control
+       (Smart App Control) started blocking freshly built binaries once 0.10.0
+       shipped and an installed copy staked a claim to that identity. Nothing had
+       changed about the code; what changed was that the name became taken.
+
+       The separation is also just correct on its own terms. The mutex and the
+       settings file were already split by install kind (see SettingsLocation and
+       SingleInstanceGuard) so a dev run can't disturb a layout arranged for real
+       racing - but the two artifacts still presented to the OS as the same
+       product. Now they don't: different file name, different product, different
+       version. Release builds are untouched, so the shipped artifact and the
+       update feed keep the identity they have always had. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <AssemblyName>IRacingOverlay.Dev</AssemblyName>
+    <Product>iRacing Overlay (Dev)</Product>
+    <Company>iRacing Overlay (Dev)</Company>
+    <Version>0.0.0-dev</Version>
+  </PropertyGroup>
+
   <ItemGroup>
     <ApplicationDefinition Remove="App.xaml" />
     <Page Include="App.xaml" />
