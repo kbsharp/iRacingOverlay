@@ -60,14 +60,21 @@ function Invoke-Dotnet {
 function Stop-RunningOverlay {
     <#
     .SYNOPSIS
-        Kills any live overlay process so the build can overwrite its DLLs.
+        Kills any live *source-build* overlay process so the build can overwrite
+        its DLLs.
 
         Without this, a build after a detached launch fails with
-        "MSB3026: ... The file is locked by IRacingOverlay (pid)".
+        "MSB3026: ... The file is locked by IRacingOverlay.Dev (pid)".
+
+        The name is deliberately exact. Debug builds are IRacingOverlay.Dev
+        (see IRacingOverlay.App.csproj); the installed release is
+        IRacingOverlay, and it is emphatically not ours to kill - someone may be
+        mid-race on it. A bare "IRacingOverlay" here would both miss the process
+        we need to stop and terminate the one we must not.
     #>
-    $running = Get-Process IRacingOverlay -ErrorAction SilentlyContinue
+    $running = Get-Process IRacingOverlay.Dev -ErrorAction SilentlyContinue
     if ($running) {
-        Write-Host "Stopping $($running.Count) running overlay process(es) so the build can write." -ForegroundColor Yellow
+        Write-Host "Stopping $($running.Count) running dev overlay process(es) so the build can write." -ForegroundColor Yellow
         $running | Stop-Process -Force
         Start-Sleep -Milliseconds 300
     }

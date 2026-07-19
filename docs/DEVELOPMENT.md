@@ -73,7 +73,7 @@ simulator or a UI thread.
 
 Both build/run scripts **stop any running overlay first** (`Stop-RunningOverlay`
 in `_common.ps1`). Without that, a rebuild fails with `MSB3026: ... The file is
-locked by "IRacingOverlay (pid)"` — easy to hit, because the app survives
+locked by "IRacingOverlay.Dev (pid)"` — easy to hit, because the app survives
 window-close (see below) and a detached launch doesn't visibly tie up a terminal.
 This used to be a manual step and no longer is.
 
@@ -82,7 +82,7 @@ the built exe directly, which is what a scripted smoke test wants:
 
 ```powershell
 dotnet run --project src/IRacingOverlay.App -- --demo
-src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.exe --demo
+src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.Dev.exe --demo
 ```
 
 There's no watch/hot-reload set up — a rebuild after each change takes a couple
@@ -101,7 +101,7 @@ of seconds, so it hasn't been worth adding.
   exe and checking the process stays alive:
 
   ```powershell
-  $exe = "src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.exe"
+  $exe = "src\IRacingOverlay.App\bin\Debug\net8.0-windows\IRacingOverlay.Dev.exe"
   $p = Start-Process -FilePath $exe -ArgumentList "--demo" -PassThru
   Start-Sleep -Seconds 5
   -not $p.HasExited   # True = still running
@@ -302,6 +302,45 @@ Conventional-commit style, feature-sized: `feat(core): ...`, `fix(app): ...`,
 `dotnet test` on its own — don't split a change across commits such that an
 intermediate one is broken.
 
+## Dev builds vs the installed app
+
+The two are deliberately kept **entirely separate artifacts**, because most of us
+run the released copy for real racing on the same machine we develop on.
+
+|  | Installed release | Source build (Debug) |
+|---|---|---|
+| Assembly / exe | `IRacingOverlay.exe` | `IRacingOverlay.Dev.exe` |
+| Product / Company | `IRacingOverlay` | `iRacing Overlay (Dev)` |
+| Version | the git tag, e.g. `0.10.0` | `0.0.0-dev` |
+| Settings folder | `%LocalAppData%\IRacingOverlay\` | `%LocalAppData%\IRacingOverlay.Dev\` |
+| Settings file | `settings.json` | `settings.json` |
+| Single-instance mutex | scoped by install kind | scoped by install kind |
+
+Separate **folders**, not two file names in one folder. The installed folder is
+Velopack's — it creates it, updates inside it and deletes it on uninstall — so a
+source build writing there left files the uninstaller had no reason to know
+about. A dev layout written under the old scheme
+(`IRacingOverlay\settings.dev.json`) is copied across on first run by
+`SettingsService.MigrateLegacyDevSettings`; it copies rather than moves, since
+this build has no business deleting from the installed app's folder. The stale
+original is harmless and can be deleted by hand.
+
+The identity split lives in a `Configuration == 'Debug'` property group in
+`IRacingOverlay.App.csproj`; **Release builds are untouched**, so the shipped
+artifact and the Velopack update feed keep the identity they have always had.
+
+Before this, a Debug build produced an assembly whose identity was byte-identical
+to the installed release — same name, product, company and version, down to the
+same git hash in `InformationalVersion` — but with different bytes and no
+signature. Nothing depended on that being true, and it is a bad thing to be true:
+it makes a local build indistinguishable from a tampered copy of the shipped app,
+to Windows and to anything else looking. Install-kind detection does **not** key
+off the assembly name (it comes from Velopack's `UpdateManager.IsInstalled`), so
+renaming is safe.
+
+Note that `scripts/run-demo.ps1` and `run-live.ps1` launch `IRacingOverlay.Dev.exe`;
+`Get-Process` and `Stop-Process` during development want that name too.
+
 ## Releasing
 
 Releases are packaged with [Velopack](https://velopack.io) and published to
@@ -429,12 +468,13 @@ Because the app owns its entry point, the `VelopackApp.Build().Run()` bootstrap 
 |---|---|
 | `dotnet : term not recognized` | SDK not on PATH — use `scripts\build.ps1`, which finds a per-user install |
 | Build fails on a warning | `TreatWarningsAsErrors` is on by design — fix the warning, don't suppress it |
-| Build fails with `MSB3026 ... locked by "IRacingOverlay (pid)"` | A previous run is still alive (it no longer exits when its window closes). `scripts\build.ps1` stops it for you; a raw `dotnet build` doesn't |
+| Build fails with `MSB3026 ... locked by "IRacingOverlay.Dev (pid)"` | A previous run is still alive (it no longer exits when its window closes). `scripts\build.ps1` stops it for you; a raw `dotnet build` doesn't |
 | `CS0104` ambiguous reference to `Application`/`Color` | `UseWPF` + `UseWindowsForms` both contribute that type name — fully qualify it, see "Window lifecycle" above |
-| Demo window never appears, process exits 0 immediately | A copy of the **same flavour** is already running — `SingleInstanceGuard` yields to it. `Get-Process IRacingOverlay` to find it; the installed app and a source build don't block each other, two source builds do |
+| Demo window never appears, process exits 0 immediately | A copy of the **same flavour** is already running — `SingleInstanceGuard` yields to it. `Get-Process IRacingOverlay.Dev` to find it; the installed app and a source build don't block each other, two source builds do |
+| Process dies instantly with `FileLoadException … Application Control policy has blocked this file (0x800711C7)` | Windows **Smart App Control** has blocked a freshly built binary. It is reputation-based, applies to unsigned local builds, and its verdicts are not predictable from the code — the same project built and ran minutes earlier. **A reboot has cleared it every time so far.** Check with `Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy'` (`VerifiedAndReputablePolicyState`: 0 off, 1 enforcing, 2 evaluation), and confirm the specific file in Event Viewer under `Microsoft-Windows-CodeIntegrity/Operational`. Turning SAC off is possible but **irreversible without reinstalling Windows** |
 | Demo window never appears | Check the process didn't exit immediately (`echo $?`/exit code) — a startup exception would show as a fast exit |
 | Widgets don't appear at all in live mode | Expected when iRacing isn't running — they stay hidden until telemetry connects. Uncheck *Only show widgets while iRacing is running* in Settings → General to position them with the sim shut |
-| Your real layout got reset / dev windows moved your racing layout | Shouldn't happen since the settings split — confirm which file is being written: installed = `settings.json`, everything else = `settings.dev.json`, both in `%LocalAppData%\IRacingOverlay` |
+| Your real layout got reset / dev windows moved your racing layout | Shouldn't happen since the settings split — confirm which file is being written: installed = `%LocalAppData%\IRacingOverlay\settings.json`, everything else = `%LocalAppData%\IRacingOverlay.Dev\settings.json` |
 | Installed app never updates | Check `%LocalAppData%\IRacingOverlay\update.log`. A wall of `404 (Not Found)` means the release feed isn't publicly readable — see the release prerequisites above |
 | Closing a widget window doesn't quit the app | Expected — it hides, not closes. Use the tray icon to bring it back, or its Exit to actually quit |
 | No tray icon visible | Windows hides new tray icons behind the taskbar's `^` overflow arrow the first time — click it |

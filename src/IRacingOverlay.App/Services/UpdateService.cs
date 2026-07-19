@@ -1,4 +1,5 @@
 using System.IO;
+using IRacingOverlay.Core.Settings;
 using Velopack;
 using Velopack.Sources;
 
@@ -111,9 +112,11 @@ public sealed class UpdateService
     {
         try
         {
+            // Always the installed folder, never the dev one: everything that
+            // reaches this log runs behind UpdateManager.IsInstalled.
             var dir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "IRacingOverlay");
+                SettingsLocation.InstalledFolderName);
             Directory.CreateDirectory(dir);
             File.AppendAllText(
                 Path.Combine(dir, "update.log"),
