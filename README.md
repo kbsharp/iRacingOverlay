@@ -33,7 +33,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
 
 **Full docs:** [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, commands, debugging,
 and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) for exactly what's
-implemented (every field, calculation, and known limitation).
+implemented (every field, calculation, and known limitation);
+[docs/STYLE.md](docs/STYLE.md) for the visual language and the active styling
+refinement pass.
 
 ## Install (for the team)
 
