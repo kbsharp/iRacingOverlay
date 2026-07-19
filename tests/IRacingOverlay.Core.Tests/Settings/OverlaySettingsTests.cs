@@ -49,6 +49,29 @@ public class OverlaySettingsTests
         Assert.False(OverlaySettingsSerializer.Deserialize(json).ShowSetupReminder);
     }
 
+    // The manufacturer badges are the other way round: opt-in while the mark set
+    // is incomplete, so an existing settings file must not switch them on.
+
+    [Fact]
+    public void ShowManufacturerBadges_DefaultsToOff()
+        => Assert.False(new OverlaySettings().ShowManufacturerBadges);
+
+    [Fact]
+    public void ShowManufacturerBadges_AbsentFromExistingFile_StaysOff()
+    {
+        var restored = OverlaySettingsSerializer.Deserialize("""{ "scale": 1.0 }""");
+
+        Assert.False(restored.ShowManufacturerBadges);
+    }
+
+    [Fact]
+    public void ShowManufacturerBadges_SwitchedOn_RoundTrips()
+    {
+        var json = OverlaySettingsSerializer.Serialize(new OverlaySettings { ShowManufacturerBadges = true });
+
+        Assert.True(OverlaySettingsSerializer.Deserialize(json).ShowManufacturerBadges);
+    }
+
     [Fact]
     public void WidgetIds_NoLongerListsTheStandaloneSetupWidget()
     {

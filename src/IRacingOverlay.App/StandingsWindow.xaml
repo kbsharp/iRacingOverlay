@@ -104,7 +104,8 @@
                             <ColumnDefinition Width="5" />
                             <ColumnDefinition Width="24" />
                             <ColumnDefinition Width="40" />
-                            <ColumnDefinition Width="30" />
+                            <!-- Collapses to zero when the badges are switched off. -->
+                            <ColumnDefinition Width="{Binding ManufacturerColumnWidth}" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="46" />
                             <ColumnDefinition Width="44" />
@@ -114,7 +115,8 @@
                             <ColumnDefinition Width="52" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="1" Text="P" Style="{StaticResource Caption}" Margin="3,0,0,0" />
-                        <TextBlock Grid.Column="3" Text="CAR" Style="{StaticResource Caption}" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="CAR" Style="{StaticResource Caption}" HorizontalAlignment="Center"
+                                   Visibility="{Binding ShowManufacturerBadges, Converter={StaticResource BoolToVis}}" />
                         <TextBlock Grid.Column="4" Text="DRIVER" Style="{StaticResource Caption}" />
                         <TextBlock Grid.Column="7" Text="INT" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
                         <TextBlock Grid.Column="8" Text="GAP" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,0,6,0" />
@@ -181,7 +183,7 @@
                                             <ColumnDefinition Width="5" />
                                             <ColumnDefinition Width="24" />
                                             <ColumnDefinition Width="40" />
-                                            <ColumnDefinition Width="30" />
+                                            <ColumnDefinition Width="{Binding ManufacturerColumnWidth}" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="46" />
                                             <ColumnDefinition Width="44" />

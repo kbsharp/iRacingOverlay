@@ -4,7 +4,8 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
 
 - **Standings**: the full, class-grouped field (top-left by default) — colour-tinted class
   banners with **Strength of Field**, then each car by class position with car number, a
-  manufacturer badge, driver, colour-coded license and iRating badges, interval to the car
+  driver, colour-coded license and iRating badges, an optional (experimental) car
+  manufacturer badge, interval to the car
   ahead, gap to the class leader, best lap (session-fastest in purple) and last-lap delta.
   Zebra rows, your own row highlighted, up to a full 40-car multiclass grid — all from the
   sim's real timing.

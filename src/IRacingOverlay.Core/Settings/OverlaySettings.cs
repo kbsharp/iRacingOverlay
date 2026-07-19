@@ -57,6 +57,12 @@ public sealed record OverlaySettings
     /// Off gives a fuel widget with no setup strip at all.</summary>
     public bool ShowSetupReminder { get; init; } = true;
 
+    /// <summary>Whether the standings shows a manufacturer badge column. Off by
+    /// default: the mark set is incomplete, so a field mixes vector logos with
+    /// text abbreviations (the makes with no CC0 artwork) and reads as
+    /// inconsistent. Opt-in until every car iRacing ships has a mark.</summary>
+    public bool ShowManufacturerBadges { get; init; }
+
     /// <summary>Whether widgets stay hidden while iRacing isn't running. On by
     /// default: with <see cref="RunAtStartup"/> set, the alternative is a set of
     /// always-on-top panels sitting over the desktop all day. Turn it off to

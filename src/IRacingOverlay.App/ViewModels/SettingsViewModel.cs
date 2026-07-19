@@ -239,6 +239,19 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>Whether the standings carries the manufacturer badge column.
+    /// Experimental while the mark set is incomplete - see
+    /// <see cref="OverlaySettings.ShowManufacturerBadges"/>.</summary>
+    public bool ShowManufacturerBadges
+    {
+        get => _settings.Current.ShowManufacturerBadges;
+        set
+        {
+            _settings.SetShowManufacturerBadges(value);
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>Unsubscribes from the settings service. The window is rebuilt each
     /// time it's opened, so without this every open would leave a live handler on
     /// a service that outlives it.</summary>
@@ -276,6 +289,7 @@ public sealed class SettingsViewModel : ObservableObject
             RaiseUnitProperties();
             RaiseTuningProperties();
             OnPropertyChanged(nameof(ShowSetupReminder));
+            OnPropertyChanged(nameof(ShowManufacturerBadges));
         }
         finally
         {

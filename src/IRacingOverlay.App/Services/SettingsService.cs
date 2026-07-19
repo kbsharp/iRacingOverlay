@@ -115,6 +115,10 @@ public sealed class SettingsService
     public void SetShowSetupReminder(bool showSetupReminder)
         => Update(_current with { ShowSetupReminder = showSetupReminder });
 
+    /// <summary>Records whether the standings shows the manufacturer badge column.</summary>
+    public void SetShowManufacturerBadges(bool showManufacturerBadges)
+        => Update(_current with { ShowManufacturerBadges = showManufacturerBadges });
+
     /// <summary>Forgets every saved window position, so the next launch puts each
     /// widget back at its default corner. The recovery path for a layout that's
     /// been dragged somewhere unusable - previously this meant deleting
