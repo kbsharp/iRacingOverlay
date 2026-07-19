@@ -13,6 +13,20 @@ If it doesn't, it's out — no matter how good it looks on a feature grid.
 Heart-rate monitors, G-force meters and boost boxes are decoration; a number
 that tells you *pit now, not next lap* is the product.
 
+A readout that passes the first test then has to survive a second one, which
+the removed safety chip is what taught us:
+
+> **Is it in a unit the driver already has, and can they tell when it's wrong?**
+
+This is *not* a rule against forecasts or estimates. "Closing 0.3s/lap, contact
+in 1 lap" is a prediction and it is fine — seconds and laps are units every
+driver already owns, and one lap later you can see whether it was right. Same
+as "60% chance of rain": legibly uncertain, in units you understand, checkable
+after the fact. What fails is a number you must be *taught* before it says
+anything (`49 CPI`), or one measured against a baseline only this app can see,
+so nobody can tell a right answer from a wrong one. Uncertainty is fine.
+Illegibility isn't.
+
 For what's already implemented (every field and calculation), see
 [FEATURES.md](FEATURES.md).
 
@@ -86,6 +100,18 @@ extends an existing widget rather than adding a new one.
   against. See [FEATURES.md](FEATURES.md#delta--deltawindow--deltaviewmodel--coredeltadeltacalculator).
 - **Radar density pass** — the last widget not audited against the shared
   spacing rhythm; the question is the 150×240 field size and blip scale.
+- **Radar: show when the geometry can't resolve a car.** The one place in the
+  app that fails the second test above. Every other readout is either measured
+  or legibly a forecast; the radar draws *inferred* positions that look exactly
+  as authoritative as measured ones. It reconstructs a car's position by walking
+  the learned track shape, which separates cars by the track's **curvature** — 
+  and a straight has none, so two cars genuinely side-by-side on a straight both
+  land on the centreline. The driver cannot tell that case from an empty
+  mirror. The fix isn't better geometry (the data isn't there); it's admitting
+  it — fall back to, or blend in, iRacing's own `CarLeftRight` spotter signal
+  when the local track curvature is near zero, the way the first-lap fallback
+  already does. Same idea as the delta bar deferring to the sim's own number
+  rather than inventing a second opinion.
 - Carried-over polish: manufacturer badge on the relative, drag-to-resize
   widgets, a speed readout for the existing km/h / mph preference,
   configurable telemetry refresh rate, pinning the tray icon.
