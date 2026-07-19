@@ -29,8 +29,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   coarse left/right spotter signal.
 
 **Full docs:** [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, commands, debugging,
-and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) for exactly what's
-implemented (every field, calculation, and known limitation).
+and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) indexes a page per
+widget covering exactly what's implemented (every field, calculation, and known
+limitation).
 
 ## Install (for the team)
 
@@ -117,7 +118,7 @@ Usage notes:
   grid), drain/add fuel, set fuel critical, cycle track wetness, add an incident, toggle the
   player into the pits, cycle Practice/Qualify/Race (retriggers the setup-reminder flash),
   cycle the radar's spotter-fallback states — all live, no rebuild. See
-  [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.
+  [docs/features/dev-tools.md](docs/features/dev-tools.md) for exact values.
 - Drag each widget anywhere with the left mouse button. **Positions and the UI scale
   are remembered between runs** (saved to `%LocalAppData%\IRacingOverlay\settings.json`,
   or `settings.dev.json` for a source build, so development can't disturb a racing layout);
@@ -152,7 +153,7 @@ on/off, per-widget scale, click-through, display units, the tuning numbers that
 used to be hardcoded, run-at-startup, and a layout reset. Widgets also stay hidden
 until iRacing is running (and hide again when it closes), so **Start with Windows**
 no longer leaves panels sitting over the desktop all day. See
-[docs/FEATURES.md](docs/FEATURES.md#settings).
+[docs/features/settings.md](docs/features/settings.md).
 
 Still open:
 

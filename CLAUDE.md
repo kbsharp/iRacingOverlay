@@ -32,9 +32,13 @@ owns that, in one place.
 - **Tests.** Any logic in `Core` gets xUnit coverage. Bug fixes get a regression test.
   UI/SDK glue is exempt — that's why the logic lives in `Core` (see below).
 - **Docs.** README changes when run steps, widgets, or prerequisites change.
-  [docs/FEATURES.md](docs/FEATURES.md) changes whenever a widget's fields,
-  calculations, thresholds, or limitations change — it's the canonical "what does
-  this app currently do" reference, so it must stay accurate, not aspirational.
+  The relevant page under [docs/features/](docs/features/) changes whenever a
+  widget's fields, calculations, thresholds, or limitations change — those are the
+  canonical "what does this app currently do" reference, so they must stay
+  accurate, not aspirational. **Edit the one page you touched**, not the whole set;
+  [docs/FEATURES.md](docs/FEATURES.md) is just the index. Record what the app does
+  now and the rules that must not be broken — not the history of how it got here.
+  "Previously X, now Y" is a commit message, not documentation.
   [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) changes when the dev workflow itself
   changes (new commands, new conventions, new gotchas).
 - **Commit** in feature-sized chunks, conventional-commit style
@@ -109,7 +113,7 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
   AA and needs one weight step more than normal - `Bold` where you'd reach for
   `SemiBold`. WPF maps `SemiBold` and `DemiBold` to the same 600, so there is nothing
   between 600 and `Bold`. Numeric columns need `Typography.NumeralAlignment="Tabular"`
-  or the digits jitter as they tick. See docs/FEATURES.md § Typography.
+  or the digits jitter as they tick. See docs/features/shell.md § Typography.
 - Keep colour **purposeful, not decorative**: each hue should mean one thing
   (class, license tier, iRating tier, lap status, "this is you"). Don't reach
   for the same accent colour for everything — that's what made the first pass

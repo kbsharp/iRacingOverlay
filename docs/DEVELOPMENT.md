@@ -2,7 +2,7 @@
 
 Full setup, day-to-day commands, and how to extend the app. For a quick
 overview and the widget list, see the [README](../README.md); for what's
-implemented in detail, see [FEATURES.md](FEATURES.md).
+implemented in detail, see the [feature pages](FEATURES.md).
 
 ## Prerequisites
 
@@ -250,7 +250,7 @@ The pattern every widget so far follows (relative, fuel):
    reacts to a user setting. Keep it a thin translation from Core types to display
    strings/bools — no maths here.
 5. **Window.** A borderless, transparent, topmost `Window` XAML file styled from
-   the shared brushes/styles in `App.xaml` (see [FEATURES.md](FEATURES.md) for
+   the shared brushes/styles in `App.xaml` (see [features/shell.md](features/shell.md) for
    the current palette). Reuse the drag-to-move and right-click-to-exit pattern
    from `RelativeWindow.xaml.cs` / `FuelWindow.xaml.cs`.
 6. **Register it.** Add a constant to `WidgetIds` (`Core/Settings`) and one
@@ -274,8 +274,9 @@ The pattern every widget so far follows (relative, fuel):
    `SettingsWindow.xaml`, and read it in the view model's `ApplySettings`. A new
    field must be *additive* — an existing `settings.json` predates it, so absent
    must mean "previous behaviour".
-8. **Update the docs:** add the widget to [FEATURES.md](FEATURES.md) and, if the
-   headline feature list changed, the [README](../README.md).
+8. **Update the docs:** add a page under [features/](features/) and link it from
+   the [FEATURES.md](FEATURES.md) index; if the headline feature list changed,
+   the [README](../README.md) too.
 
 ## Testing conventions
 
@@ -286,6 +287,17 @@ The pattern every widget so far follows (relative, fuel):
 - UI code (`App` project) and the SDK adapter (`Infrastructure`) are not unit
   tested — that's deliberate, not a gap: they're thin glue over `Core`, which
   carries the coverage.
+
+**Test files mirror the `Core` namespace they cover**, one class per calculator
+— `Core/Fuel/FuelCalculator.cs` ↔ `Core.Tests/Fuel/FuelCalculatorTests.cs`. So
+`Get-ChildItem tests -Recurse -Filter *Tests.cs` *is* the coverage inventory;
+there's deliberately no hand-maintained table of it in the docs, because the
+copy that used to exist drifted (it claimed 321 tests when there were 347)
+without anything failing to catch it.
+
+For sim telemetry, cover the edge cases that actually occur: lap-counter
+jumps/resets, missing data, and boundary values (0, negative, and the sim's
+"unlimited" sentinels).
 
 ## Commits
 
