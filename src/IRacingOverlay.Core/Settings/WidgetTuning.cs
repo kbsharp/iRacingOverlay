@@ -27,8 +27,8 @@ public sealed record WidgetTuning
 
     /// <summary>Cars listed per class in the standings (the player is always
     /// appended if they fall outside the window). 12 is what StandingsViewModel
-    /// has always passed - the calculator's own 30 default is unused, and
-    /// FEATURES.md documented the 30 by mistake.</summary>
+    /// passes; the calculator's own 30 default is unused, so 12 is the real
+    /// shipped behaviour.</summary>
     public int StandingsMaxPerClass { get; init; } = 12;
 
     public WidgetTuning Sanitized() => new()
