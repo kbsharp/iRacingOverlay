@@ -973,10 +973,13 @@ The UI scale and every widget's window position are remembered between runs, so
 the app comes back the way it was left instead of resetting to the default
 corners.
 
-- Saved to `%LocalAppData%\IRacingOverlay\` as `OverlaySettings` — **`settings.json`
-  for the installed app, `settings.dev.json` for anything else** (`dotnet run`, a
-  portable unzip, a build run straight out of `bin\`). `SettingsLocation.FileNameFor`
-  picks between them from `UpdateManager.IsInstalled`. They used to share one file,
+- Saved as `OverlaySettings` to **`%LocalAppData%\IRacingOverlay\settings.json`
+  for the installed app, and `%LocalAppData%\IRacingOverlay.Dev\settings.json` for
+  anything else** (`dotnet run`, a portable unzip, a build run straight out of
+  `bin\`). `SettingsLocation.FolderNameFor` picks between them from
+  `UpdateManager.IsInstalled`. Separate folders rather than two names in one,
+  because the installed folder is Velopack's to create and delete on uninstall —
+  a source build should leave nothing in it. They used to share one file,
   which meant a dev session loaded the layout you'd arranged for real racing and
   wrote back wherever the dev windows landed; with both open, each debounce-saved
   the whole file and the last writer won. The installed name is unchanged, so

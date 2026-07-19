@@ -34,10 +34,17 @@ public sealed class SettingsService
     /// (<c>UpdateService.IsInstalled</c>). Decides which file is used.</param>
     public SettingsService(bool isInstalled)
     {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
         _path = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            SettingsLocation.FolderName,
-            SettingsLocation.FileNameFor(isInstalled));
+            localAppData,
+            SettingsLocation.FolderNameFor(isInstalled),
+            SettingsLocation.FileName);
+
+        if (!isInstalled)
+        {
+            MigrateLegacyDevSettings(localAppData, _path);
+        }
 
         _current = Load();
         _windows = new Dictionary<string, WindowPosition>(_current.Windows);
@@ -145,6 +152,44 @@ public sealed class SettingsService
             // Non-critical: the app runs fine, the layout just won't stick. Leave
             // a breadcrumb rather than surfacing it.
             Debug.WriteLine($"Settings save failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Moves a dev layout written before source builds got their own folder
+    /// (<c>IRacingOverlay\settings.dev.json</c>) to its new home. Best-effort and
+    /// one-way: it only ever runs when the new file doesn't exist yet, so it
+    /// can't clobber a newer layout, and any failure just means starting from
+    /// defaults - which is what would have happened without the migration.
+    /// Copies rather than moves, deliberately: the source lives inside the
+    /// installed app's folder, and this build has no business deleting from
+    /// there.
+    /// </summary>
+    private static void MigrateLegacyDevSettings(string localAppData, string newPath)
+    {
+        try
+        {
+            if (File.Exists(newPath))
+            {
+                return;
+            }
+
+            var legacy = Path.Combine(
+                localAppData,
+                SettingsLocation.InstalledFolderName,
+                SettingsLocation.LegacyDevFileName);
+
+            if (!File.Exists(legacy))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(newPath)!);
+            File.Copy(legacy, newPath);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Dev settings migration failed: {ex.Message}");
         }
     }
 
