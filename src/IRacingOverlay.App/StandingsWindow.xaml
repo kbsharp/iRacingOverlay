@@ -60,6 +60,13 @@
                                FontWeight="Bold"
                                Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource TextPrimary}" />
+                    <TextBlock Text="{Binding LapCounterText}"
+                               Margin="9,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
+                               Foreground="{StaticResource TextSecondary}" />
                     <TextBlock Text="{Binding CarCountText}"
                                Margin="12,0,0,0"
                                VerticalAlignment="Center"

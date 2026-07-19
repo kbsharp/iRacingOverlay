@@ -302,6 +302,41 @@
             <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
         </Style>
 
+        <!-- Brake-disc mark for the brake-bias readout: a vented disc seen face-on
+             with its caliper at the left. Drawn as a stroked geometry rather than a
+             glyph so it stays crisp at 12px under greyscale AA, and so it doesn't
+             depend on an icon font being installed. Sized for a 12x12 box. -->
+        <Geometry x:Key="BrakeDiscIcon">
+            M 1,6 A 5,5 0 1 0 11,6 A 5,5 0 1 0 1,6
+            M 4.4,6 A 1.6,1.6 0 1 0 7.6,6 A 1.6,1.6 0 1 0 4.4,6
+            M 1.6,3.1 L 0.3,3.1 L 0.3,8.9 L 1.6,8.9
+        </Geometry>
+
+        <Style x:Key="BrakeDiscMark" TargetType="Path">
+            <Setter Property="Data" Value="{StaticResource BrakeDiscIcon}" />
+            <Setter Property="Stroke" Value="{StaticResource TextMuted}" />
+            <Setter Property="StrokeThickness" Value="1.1" />
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="Stretch" Value="None" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- Flag chip. The one place in the overlay where hue is dictated entirely
+             by the real world - a yellow flag must be yellow - so these are the
+             marshals' own colours rather than the panel palette, with the personal
+             flags (black, meatball, DQ) kept visually distinct from track flags. -->
+        <Style x:Key="FlagChipBackground" TargetType="Border" BasedOn="{StaticResource Chip}">
+            <Setter Property="Background" Value="{Binding FlagBackground}" />
+            <Setter Property="BorderBrush" Value="{Binding FlagBorder}" />
+        </Style>
+
+        <Style x:Key="FlagChipText" TargetType="TextBlock" BasedOn="{StaticResource ChipText}">
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="Foreground" Value="{Binding FlagForeground}" />
+        </Style>
+
         <!-- Pit-lane chip. Same geometry, amber-on-amber like the other tinted
              chips; kept as a named style so the relative and standings rows can't
              drift apart. -->

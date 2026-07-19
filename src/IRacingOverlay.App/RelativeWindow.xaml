@@ -34,7 +34,7 @@
             </Border.Effect>
             <StackPanel>
 
-                <!-- session strip: session/time · brake bias · temps · wetness · incidents -->
+                <!-- session strip: session/time/lap · flag | brake bias · temps · wetness · incidents -->
                 <DockPanel Margin="0,0,0,7">
                     <Ellipse Width="8" Height="8" VerticalAlignment="Center" DockPanel.Dock="Left">
                         <Ellipse.Style>
@@ -54,11 +54,30 @@
                                FontSize="12"
                                FontWeight="Bold"
                                Foreground="{StaticResource TextPrimary}" />
+                    <TextBlock Text="{Binding LapCounterText}"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
+                               Foreground="{StaticResource TextSecondary}" />
+                    <Border Margin="8,0,0,0"
+                            Style="{StaticResource FlagChipBackground}"
+                            Visibility="{Binding HasFlag, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding FlagText}" Style="{StaticResource FlagChipText}" />
+                    </Border>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <TextBlock Text="{Binding BrakeBiasText}"
-                                   Margin="10,0,0,0"
-                                   Style="{StaticResource Caption}"
-                                   Visibility="{Binding HasBrakeBias, Converter={StaticResource BoolToVis}}" />
+                        <!-- brake bias, marked with a disc rather than a "BB" prefix:
+                             the glyph is read at a glance where two letters aren't. -->
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="10,0,0,0"
+                                    Visibility="{Binding HasBrakeBias, Converter={StaticResource BoolToVis}}">
+                            <Path Style="{StaticResource BrakeDiscMark}" />
+                            <TextBlock Text="{Binding BrakeBiasText}"
+                                       Margin="4,0,0,0"
+                                       Style="{StaticResource Caption}"
+                                       Typography.NumeralAlignment="Tabular" />
+                        </StackPanel>
                         <TextBlock Text="{Binding TrackTempText}" Margin="10,0,0,0" Style="{StaticResource Caption}" />
                         <TextBlock Text="{Binding AirTempText}" Margin="10,0,0,0" Style="{StaticResource Caption}" />
                         <TextBlock Text="{Binding WetnessText}"
@@ -67,10 +86,25 @@
                                    FontWeight="Bold"
                                    Foreground="{StaticResource Warning}"
                                    Visibility="{Binding IsWet, Converter={StaticResource BoolToVis}}" />
+                        <!-- incidents warm to amber then red as the licence limit
+                             nears, so it's a signal rather than a static number. -->
                         <TextBlock Text="{Binding IncidentsText}"
                                    Margin="10,0,0,0"
-                                   Style="{StaticResource Caption}"
-                                   Foreground="{StaticResource TextSecondary}" />
+                                   Typography.NumeralAlignment="Tabular">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+                                    <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IncidentLevel}" Value="Warning">
+                                            <Setter Property="Foreground" Value="{StaticResource Warning}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IncidentLevel}" Value="Critical">
+                                            <Setter Property="Foreground" Value="{StaticResource Negative}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </StackPanel>
                 </DockPanel>
 

@@ -21,6 +21,7 @@ public sealed class StandingsViewModel : OverlayViewModelBase
     private SessionMetadata? _metadata;
     private string _sessionText = "SESSION";
     private string _carCountText = string.Empty;
+    private string _lapCounterText = string.Empty;
 
     public StandingsViewModel(string connectedLabel = "Live")
         : base(connectedLabel)
@@ -39,6 +40,12 @@ public sealed class StandingsViewModel : OverlayViewModelBase
     {
         get => _carCountText;
         private set => SetProperty(ref _carCountText, value);
+    }
+
+    public string LapCounterText
+    {
+        get => _lapCounterText;
+        private set => SetProperty(ref _lapCounterText, value);
     }
 
     public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
@@ -99,6 +106,8 @@ public sealed class StandingsViewModel : OverlayViewModelBase
             : snapshot.SessionLapsRemain > 0
                 ? $"{sessionType} · {snapshot.SessionLapsRemain} LAPS"
                 : sessionType;
+
+        LapCounterText = SessionFormat.LapCounter(snapshot.Lap, _metadata?.LapsForSession(snapshot.SessionNum));
 
         var carCount = 0;
         foreach (var car in snapshot.Cars)

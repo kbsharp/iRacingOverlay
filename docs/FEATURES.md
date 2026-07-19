@@ -21,7 +21,8 @@ Exit. Soft-cornered (`6px`), near-opaque with a top-lit panel material —
 styled after RaceLab/iOverlay/LMU standings. Default position top-left
 (`Left=24, Top=24`), then restored from
 saved settings. No widget-name label — the class banners and columns identify
-it; the top strip carries session type + time/laps remaining + car count.
+it; the top strip carries session type + time/laps remaining + the same
+`Ln/total` lap counter as the relative widget + car count.
 Under that strip, the column captions sit on a full-bleed **header band**
 (`HeaderBand` fill, `Separator` underline) so the table reads as having a head
 rather than a floating row of grey labels.
@@ -131,12 +132,29 @@ widget-name label — the session strip heads it.
 - Session type (from the sim's session-info YAML, e.g. "RACE") + either time
   remaining (`m:ss` / `h:mm:ss`) or laps remaining, whichever the session
   reports — `RelativeViewModel.UpdateHeader`.
-- Brake bias (`BB nn.n`) — hidden entirely when the car has no adjustable bias
-  (value is 0).
+- Lap counter (`SessionFormat.LapCounter`) — `Ln/total` when the session has a
+  scheduled lap count (from `Session: SessionLaps` in the session-info YAML,
+  carried on `SessionMetadata.SessionLapsByNum`), or just `Ln` for a timed
+  session, where the sim reports the distance as "unlimited". The current lap
+  is clamped to the total, so the cool-down lap shows `L25/25` and not
+  `L26/25`. Blank before the player has started a lap.
+- Flag chip — the highest-priority raised flag (`SessionFlagResolver`), shown
+  in the marshals' own colours rather than the panel palette. iRacing sets many
+  `SessionFlags` bits at once, so the resolver picks one: personal flags
+  (`DQ` > `BLACK` > `REPAIR`) outrank track flags, then `RED` > `YELLOW` >
+  `BLUE` > `FINISH` > `WHITE` > `GREEN`. Any of the yellow/caution/waving bits
+  read as `YELLOW`. The plain green bit stays set for a whole green-flag run,
+  so it shows nothing on its own — only the green-held/start-go bits raise a
+  `GREEN` chip. Hidden when nothing is flying.
+- Brake bias (`nn.n`, prefixed by a stroked brake-disc mark rather than a "BB"
+  label) — hidden entirely when the car has no adjustable bias (value is 0).
 - Track temp / air temp (`TRK n° / AIR n°`).
 - Wetness badge — only rendered when the track is at least `VeryLightlyWet`;
   dry conditions show nothing rather than a "DRY" badge.
-- Incident count (`Nx`).
+- Incident count — `Nx/limitx` against the session's incident cap (from
+  `WeekendOptions: IncidentLimit`), falling back to `Nx` when the session is
+  unlimited. Colour-graded by `SessionFormat.IncidentLevel`: amber from 70% of
+  the limit, red from 90%, so it warns before the limit rather than after.
 
 **Row list:** fixed 3-ahead / player / 3-behind slots (`slotsPerSide = 3` in
 both `RelativeCalculator.Compute` and `RelativeViewModel`). Rows are updated
@@ -449,7 +467,9 @@ takes over.
 remaining/laps remaining, player lap/fuel/speed/gear/on-track flag, player
 car index, air/track temp, wetness, brake bias %, incident count,
 `CarLeftRight` (near-field proximity, see the Radar widget above), and the
-full per-car `Cars` list. Also carries `PlayerYawRad` — the player car's
+full per-car `Cars` list. Also carries `Flags` — iRacing's raised
+`SessionFlags` bitfield, reduced to one displayable flag by
+`SessionFlagResolver` — and `PlayerYawRad`, the player car's
 heading (iRacing's `Yaw`), the one heading iRacing exposes, which the radar
 records around the lap to reconstruct the track shape.
 
@@ -469,9 +489,14 @@ ExtremelyWet).
 (`RosterDriver`: car number, display name, iRating, license string,
 class-estimated lap time, class short name, raw class colour from the sim),
 `SessionTypesByNum`, the player's own `PlayerSetupName`/`PlayerSetupIsModified`
-(drives the fuel widget's setup strip), and `TrackLengthMeters` (parsed from
+(drives the fuel widget's setup strip), `TrackLengthMeters` (parsed from
 `WeekendInfo:TrackLength`, used by the radar to scale lap-fraction gaps into
-metres). Refreshed whenever the sim re-broadcasts session info. `RelativeRow` carries the same driver fields plus
+metres), `IncidentLimit` (from `WeekendOptions:IncidentLimit`) and
+`SessionLapsByNum` (from each session's `SessionLaps`). The last two are
+written as either a number or the word "unlimited" in the YAML;
+`SessionFormat.ParseLimit` turns them into an `int?`, and "unlimited" simply
+means the corresponding readout drops its `/total` half. Refreshed whenever
+the sim re-broadcasts session info. `RelativeRow` carries the same driver fields plus
 the parsed `LicenseTier`, `IRatingTier`, and normalised `ClassColorHex` used
 for the relative widget's colour coding (see the Relative widget section
 above).
@@ -494,15 +519,16 @@ fire on background threads; all marshalling to the UI thread happens in
 - SDK variables read: `SessionTime`, `SessionNum`, `SessionTimeRemain`,
   `SessionLapsRemainEx`, `Lap`, `FuelLevel`, `Speed`, `Gear`, `IsOnTrack`,
   `PlayerCarIdx`, `AirTemp`, `TrackTempCrew`, `TrackWetness`, `dcBrakeBias`,
-  `PlayerCarMyIncidentCount`, `CarLeftRight`, and the arrays `CarIdxLap`,
+  `PlayerCarMyIncidentCount`, `SessionFlags`, `CarLeftRight`, and the arrays `CarIdxLap`,
   `CarIdxLapDistPct`, `CarIdxEstTime`, `CarIdxOnPitRoad`,
   `CarIdxTrackSurface`, `CarIdxPosition`, plus the standings arrays
   `CarIdxClassPosition`, `CarIdxLapCompleted`, `CarIdxBestLapTime`,
   `CarIdxLastLapTime`, `CarIdxF2Time`.
 - Variables that don't exist on every sim build/car (`AirTemp`,
   `TrackTempCrew`, `TrackWetness`, `dcBrakeBias`,
-  `PlayerCarMyIncidentCount`, `CarLeftRight`) go through `GetIntOrDefault`/
-  `GetFloatOrDefault` helpers that check `TelemetryDataProperties` first and
+  `PlayerCarMyIncidentCount`, `SessionFlags`, `CarLeftRight`) go through
+  `GetIntOrDefault`/`GetFloatOrDefault`/`GetBitFieldOrDefault` helpers that
+  check `TelemetryDataProperties` first and
   fall back to a default (`CarLeftRight.Off` for the radar) rather than
   throwing. The standings arrays go through guarded `ReadIntArray`/
   `ReadFloatArray` helpers that clear the buffer to zero rather than throwing
@@ -832,7 +858,8 @@ control in live mode and doesn't appear there.
 | **− 5 L** / **+ 5 L** | Adjusts player fuel, clamped to a 65 L tank capacity. Adding fuel mid-lap exercises the same refuel-detection path (`FuelCalculator`'s 0.2 L threshold) that a real pit stop would. |
 | **Set critical (2 L)** | Drops fuel straight to 2 L, to check the fuel widget's red "LAPS SHORT" state without waiting for a real burn-down. |
 | **Cycle wetness** | Steps through Dry → Very Lightly Wet → Moderately Wet → Very Wet → (wraps to Dry), to check the relative widget's wetness badge. |
-| **+ Incident** | Increments the player's incident count shown in the relative session strip. |
+| **+ Incident** | Increments the player's incident count shown in the relative session strip. The demo session carries a 17-incident limit, so repeated presses walk the readout through its amber (70%) and red (90%) states. |
+| **Cycle flag** | Steps green-running (no chip) → green held → yellow → blue → white → chequered → meatball → black → (wraps), to check the session strip's flag chip and the resolver's priority order. |
 | **Toggle player pit** | Flags the player's own row as pitting (surface `InPitStall`), to check the PIT badge and opacity dimming on the player's row specifically. |
 | **Cycle session** | Steps Practice → Open Qualify → Race → (wraps), each with its matching setup file, bumping the session number so the setup reminder's flash re-triggers. Resets the "modified" flag, matching a freshly loaded setup. |
 | **Toggle setup modified** | Flags the loaded setup as modified, to check the setup strip's "MOD" tag. |
