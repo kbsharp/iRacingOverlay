@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Threading;
-using IRacingOverlay.Core.Rating;
 using IRacingOverlay.Core.Settings;
 
 namespace IRacingOverlay.App.Services;
@@ -69,19 +68,6 @@ public sealed class SettingsService
     public void SetWindowPosition(string key, double left, double top)
     {
         _windows[key] = new WindowPosition(left, top);
-        ScheduleSave();
-    }
-
-    /// <summary>
-    /// Records the driver's rolling corners-per-incident baseline after a
-    /// session is banked. Like <see cref="SetWindowPosition"/> this does
-    /// <b>not</b> raise <see cref="Changed"/> - nothing in the UI is configured
-    /// by it, and re-applying every setting mid-session to store a number that
-    /// only the safety chip reads would be a lot of work for no effect.
-    /// </summary>
-    public void SetSafetyHistory(CpiHistory history)
-    {
-        _current = _current with { SafetyHistory = history };
         ScheduleSave();
     }
 

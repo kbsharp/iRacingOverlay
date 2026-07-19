@@ -156,42 +156,23 @@ public class OverlaySettingsSerializerTests
         Assert.Equal(1, settings.Tuning.RelativeSlotsPerSide);
     }
 
-    [Fact]
-    public void SafetyHistory_SurvivesARoundTrip()
-    {
-        var json = OverlaySettingsSerializer.Serialize(
-            new OverlaySettings { SafetyHistory = new CpiHistory(1200, 8) });
-
-        var restored = OverlaySettingsSerializer.Deserialize(json);
-
-        Assert.Equal(1200, restored.SafetyHistory.Corners);
-        Assert.Equal(8, restored.SafetyHistory.IncidentPoints);
-    }
-
-    [Fact]
-    public void SafetyHistory_AbsentFromAnOlderFile_StartsEmpty()
-    {
-        var settings = OverlaySettingsSerializer.Deserialize("""{ "scale": 1.0 }""");
-
-        Assert.Equal(CpiHistory.Empty, settings.SafetyHistory);
-    }
-
     /// <summary>
-    /// The baseline is earned data, not a preference. A value that couldn't have
-    /// been accumulated means a hand-edited or foreign file, and judging real
-    /// sessions against it would be worse than starting over.
+    /// The safety/CPI chip was removed, but every settings.json written while it
+    /// existed still carries its accumulated baseline. That file has to keep
+    /// loading - a stale field must not cost the user their layout.
     /// </summary>
-    [Theory]
-    [InlineData(-100, 2)]
-    [InlineData(500, -1)]
-    [InlineData(999999, 4)]
-    public void SafetyHistory_ImpossibleValues_AreReset(double corners, double incidents)
+    [Fact]
+    public void SafetyHistory_FromAFileWrittenBeforeItWasRemoved_IsIgnored()
     {
-        var json = OverlaySettingsSerializer.Serialize(
-            new OverlaySettings { SafetyHistory = new CpiHistory(corners, incidents) });
+        var json = """
+            {
+              "scale": 1.25,
+              "safetyHistory": { "corners": 1200, "incidentPoints": 8 }
+            }
+            """;
 
         var settings = OverlaySettingsSerializer.Deserialize(json);
 
-        Assert.Equal(CpiHistory.Empty, settings.SafetyHistory);
+        Assert.Equal(1.25, settings.Scale);
     }
 }

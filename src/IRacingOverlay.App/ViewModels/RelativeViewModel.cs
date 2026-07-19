@@ -41,10 +41,9 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     private Brush _flagBorder = Brushes.Transparent;
     private Brush _flagForeground = Brushes.Transparent;
 
-    public RelativeViewModel(string connectedLabel = "Live", SafetyChipViewModel? safety = null)
+    public RelativeViewModel(string connectedLabel = "Live")
         : base(connectedLabel)
     {
-        Safety = safety ?? new SafetyChipViewModel();
         BuildRows();
     }
 
@@ -61,12 +60,6 @@ public sealed class RelativeViewModel : OverlayViewModelBase
 
     /// <summary>Projected iRating change; hides itself outside a race.</summary>
     public IRatingChipViewModel IRating { get; } = new();
-
-    /// <summary>Corners per incident, and whether it beats the driver's baseline.
-    /// Shared with the standings - see <see cref="SafetyChipViewModel"/>. This
-    /// strip has no room for the figure, so it shows the arrow alone, beside the
-    /// incident count it gives meaning to.</summary>
-    public SafetyChipViewModel Safety { get; }
 
     /// <summary>The session label ("RACE") - the quiet half of the strip.</summary>
     public string SessionTypeText
@@ -246,7 +239,6 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         IncidentLevel = SessionFormat.IncidentLevel(snapshot.IncidentCount, incidentLimit);
 
         IRating.Update(snapshot, _metadata);
-        Safety.Update(snapshot, _metadata);
 
         var flag = SessionFlagResolver.Resolve(snapshot.Flags);
         HasFlag = flag != SessionFlagState.None;

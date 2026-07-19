@@ -25,8 +25,6 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     // its "x/limit" and "Lx/y" forms in the demo rather than the bare fallbacks.
     private const int DemoIncidentLimit = 17;
 
-    /// <summary>Corner count for the demo track, the CPI denominator's other half.</summary>
-    private const int DemoTrackNumTurns = 14;
     private const int DemoRaceLaps = 25;
 
     // The radar needs a real track length (to turn lap-fraction gaps into metres)
@@ -543,8 +541,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             DemoTrackLengthMeters,
             DemoIncidentLimit,
             new Dictionary<int, int> { [sessionNum] = DemoRaceLaps },
-            TankCapacityLiters,
-            DemoTrackNumTurns);
+            TankCapacityLiters);
     }
 
     private sealed record SimDriver(
