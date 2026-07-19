@@ -1184,10 +1184,14 @@ on the content root (see the tray icon section).
 
 ## Not yet implemented
 
-Tracked in the [README roadmap](../README.md#roadmap): delta bar, extending the
+Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
+[README](../README.md#roadmap)): delta bar, extending the
 manufacturer badge to the relative, drag-to-resize widgets,
 a speed readout for the existing km/h / mph preference, a configurable
-telemetry refresh rate, per-car/track settings profiles, and pinning the tray icon.
+telemetry refresh rate, per-car/track settings profiles, and pinning the tray
+icon — plus the market-gap and differentiator items from the July 2026
+competitive review (projected Safety Rating, catch/defend forecasts, track
+map, input trace, pit-exit projection).
 
 (Click-through, running at Windows startup, and the settings surface itself have
 since landed — see [Settings](#settings--settingswindow--settingsviewmodel--coresettings).)
