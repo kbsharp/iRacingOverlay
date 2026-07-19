@@ -68,6 +68,10 @@
              next to the now-colourful license/iRating badges and class bars. -->
         <SolidColorBrush x:Key="PlayerHighlight" Color="#5CFFB03D" />
         <SolidColorBrush x:Key="PlayerBorder" Color="#B0FFB03D" />
+        <!-- The same amber as a bare Color, because DropShadowEffect.Color takes a
+             Color and not a Brush - without this the player-row glow hue has to be
+             retyped in every list widget, which is exactly how the two drift. -->
+        <Color x:Key="PlayerGlowColor">#FFB03D</Color>
 
         <!-- Three clearly separated steps. The muted step was #7C8CAB, which at
              ~4:1 on this panel is where the greyness came from - captions read as
@@ -133,13 +137,44 @@
             <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
         </Style>
 
+        <!-- Chip geometry, in ONE place. Every badge in the app (license, iRating,
+             manufacturer, PIT, fuel status) is the same object at the same size, so
+             the size lives here rather than being retyped per instance - that
+             duplication is how the chips drifted apart in the first place.
+
+             The vertical centring is the subtle part. A 10px line box is ~13.3 DIP
+             tall but the caps/digits inside it are only ~7 DIP, and the font puts
+             ~4 DIP of ascent gap above them against ~2.3 DIP of descent space below.
+             Since these chips never contain a descender, that lower space is dead:
+             centre the *line box* and the glyph lands visibly low (measured 10px
+             above vs 4px below on a 2x render). ChipText therefore top-aligns the
+             line box and lifts it a pixel, which centres the glyph rather than
+             the box it sits in. -->
+        <Style x:Key="Chip" TargetType="Border">
+            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="Padding" Value="4,0" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style x:Key="ChipText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource FontSmall}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <!-- Half a DIP, not a whole one: the correction needed is genuinely
+                 fractional, and -1 overshoots into 6-above/8-below. -->
+            <Setter Property="Margin" Value="0,-0.5,0,0" />
+        </Style>
+
         <!-- License badge chip: tinted background + a 1px edge in the same hue +
              vivid text, coloured by RelativeRowViewModel.LicenseTier. The edge is
              what makes it read as a chip: a bare tint fill at this size has no
              boundary and just looks like the text is sitting on a smudge. -->
-        <Style x:Key="LicenseBadgeBackground" TargetType="Border">
+        <Style x:Key="LicenseBadgeBackground" TargetType="Border" BasedOn="{StaticResource Chip}">
             <Setter Property="Background" Value="#14FFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="#26FFFFFF" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding LicenseTier}" Value="Rookie">
@@ -177,8 +212,7 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="LicenseBadgeText" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource FontSmall}" />
+        <Style x:Key="LicenseBadgeText" TargetType="TextBlock" BasedOn="{StaticResource ChipText}">
             <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding LicenseTier}" Value="Rookie">
@@ -203,9 +237,8 @@
         </Style>
 
         <!-- iRating badge chip: same pattern, driven by IRatingTier -->
-        <Style x:Key="IRatingBadgeBackground" TargetType="Border">
+        <Style x:Key="IRatingBadgeBackground" TargetType="Border" BasedOn="{StaticResource Chip}">
             <Setter Property="Background" Value="#14FFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="#26FFFFFF" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IRatingTier}" Value="Mid">
@@ -228,8 +261,7 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="IRatingBadgeText" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource FontSmall}" />
+        <Style x:Key="IRatingBadgeText" TargetType="TextBlock" BasedOn="{StaticResource ChipText}">
             <Setter Property="Foreground" Value="{StaticResource IRatingLow}" />
             <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
             <Style.Triggers>
@@ -251,9 +283,8 @@
              the panel material rather than yet another accent. This chip is the
              fallback for the makes with no vector mark; it holds a short brand
              abbreviation. -->
-        <Style x:Key="ManufacturerBadgeBackground" TargetType="Border">
+        <Style x:Key="ManufacturerBadgeBackground" TargetType="Border" BasedOn="{StaticResource Chip}">
             <Setter Property="Background" Value="#14FFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="#26FFFFFF" />
             <Style.Triggers>
                 <!-- Opaque dark backing on the amber "you" row, matching the other
@@ -264,9 +295,24 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="ManufacturerBadgeText" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource FontSmall}" />
+        <Style x:Key="ManufacturerBadgeText" TargetType="TextBlock" BasedOn="{StaticResource ChipText}">
+            <!-- One step smaller than the other chips: these are 2-4 letter brand
+                 abbreviations standing in for a vector mark, not a value to read. -->
+            <Setter Property="FontSize" Value="9" />
             <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+        </Style>
+
+        <!-- Pit-lane chip. Same geometry, amber-on-amber like the other tinted
+             chips; kept as a named style so the relative and standings rows can't
+             drift apart. -->
+        <Style x:Key="PitBadgeBackground" TargetType="Border" BasedOn="{StaticResource Chip}">
+            <Setter Property="Background" Value="#3DFFB03D" />
+            <Setter Property="BorderBrush" Value="#8AFFB03D" />
+        </Style>
+
+        <Style x:Key="PitBadgeText" TargetType="TextBlock" BasedOn="{StaticResource ChipText}">
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="Foreground" Value="{StaticResource Warning}" />
         </Style>
 
         <!-- Flat button used by the dev control panel -->

@@ -943,6 +943,36 @@ lap status, "this is you").
   large-number / tabular-figure patterns used throughout the widgets.
 - `DevButton` — flat, rounded button style used by the dev control panel
   (accent-tinted on hover, dimmed when disabled).
+- `Chip`/`ChipText` — the shared badge geometry (see Chips below). Every badge
+  style is `BasedOn` these, so size lives in one place.
+- `PlayerGlowColor` — the player-row glow hue as a bare `Color`, because
+  `DropShadowEffect.Color` takes a `Color` and not a `Brush`.
+
+### Chips
+
+Every badge in the app — license, iRating, manufacturer, PIT, the fuel widget's
+session chip — is the same object: `CornerRadius 2`, `Padding 4,0`,
+`Height 16`, a 1px edge, `FontSmall` Bold at 10px. That geometry lives **only**
+in the `Chip`/`ChipText` styles; the per-badge styles are `BasedOn` them and add
+nothing but colour. They had previously been retyped at each of six call sites
+and had already drifted (the fuel session chip was at radius 3 with different
+padding and no edge).
+
+Tinted chips follow one formula: **`#3D<hue>` fill, `#8A<hue>` edge, full-hue
+text**. A bare tint with no edge has no boundary at this size and just looks
+like text sitting on a smudge.
+
+**Vertical centring is not `VerticalAlignment="Center"`.** A 10px line box is
+~13.3 DIP tall but the caps and digits inside it are only ~7 DIP, and the font
+leaves ~4 DIP of ascent gap above them against ~2.3 DIP below. Chips never
+contain a descender, so that lower space is dead — centre the *line box* and the
+glyph lands visibly low (measured 10px above the caps vs 4px below, on a 2x
+render). `ChipText` therefore top-aligns the line box and lifts it half a DIP
+(`Margin="0,-0.5,0,0"`), which centres the **glyph**. The correction is genuinely
+fractional: a whole `-1` overshoots to 6-above/8-below.
+
+Verify any change to this with `tools/RenderWidget` and count pixels — the
+asymmetry is a couple of DIP and is much easier to measure than to eyeball.
 
 ### Typography
 

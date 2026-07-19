@@ -97,7 +97,7 @@
                                                 <Setter Property="Effect">
                                                     <Setter.Value>
                                                         <DropShadowEffect BlurRadius="16" ShadowDepth="0"
-                                                                          Color="#FFB03D" Opacity="0.5" />
+                                                                          Color="{StaticResource PlayerGlowColor}" Opacity="0.5" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </DataTrigger>
@@ -167,29 +167,13 @@
                                         </TextBlock.Style>
                                     </TextBlock>
 
-                                    <Border Grid.Column="4"
-                                            CornerRadius="2"
-                                            Padding="4,1"
-                                            Height="16"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Center"
-                                            Style="{StaticResource LicenseBadgeBackground}">
+                                    <Border Grid.Column="4" Style="{StaticResource LicenseBadgeBackground}">
                                         <TextBlock Text="{Binding License}"
-                                                   FontSize="10"
-                                                   FontWeight="Bold"
                                                    Style="{StaticResource LicenseBadgeText}" />
                                     </Border>
 
-                                    <Border Grid.Column="5"
-                                            CornerRadius="2"
-                                            Padding="4,1"
-                                            Height="16"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Center"
-                                            Style="{StaticResource IRatingBadgeBackground}">
+                                    <Border Grid.Column="5" Style="{StaticResource IRatingBadgeBackground}">
                                         <TextBlock Text="{Binding IRatingText}"
-                                                   FontSize="10"
-                                                   FontWeight="Bold"
                                                    Style="{StaticResource IRatingBadgeText}" />
                                     </Border>
 
@@ -198,19 +182,10 @@
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"
                                                 Margin="0,0,2,0">
-                                        <Border CornerRadius="2"
-                                                Padding="4,1"
-                                                Margin="0,0,6,0"
-                                                Background="#3DFFB03D"
-                                                BorderBrush="#8AFFB03D"
-                                                BorderThickness="1"
-                                                VerticalAlignment="Center"
+                                        <Border Margin="0,0,6,0"
+                                                Style="{StaticResource PitBadgeBackground}"
                                                 Visibility="{Binding InPits, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Text="PIT"
-                                                       FontFamily="{StaticResource FontSmall}"
-                                                       FontSize="9"
-                                                       FontWeight="Bold"
-                                                       Foreground="{StaticResource Warning}" />
+                                            <TextBlock Text="PIT" Style="{StaticResource PitBadgeText}" />
                                         </Border>
                                         <TextBlock Text="{Binding DeltaText}"
                                                    FontSize="13"
