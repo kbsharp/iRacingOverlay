@@ -193,9 +193,13 @@ public sealed class RadarViewModel : OverlayViewModelBase
             }
         }
 
+        // One scale for the whole frame: the canvas shows exactly the configured
+        // range, so moving the range slider zooms the field rather than pushing
+        // cars off the edge (long range) or into a huddle at the centre (short).
+        var scale = RadarLayout.ScaleFor(_rangeMeters);
         for (var i = 0; i < ordered.Count; i++)
         {
-            Blips[i].Update(ordered[i]);
+            Blips[i].Update(ordered[i], scale);
         }
     }
 

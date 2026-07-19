@@ -52,14 +52,18 @@ public sealed class RadarBlipViewModel : ObservableObject
         private set => SetProperty(ref _opacity, value);
     }
 
-    public void Update(RadarBlip blip)
+    /// <param name="blip">The car's position in the player's local frame, in metres.</param>
+    /// <param name="pixelsPerMeter">The scale for the range currently in view - see
+    /// <see cref="RadarLayout.ScaleFor"/>. Passed in rather than read from a constant
+    /// so the canvas always shows exactly the range the driver asked for.</param>
+    public void Update(RadarBlip blip, double pixelsPerMeter)
     {
         // Metres -> canvas pixels: forward (+) is up the screen, right (+) is right.
-        var pointX = RadarLayout.CenterX + blip.RightMeters * RadarLayout.PixelsPerMeter;
-        var pointY = RadarLayout.CenterY - blip.ForwardMeters * RadarLayout.PixelsPerMeter;
+        var pointX = RadarLayout.CenterX + (blip.RightMeters * pixelsPerMeter);
+        var pointY = RadarLayout.CenterY - (blip.ForwardMeters * pixelsPerMeter);
 
-        CanvasLeft = pointX - RadarLayout.BlipWidth / 2;
-        CanvasTop = pointY - RadarLayout.BlipHeight / 2;
+        CanvasLeft = pointX - (RadarLayout.BlipWidth / 2);
+        CanvasTop = pointY - (RadarLayout.BlipHeight / 2);
 
         // The geometry's angle is anticlockwise (world); WPF's RotateTransform is
         // clockwise because the canvas Y axis points down, so negate.

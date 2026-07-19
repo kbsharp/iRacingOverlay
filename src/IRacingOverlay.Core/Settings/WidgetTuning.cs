@@ -19,8 +19,11 @@ public sealed record WidgetTuning
     /// <summary>How long the setup widget pulses at the start of a Qualify/Race.</summary>
     public double SetupFlashSeconds { get; init; } = 60;
 
-    /// <summary>Along-track distance within which a car appears on the radar.</summary>
-    public double RadarRangeMeters { get; init; } = 60;
+    /// <summary>Along-track distance within which a car appears on the radar.
+    /// The radar's job ends where the mirrors' does; 40 m is roughly nine car
+    /// lengths, five times the overlap zone the danger glow grades, and the
+    /// relative is the right instrument for anything further back.</summary>
+    public double RadarRangeMeters { get; init; } = 40;
 
     /// <summary>Cars shown ahead of and behind the player in the relative.</summary>
     public int RelativeSlotsPerSide { get; init; } = 3;
@@ -35,7 +38,7 @@ public sealed record WidgetTuning
     {
         FuelSafetyMarginLaps = Clamp(FuelSafetyMarginLaps, 0, 5, 0.5),
         SetupFlashSeconds = Clamp(SetupFlashSeconds, 5, 300, 60),
-        RadarRangeMeters = Clamp(RadarRangeMeters, 15, 200, 60),
+        RadarRangeMeters = Clamp(RadarRangeMeters, 15, 200, 40),
         RelativeSlotsPerSide = Math.Clamp(RelativeSlotsPerSide, 1, 8),
         StandingsMaxPerClass = Math.Clamp(StandingsMaxPerClass, 5, 60),
     };

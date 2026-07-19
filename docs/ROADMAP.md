@@ -117,8 +117,30 @@ extends an existing widget rather than adding a new one.
   where the sim resets it to zero exactly as it becomes worth reading, and it
   shows nothing in the pits, on an in-lap, or before there's a lap to compare
   against. See [FEATURES.md](FEATURES.md#delta--deltawindow--deltaviewmodel--coredeltadeltacalculator).
-- **Radar density pass** — the last widget not audited against the shared
-  spacing rhythm; the question is the 150×240 field size and blip scale.
+- ~~**Radar density pass**~~ — **done**, and the audit found a defect rather than a
+  spacing question. `PixelsPerMeter` was a constant while the range it depicts is a
+  setting (15–200 m), so the canvas and the range disagreed at every value except
+  the one the constant was chosen for: at 200 m cars were placed 320 px out on a
+  240 px canvas — off the widget entirely — and at 15 m the whole field huddled
+  into the middle fifth while the rest stayed blank.
+
+  So the scale is now derived from the range (`RadarLayout.ScaleFor`): a car at the
+  limit of range sits exactly at the canvas edge at every setting. That fixes the
+  density question as a side effect, because "how many pixels is a car's width" was
+  never a spacing choice — it was this bug. The canvas width is derived too, from
+  the fact that lateral offset can't exceed the arc walked and the calculator
+  already bounds that by the range, so no car can be clipped off the side at any
+  setting (a hairpin used to throw the inside car out over the glows).
+
+  The one taste call: the default range drops 60 m → 40 m. With the scale following
+  the range, the default range *is* the density control, and 60 m was showing cars
+  the mirrors have long since handed over to the relative. 40 m is nine car lengths
+  and five times the overlap zone the glow grades. The slider is still there for
+  anyone who disagrees.
+
+  **Needs a human eye in the sim**: whether 40 m feels right at racing speed, and
+  whether a car queued right on your gearbox — which now overlaps the player mark
+  by about half a blip rather than three-quarters — reads clearly enough.
 - ~~**Radar: show when the geometry can't resolve a car**~~ — **done**. This was
   the one place in the app that failed the second test above: every other readout
   is either measured or legibly a forecast, while the radar drew *inferred*

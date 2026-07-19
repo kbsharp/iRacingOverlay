@@ -1,3 +1,4 @@
+using IRacingOverlay.Core.Radar;
 using IRacingOverlay.Core.Settings;
 
 namespace IRacingOverlay.Core.Tests.Settings;
@@ -13,12 +14,24 @@ public class WidgetTuningTests
 
         Assert.Equal(0.5, tuning.FuelSafetyMarginLaps);
         Assert.Equal(60, tuning.SetupFlashSeconds);
-        Assert.Equal(60, tuning.RadarRangeMeters);
         Assert.Equal(3, tuning.RelativeSlotsPerSide);
 
         // 12, not the calculator's own 30 default: 12 is what StandingsViewModel
         // has always passed, so it's the behaviour an untouched file must keep.
         Assert.Equal(12, tuning.StandingsMaxPerClass);
+
+        // The one deliberate departure: the radar range was 60 m, shortened in the
+        // density pass once the canvas scale started following the range. See
+        // RadarRangeMeters' own doc comment.
+        Assert.Equal(40, tuning.RadarRangeMeters);
+    }
+
+    [Fact]
+    public void Defaults_RadarRange_MatchesTheCalculatorsOwnDefault()
+    {
+        // Two places name this number and only one of them is what the app actually
+        // passes. They drifted apart once already; this is the tripwire.
+        Assert.Equal(RadarCalculator.DefaultRangeMeters, new WidgetTuning().RadarRangeMeters);
     }
 
     [Fact]
@@ -72,6 +85,6 @@ public class WidgetTuningTests
 
         Assert.Equal(0.5, tuning.FuelSafetyMarginLaps);
         Assert.Equal(60, tuning.SetupFlashSeconds);
-        Assert.Equal(60, tuning.RadarRangeMeters);
+        Assert.Equal(40, tuning.RadarRangeMeters);
     }
 }
