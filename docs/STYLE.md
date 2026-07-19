@@ -66,11 +66,8 @@ a human eye in the sim.
 
 1. ~~**Relative: make the delta the headline.**~~ *Shipped* — delta raised to
    `16px` Bold against the name's `13px`.
-2. **Standings: solid class name-plates.** The class short name on each
-   banner moves into a small solid block of the class colour with dark
-   text — a number-board, in the sim's own class hue — while the banner
-   keeps its current wash and the SoF stays put. Multiclass grouping should
-   read from the cockpit the way their class strips do, in our material.
+2. ~~**Standings: solid class name-plates.**~~ *Shipped* — solid plate in the
+   class hue, label darkened/lightened by measured luminance.
 3. **Fuel: a tank gauge bar.** One slim horizontal bar under the headline
    figure: fill = current fuel against tank capacity, a tick at
    fuel-needed-to-finish. Green fill when level clears the tick, red when

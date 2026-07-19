@@ -87,4 +87,37 @@ public static class RatingFormat
 
         return null;
     }
+
+    /// <summary>
+    /// Whether text drawn on top of a solid block of the given colour should be
+    /// dark rather than light. Used by the standings class name-plate: iRacing's
+    /// class colours are series-defined and can be anything, so a plate filled
+    /// with a dark navy would swallow dark text entirely.
+    ///
+    /// Uses relative luminance with the standard Rec. 601 weights - the eye is
+    /// far more sensitive to green than to blue, so a plain RGB average would
+    /// call a saturated blue "light" and a saturated green "dark". The 0.55
+    /// threshold sits above the midpoint because light text on a mid-tone holds
+    /// up better than dark text does on the same tone.
+    /// </summary>
+    public static bool PrefersDarkText(string? hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex))
+        {
+            return false;
+        }
+
+        var trimmed = hex.Trim().TrimStart('#');
+        if (trimmed.Length < 6 || !trimmed[..6].All(Uri.IsHexDigit))
+        {
+            return false;
+        }
+
+        var r = int.Parse(trimmed[..2], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+        var g = int.Parse(trimmed[2..4], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+        var b = int.Parse(trimmed[4..6], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
+        var luminance = ((0.299 * r) + (0.587 * g) + (0.114 * b)) / 255.0;
+        return luminance >= 0.55;
+    }
 }

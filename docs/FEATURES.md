@@ -30,9 +30,16 @@ Under that strip, the column captions sit on a full-bleed **header band**
 rather than a floating row of grey labels.
 
 **Rows** are grouped by class. Each class shows a colour-tinted **banner** (a
-translucent wash of the sim's `CarClassColor`) with the class short name, its
-**Strength of Field** (`StrengthOfField.Compute`, iRacing's real SoF formula),
-and a car count. Under it, its cars ordered by position, each with a
+translucent wash of the sim's `CarClassColor`) carrying a solid **class
+name-plate** — the short name in a filled block of the class colour, like a
+number-board — plus its **Strength of Field** (`StrengthOfField.Compute`,
+iRacing's real SoF formula) and a car count. The plate exists because the
+translucent wash alone left three classes reading as three similar dark tints
+at a squint; a solid block of the sim's own class hue is what makes multiclass
+grouping legible from the cockpit. Its label flips between dark and light by
+`RatingFormat.PrefersDarkText` (Rec. 601 relative luminance, threshold `0.55`),
+since class colours are series-defined and a dark fill would otherwise swallow
+a dark label. Under it, its cars ordered by position, each with a
 full-height class-colour bar flush to the panel's left edge, and alternating
 (zebra) row shading. Each car row: class position, car number, a
 an optional **manufacturer badge**, driver name, a license badge and a neutral iRating
@@ -1026,6 +1033,13 @@ testable in `Core` even though the actual brushes live in `App.xaml`.
   `CarClassColor` format (a decimal-packed `0xRRGGBB` int, e.g. `"16750899"`)
   and, defensively, an already-hex value (`"FFCC00"`, `"#ffcc00"`, or an
   8-digit ARGB/RGBA string).
+- `PrefersDarkText(hex)` → whether a label drawn **on** a solid block of that
+  colour should be dark. Rec. 601 relative luminance
+  (`0.299R + 0.587G + 0.114B`) against a `0.55` threshold — the perceptual
+  weights matter, since a plain RGB average calls a saturated blue "light" and
+  a saturated green "dark". Anything unparseable answers "use light text", so
+  the fallback grey plate can never render an invisible label. Used by the
+  standings class name-plate.
 
 ## UI shell (`App.xaml`)
 

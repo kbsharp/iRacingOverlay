@@ -137,10 +137,40 @@
                                     <Border Background="{Binding HeaderColorBrush}" Opacity="0.22" Margin="-14,0,-14,0" />
                                     <Border Background="{Binding HeaderColorBrush}" Width="5" HorizontalAlignment="Left" Margin="-14,0,0,0" />
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,0,0">
-                                        <TextBlock Text="{Binding ClassName}"
-                                                   FontSize="12"
-                                                   FontWeight="Bold"
-                                                   Foreground="{StaticResource TextPrimary}" />
+                                        <!-- Class name-plate: a solid block of the sim's own class
+                                             colour with dark text, like a number-board. The banner
+                                             keeps its 0.22 wash, but at a squint that wash alone
+                                             made three classes read as three similar dark tints -
+                                             the solid plate is what makes multiclass grouping
+                                             legible from the cockpit. -->
+                                        <Border Background="{Binding HeaderColorBrush}"
+                                                CornerRadius="2"
+                                                Padding="5,0"
+                                                Height="16"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding ClassName}"
+                                                       FontFamily="{StaticResource FontSmall}"
+                                                       FontSize="11"
+                                                       FontWeight="Bold"
+                                                       VerticalAlignment="Top"
+                                                       Margin="0,-0.5,0,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <!-- Light label by default; dark only when the
+                                                             plate's fill is light enough to carry it
+                                                             (RatingFormat.PrefersDarkText). Class colours
+                                                             are series-defined, so a dark navy class would
+                                                             otherwise swallow the label whole. -->
+                                                        <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HeaderPrefersDarkText}" Value="True">
+                                                                <Setter Property="Foreground" Value="{StaticResource OnClassColor}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
                                         <TextBlock Text="{Binding ClassSofText}"
                                                    Margin="10,0,0,0"
                                                    VerticalAlignment="Center"

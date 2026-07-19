@@ -78,4 +78,43 @@ public class RatingFormatTests
     {
         Assert.Null(RatingFormat.NormalizeHexColor(raw));
     }
+
+    [Theory]
+    [InlineData("#FFFFFF")]  // white
+    [InlineData("#FFD84D")]  // C-license yellow
+    [InlineData("#FF9933")]  // the real GTP orange from the sim
+    [InlineData("#33D689")]  // a bright green
+    public void PrefersDarkText_LightFills_WantDarkLabel(string hex)
+    {
+        Assert.True(RatingFormat.PrefersDarkText(hex));
+    }
+
+    [Theory]
+    [InlineData("#000000")]  // black
+    [InlineData("#3355FF")]  // saturated blue - an RGB average would wrongly call this light
+    [InlineData("#1A1D23")]  // the panel material itself
+    [InlineData("#8A2846")]  // deep maroon
+    public void PrefersDarkText_DarkFills_WantLightLabel(string hex)
+    {
+        Assert.False(RatingFormat.PrefersDarkText(hex));
+    }
+
+    [Fact]
+    public void PrefersDarkText_WeightsGreenOverBlue()
+    {
+        // Same channel value, opposite answers: the Rec. 601 weights are the
+        // whole point of the helper. A plain average would tie these.
+        Assert.True(RatingFormat.PrefersDarkText("#00FF00"));
+        Assert.False(RatingFormat.PrefersDarkText("#0000FF"));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("not-a-color")]
+    public void PrefersDarkText_Unusable_FallsBackToLightLabel(string? hex)
+    {
+        // Light text on the fallback grey plate, never an invisible dark label.
+        Assert.False(RatingFormat.PrefersDarkText(hex));
+    }
 }

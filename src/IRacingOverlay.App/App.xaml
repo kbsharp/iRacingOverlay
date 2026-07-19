@@ -80,6 +80,13 @@
         <SolidColorBrush x:Key="TextSecondary" Color="#D8E3F5" />
         <SolidColorBrush x:Key="TextMuted" Color="#98A9C6" />
 
+        <!-- Text drawn *on* a solid class-colour block (the standings class
+             name-plate). Near-black rather than pure black so it sits in the
+             panel material rather than punching a hole in it; iRacing's class
+             colours are saturated mid-to-light hues, which this clears
+             comfortably. -->
+        <SolidColorBrush x:Key="OnClassColor" Color="#11141A" />
+
         <SolidColorBrush x:Key="LapAheadText" Color="#FF7A85" />
         <SolidColorBrush x:Key="LapBehindText" Color="#6FB4FF" />
 

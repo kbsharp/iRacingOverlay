@@ -24,6 +24,7 @@ public sealed class StandingsRowViewModel : ObservableObject
     private string _classSofText = string.Empty;
     private string _classCountText = string.Empty;
     private Brush _headerColorBrush = Brushes.Gray;
+    private bool _headerPrefersDarkText;
 
     // Row
     private bool _isPlayer;
@@ -81,6 +82,17 @@ public sealed class StandingsRowViewModel : ObservableObject
     {
         get => _headerColorBrush;
         private set => SetProperty(ref _headerColorBrush, value);
+    }
+
+    /// <summary>
+    /// True when the class name-plate is filled with a light enough colour that
+    /// its label must be dark. Class colours come from the series, not from us,
+    /// so the plate can't assume a bright fill.
+    /// </summary>
+    public bool HeaderPrefersDarkText
+    {
+        get => _headerPrefersDarkText;
+        private set => SetProperty(ref _headerPrefersDarkText, value);
     }
 
     public bool IsPlayer
@@ -230,6 +242,7 @@ public sealed class StandingsRowViewModel : ObservableObject
             : string.Empty;
         ClassCountText = group.Rows.Count.ToString(CultureInfo.InvariantCulture);
         HeaderColorBrush = ViewModels.ClassColorBrush.Resolve(group.ClassColorHex);
+        HeaderPrefersDarkText = RatingFormat.PrefersDarkText(group.ClassColorHex);
     }
 
     public void ShowRow(StandingsRow row, bool isAltRow, bool showManufacturer)
