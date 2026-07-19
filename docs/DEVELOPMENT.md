@@ -118,7 +118,8 @@ of seconds, so it hasn't been worth adding.
   .\scripts\render.ps1 fuel relative    # just these two
   ```
 
-  Targets: `standings`, `relative`, `fuel`, `radar`, `radar-danger`, `settings`.
+  Targets: `standings`, `relative`, `fuel`, `radar`, `radar-danger`, `delta`,
+  `settings`.
   **Rendering everything is the default** and costs barely more than rendering
   one — all the view models are fed from a single demo session, and the slow part
   is wall-clock demo laps (the fuel burn average needs ~35 s of them), not the

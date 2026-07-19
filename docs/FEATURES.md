@@ -798,6 +798,65 @@ takes over.
   with visibly angled cars; the dev panel's "Cycle radar" button still steps the
   `CarLeftRight` fallback through its states.
 
+### Delta — `DeltaWindow` / `DeltaViewModel` / `Core.Delta.DeltaCalculator`
+
+Self-pacing against your own best lap: how far up or down the lap in progress
+is, as a signed number over a bar that grows from its centre.
+
+**Layout:** a 176-wide panel in the shared material, on the fuel widget's
+10px/6px spacing rhythm. Header (`DELTA` + connection dot/status), the delta at
+30px `FontDisplay` centred, a 7px bar, then a footer reading `VS BEST` and the
+reference lap time. Default position `Left=600, Top=330`. Fixed width, so
+nothing reflows as the number changes sign or the `LAP` chip appears.
+
+**Fields:**
+
+| Field | Meaning |
+|---|---|
+| Delta | Signed seconds against your best lap this session, two decimals, always signed (`DeltaFormat.Signed`). `—` when there's nothing to report. |
+| Bar | Fills from the centre — left/green when up, right/red when down — full at ±1.00s (`DeltaCalculator.FullScaleSeconds`). A white tick marks zero. |
+| `VS BEST` | The lap being measured against (`CarIdxBestLapTime` for the player, `m:ss.fff`). |
+| `LAP` chip | Present only while the number shown is the finished lap's held figure rather than the live one. Deliberately colourless — green/red already say whether the lap was good. |
+
+**The number is iRacing's, not ours.** The source is the sim's own
+`LapDeltaToBestLap` (with its `LapDeltaToBestLap_OK` validity flag), not a
+reconstruction from lap distance. The sim already interpolates against the
+stored reference lap, and a second opinion would only differ from what the
+driver sees in their own black box. Both vars degrade to `0, not valid` on a
+build that doesn't report them, which shows nothing rather than a confident zero.
+
+**What `DeltaCalculator` adds** (pure, tested) is the part the sim doesn't do —
+making it readable:
+- **Hold at the line.** The final delta of a lap is the one moment the number is
+  worth reading in full, and it is exactly the moment the sim snaps it back
+  towards zero for the new lap. The last live value of the finished lap is banked
+  and shown for `HoldSeconds` (5s) instead, flagged by the `LAP` chip. Only a lap
+  *gained* counts — a tow or session reset rewinds the lap counter and must not
+  read as a lap completed.
+- **Suppression** in the pits and out of the car, where a stale delta left on
+  screen would be read as live. A held figure is dropped on pit entry too: a lap
+  that ends by peeling into the lane is an in-lap, and its result is not news.
+- **A deadband** of ±0.05s (`NeutralBandSeconds`), inside which the readout is
+  neutral-coloured rather than flickering green/red on hundredths.
+- **A session reset**, since a new session means a new reference lap.
+
+**Colour** reuses the app's existing green/red pair — the same one that already
+means gaining/losing on the relative's pace trend and the fuel margin — so it
+needs no learning.
+
+**Known limitations:**
+- **Your best lap only.** iRacing also exposes deltas to the session's fastest
+  lap and to optimal (best-sectors) laps; the widget deliberately shows one
+  number, because self-pacing is the in-car decision and a second reference
+  would need a control to choose between them.
+- **No all-time best.** The telemetry has no cross-session personal best, and
+  the app doesn't keep its own lap store, so "vs all-time" isn't offered rather
+  than being approximated.
+- Demo mode synthesises a delta that accumulates across the lap towards a
+  per-lap outcome and lands on it at the line, so the hold behaviour is
+  exercisable without the sim; it reports "not valid" on lap 1 and in the pits,
+  as the sim does.
+
 ## Telemetry & session data (`Core.Telemetry`, `Core.Session`)
 
 **`TelemetrySnapshot`** — one frame, normalised to the overlay's units
@@ -809,7 +868,9 @@ full per-car `Cars` list. Also carries `Flags` — iRacing's raised
 `SessionFlags` bitfield, reduced to one displayable flag by
 `SessionFlagResolver` — and `PlayerYawRad`, the player car's
 heading (iRacing's `Yaw`), the one heading iRacing exposes, which the radar
-records around the lap to reconstruct the track shape.
+records around the lap to reconstruct the track shape, and
+`LapDeltaToBestSeconds` / `LapDeltaToBestValid` — the sim's own running lap
+delta and its validity flag, which feed the delta widget.
 
 **`CarTelemetry`** — per-car state: car index, lap, lap distance %, `EstTime`,
 on-pit-road flag, `CarTrackSurface`, race position, plus the standings fields:
@@ -1265,6 +1326,10 @@ name.
 positive) and `Gap` ("+n.n" for a time gap, "+nL" when a lap or more down,
 blank for the class leader, placeholder when unknown).
 
+**`DeltaFormat`**: `Signed` renders a lap delta as `-0.34`/`+1.02` — always
+signed, always two decimals, rounded before the sign is taken so a delta of
+-0.002 reads `+0.00` rather than the nonsense `-0.00`.
+
 **`RadarFormat`**: classifies iRacing's `CarLeftRight` signal into the
 booleans the radar's first-lap spotter fallback binds to - `HasCarLeft`,
 `HasCarRight`, `HasTwoCarsLeft`, `HasTwoCarsRight`, `IsActive`.
@@ -1447,7 +1512,7 @@ on the content root (see the tray icon section).
 
 ## Test coverage
 
-422 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+565 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -1477,6 +1542,8 @@ on the content root (see the tray icon section).
 | `Rating/SafetyTrackerTests.cs` | CPI from turns × laps, minimum-laps gate, clean session = infinite rate + always gaining, above/below-baseline direction, no baseline = figure but no direction, missing turn count/metadata hides it, offline testing excluded, practice counted, banking on session change, ratcheting through a car leaving the world, idempotent repeated frames, double-commit safety |
 | `Rating/CpiHistoryTests.cs` | Baseline gated on minimum corners, spotless window = no baseline, accumulation, corner-budget cap, recent sessions displacing older ones, oversized session truncated without distorting its rate |
 | `Formatting/StandingsFormatTests.cs` | Lap-time (m:ss.fff) and gap ("+n.n"/"+nL"/blank) formatting |
+| `Delta/DeltaCalculatorTests.cs` | No reading before a reference lap, live delta, tone by direction + deadband, bar fill and full-scale clamp, hold at the line, hold expiry, lap counter rewinding, pit/off-track suppression, held delta dropped on pit entry, session-change reset |
+| `Formatting/DeltaFormatTests.cs` | Signed two-decimal delta formatting, midpoint rounding, no negative zero |
 | `Settings/OverlaySettingsSerializerTests.cs` | JSON round-trip (incl. the widget/unit/tuning fields and the safety baseline), impossible safety-baseline values reset, missing/corrupt file → defaults, out-of-range scale sanitizing, unknown-field tolerance, pre-settings-window file shape still loading with every widget enabled, null maps/records → empty defaults, per-widget scale and tuning clamping |
 | `Settings/OverlaySettingsTests.cs` | Sparse-map defaults: absent key = enabled / shared scale / interactive; overrides win; widget ids distinct |
 | `Settings/WidgetTuningTests.cs` | Defaults match the previously hardcoded constants, in-band values untouched, out-of-band clamped, non-finite → default not band edge |
@@ -1487,7 +1554,7 @@ on the content root (see the tray icon section).
 ## Not yet implemented
 
 Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
-[README](../README.md#roadmap)): delta bar, extending the
+[README](../README.md#roadmap)): the radar density pass, extending the
 manufacturer badge to the relative, drag-to-resize widgets,
 a speed readout for the existing km/h / mph preference, a configurable
 telemetry refresh rate, per-car/track settings profiles, and pinning the tray

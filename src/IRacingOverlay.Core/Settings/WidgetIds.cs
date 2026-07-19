@@ -14,6 +14,7 @@ public static class WidgetIds
     public const string Relative = "RelativeWindow";
     public const string Fuel = "FuelWindow";
     public const string Radar = "RadarWindow";
+    public const string Delta = "DeltaWindow";
 
     /// <summary>Every widget the settings surface knows about, in the order the
     /// tray menu and settings window list them.
@@ -23,5 +24,5 @@ public static class WidgetIds
     /// its keys; every per-widget map is read by lookup, so the stale entries are
     /// simply never consulted.</summary>
     public static IReadOnlyList<string> All { get; } =
-        [Standings, Relative, Fuel, Radar];
+        [Standings, Relative, Fuel, Radar, Delta];
 }

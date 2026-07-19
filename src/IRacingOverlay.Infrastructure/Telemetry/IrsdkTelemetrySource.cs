@@ -192,6 +192,11 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
             Flags = (SessionFlags)GetBitFieldOrDefault(data, "SessionFlags"),
             CarLeftRight = (CarLeftRight)GetIntOrDefault(data, "CarLeftRight"),
             PlayerYawRad = GetFloatOrDefault(data, "Yaw"),
+            // The sim's own delta to the driver's best lap, plus the validity flag
+            // it ships alongside. Both are absent on older builds, where the pair
+            // degrades to "0, not valid" and the delta widget shows nothing.
+            LapDeltaToBestSeconds = GetFloatOrDefault(data, "LapDeltaToBestLap"),
+            LapDeltaToBestValid = GetBoolOrDefault(data, "LapDeltaToBestLap_OK"),
             Cars = cars,
         });
     }
@@ -201,6 +206,9 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
 
     private static float GetFloatOrDefault(IRacingSdkData data, string name, float fallback = 0f) =>
         data.TelemetryDataProperties.TryGetValue(name, out var datum) ? data.GetFloat(datum) : fallback;
+
+    private static bool GetBoolOrDefault(IRacingSdkData data, string name, bool fallback = false) =>
+        data.TelemetryDataProperties.TryGetValue(name, out var datum) ? data.GetBool(datum) : fallback;
 
     private static uint GetBitFieldOrDefault(IRacingSdkData data, string name, uint fallback = 0) =>
         data.TelemetryDataProperties.TryGetValue(name, out var datum) ? data.GetBitField(datum) : fallback;

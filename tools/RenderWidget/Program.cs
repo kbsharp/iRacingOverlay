@@ -43,7 +43,7 @@ internal static class Program
     /// rather than a separate widget - see <see cref="RenderRadarDanger"/>.
     /// </summary>
     private static readonly string[] AllTargets =
-        ["standings", "relative", "fuel", "radar", "radar-danger", "settings"];
+        ["standings", "relative", "fuel", "radar", "radar-danger", "delta", "settings"];
 
     [STAThread]
     private static int Main(string[] args)
@@ -174,6 +174,7 @@ internal static class Program
         RelativeViewModel? relative = null;
         FuelViewModel? fuel = null;
         RadarViewModel? radar = null;
+        DeltaViewModel? delta = null;
 
         // The safety chip draws no arrow until the driver has a baseline to be
         // measured against, so a fresh one renders the no-history state and
@@ -208,14 +209,22 @@ internal static class Program
             radar = new RadarViewModel("Demo");
         }
 
-        var live = new OverlayViewModelBase?[] { standings, relative, fuel, radar }
+        if (targets.Contains("delta"))
+        {
+            // Like the fuel widget, this needs laps rather than a frame: there is
+            // no reference lap - and so no delta at all - until the player has
+            // completed one, which the shared warm-up below covers.
+            delta = new DeltaViewModel("Demo");
+        }
+
+        var live = new OverlayViewModelBase?[] { standings, relative, fuel, radar, delta }
             .Where(vm => vm is not null)
             .Select(vm => vm!)
             .ToList();
 
         if (live.Count > 0)
         {
-            WarmUp(live, radar, needsFuelLaps: fuel is not null);
+            WarmUp(live, radar, needsLaps: fuel is not null || delta is not null);
         }
 
         if (standings is not null)
@@ -238,6 +247,11 @@ internal static class Program
             results.Add(("radar", new IRacingOverlay.App.RadarWindow { DataContext = radar }));
         }
 
+        if (delta is not null)
+        {
+            results.Add(("delta", new IRacingOverlay.App.DeltaWindow { DataContext = delta }));
+        }
+
         if (targets.Contains("radar-danger"))
         {
             results.Add(("radar-danger", RenderRadarDanger()));
@@ -249,10 +263,11 @@ internal static class Program
     /// <summary>
     /// Drives one demo session, fanning every frame out to all the view models,
     /// until they've each seen enough: the radar has learned the track, and the
-    /// fuel calculator has a rolling burn average.
+    /// lap-driven widgets (fuel's burn average, delta's reference lap) have laps
+    /// behind them.
     /// </summary>
     private static void WarmUp(
-        List<OverlayViewModelBase> viewModels, RadarViewModel? radar, bool needsFuelLaps)
+        List<OverlayViewModelBase> viewModels, RadarViewModel? radar, bool needsLaps)
     {
         using var source = new SimulatedTelemetrySource();
 
@@ -283,7 +298,7 @@ internal static class Program
         while (DateTime.UtcNow - started < WarmupCap)
         {
             var elapsed = DateTime.UtcNow - started;
-            var fuelReady = !needsFuelLaps || elapsed >= FuelWarmup;
+            var fuelReady = !needsLaps || elapsed >= FuelWarmup;
             var radarReady = radar is null || radar.ShowRadar;
 
             if (fuelReady && radarReady)

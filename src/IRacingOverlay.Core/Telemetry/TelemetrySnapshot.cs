@@ -49,6 +49,17 @@ public sealed record TelemetrySnapshot
     /// reconstruct the track shape (see <c>Core.Radar.TrackMap</c>). Defaults to 0.</summary>
     public float PlayerYawRad { get; init; }
 
+    /// <summary>The sim's own running lap delta against the player's best lap of
+    /// the session (iRacing's <c>LapDeltaToBestLap</c>), in seconds; negative is
+    /// faster. Only meaningful when <see cref="LapDeltaToBestValid"/> is set.</summary>
+    public double LapDeltaToBestSeconds { get; init; }
+
+    /// <summary>iRacing's <c>LapDeltaToBestLap_OK</c> - false until there is a
+    /// reference lap, and while the sim considers the comparison unusable.
+    /// Defaults to false, so a build that doesn't report the var simply shows no
+    /// delta rather than a confident zero.</summary>
+    public bool LapDeltaToBestValid { get; init; }
+
     /// <summary>Cars currently in the world (the player included).</summary>
     public required IReadOnlyList<CarTelemetry> Cars { get; init; }
 }
