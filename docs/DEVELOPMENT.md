@@ -38,6 +38,10 @@ scripts/
   test.ps1                      # run Core.Tests (-Filter to narrow)
   run-demo.ps1                  # build + launch, detached from the terminal (--demo)
   run-live.ps1                  # build + launch, detached from the terminal
+  render.ps1                    # render widgets offscreen to out/*.png
+tools/
+  RenderWidget/                 # the offscreen renderer (not in the .sln)
+  MakeAppIcon.ps1               # generates Assets/app.ico
 ```
 
 `Directory.Build.props` applies `Nullable`, `ImplicitUsings`, and
@@ -104,43 +108,45 @@ of seconds, so it hasn't been worth adding.
   Stop-Process -Id $p.Id -Force
   ```
 
-  To actually **see** the rendered UI without a human at the keyboard, render the
-  window offscreen to a PNG with a throwaway harness rather than screen-scraping.
-  Screen capture is unreliable here — the widgets are `ShowInTaskbar="False"` /
-  `WindowStyle="None"`, so they have no taskbar entry, they can sit behind other
-  windows, and screen-capture tooling generally can't resolve them by name.
-
-  That harness lives in the repo as [`tools/RenderWidget`](../tools/RenderWidget):
+  To actually **see** the rendered UI, render the windows offscreen to PNGs and
+  look at those. Don't screen-scrape — the widgets are `ShowInTaskbar="False"` /
+  `WindowStyle="None"`, so they have no taskbar entry, can sit behind other
+  windows, and capture tooling can't resolve them by name.
 
   ```powershell
-  dotnet run --project tools/RenderWidget                            # standings.png
-  dotnet run --project tools/RenderWidget -- relative out/rel.png    # pick widget + path
-  dotnet run --project tools/RenderWidget -- settings out/set.png    # standings, relative, fuel, radar, settings
+  .\scripts\render.ps1                  # every widget -> out\*.png (~40s)
+  .\scripts\render.ps1 fuel relative    # just these two
   ```
 
-  It's deliberately **not** in `IRacingOverlay.sln`, so `dotnet build` and CI
-  don't carry it — run it explicitly by path. It news up the real `App` for its
-  `App.xaml` resources, drives `SimulatedTelemetrySource` for one frame, feeds
-  the real view model, and `RenderTargetBitmap`s the real window's `Content` at
-  2× DPI (192) over an opaque backdrop. Adding another widget is one `case` in
-  `BuildWindow`.
+  Targets: `standings`, `relative`, `fuel`, `radar`, `radar-danger`, `settings`.
+  **Rendering everything is the default** and costs barely more than rendering
+  one — all the view models are fed from a single demo session, and the slow part
+  is wall-clock demo laps (the fuel burn average needs ~35 s of them), not the
+  rendering. So after any theme, spacing or typography change, render the lot.
 
-  Most widgets render from a single frame, but the **radar** needs history — it
-  shows nothing until `TrackMap` has learned the track — so its case runs the demo
-  source until `ShowRadar` goes true (demo laps are 15 s, so seconds, not minutes).
-  Its red proximity glow won't fire under demo data at all: the demo field runs
-  nose-to-tail at zero lateral offset, which `RadarDanger` correctly reads as
-  queued traffic rather than a side-by-side. To eyeball the glow, temporarily pin
-  the ellipses' `Opacity` to a literal in `RadarWindow.xaml` and render.
+  `radar-danger` is the radar's red proximity glow. It can't be produced from
+  demo traffic — the demo field runs nose-to-tail at zero lateral offset, which
+  `RadarDanger` correctly reads as queued traffic — so that target drives the
+  **spotter fallback** instead, via `IDemoControls.CycleCarLeftRight()`. The glow
+  ellipses sit outside both the positional and fallback subtrees in
+  `RadarWindow.xaml`, so it's the real binding, not a mock.
+
+  **What a render still can't settle** — say so rather than claiming it looks
+  right: the *graded* glow (a car fading out as it drifts away) needs real
+  side-by-side geometry; whether left/right matches iRacing's live `Yaw` sign;
+  and anything about motion or how it reads at racing speed.
 
   `RenderTargetBitmap` uses greyscale antialiasing exactly as the live
-  `AllowsTransparency` windows do, so text weight comes out faithful — which is
-  the whole point when the thing under review *is* the text. This is how the
-  typography pass was verified, and how the manufacturer badges were sized (the
-  first pass had McLaren's very wide mark collapsing to an invisible hairline
-  inside a square box — only visible by looking).
+  `AllowsTransparency` windows do, so text weight comes out faithful — the whole
+  point when the thing under review *is* the text. This is how the typography
+  pass was verified, and how the manufacturer badges were sized (the first pass
+  had McLaren's very wide mark collapsing to an invisible hairline — only visible
+  by looking).
 
-  Two traps if you ever rewrite it:
+  The harness is [`tools/RenderWidget`](../tools/RenderWidget), deliberately
+  **not** in `IRacingOverlay.sln` so the solution build and CI don't carry it.
+  Adding a widget is one entry in `RenderTelemetryWidgets`. Two traps if you
+  rewrite it:
   - **Never pump the dispatcher** (no `Show()`, no `Dispatcher.Invoke`).
     Constructing `App` queues `App.OnStartup` on the dispatcher; pumping runs the
     real composition root, which builds `UpdateService` and dies with "No
@@ -149,14 +155,6 @@ of seconds, so it hasn't been worth adding.
     `Application.Current.Resources`.
   - It needs the same `Color`/`Brush`/`Size` alias workaround as `App` (see
     CLAUDE.md), because it also sets `UseWindowsForms`.
-  - **Radar caveat:** the radar auto-hides until its `TrackMap` is learned
-    (~one lap) *and* a car is in range, so a two-second demo warmup renders
-    nothing. Either drive the sim a full lap, or feed `RadarViewModel` synthetic
-    snapshots directly — step the player's `LapDistPct`/`PlayerYawRad` around a
-    lap to warm the map, then a final frame with cars nearby. Put the player on a
-    curved part of the heading function to see the car angles. One thing a render
-    *can't* settle: whether left/right matches iRacing's live `Yaw` sign — confirm
-    against the sim that a car on your left shows on your left.
 - **Live iRacing not connecting:** confirm `irsdkEnableMem=1` in iRacing's
   `app.ini` (on by default) and that the sim is running in windowed or
   borderless mode — overlays don't draw over exclusive fullscreen.

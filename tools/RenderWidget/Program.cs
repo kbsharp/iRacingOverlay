@@ -16,25 +16,43 @@ using Size = System.Windows.Size;
 namespace IRacingOverlay.Tools.RenderWidget;
 
 /// <summary>
-/// Renders a widget window offscreen to a PNG, driven by the demo telemetry
+/// Renders widget windows offscreen to PNGs, driven by the demo telemetry
 /// source, so a headless session can review a styling change instead of
 /// guessing at it. Screen-capturing the running app doesn't work: the widgets
 /// are ShowInTaskbar="False" / WindowStyle="None" and have no taskbar entry.
 ///
-///   dotnet run --project tools/RenderWidget                      # standings
-///   dotnet run --project tools/RenderWidget -- relative out.png
+///   dotnet run --project tools/RenderWidget                    # every widget -> out/
+///   dotnet run --project tools/RenderWidget -- fuel relative   # just these two
+///   dotnet run --project tools/RenderWidget -- --out img fuel  # somewhere else
+///
+/// Rendering everything costs barely more than rendering one: all the view models
+/// are fed from a single demo session rather than one run each.
 /// </summary>
 internal static class Program
 {
     private const double Scale = 2.0; // 192 DPI - small badge/caption text is unreadable at 1x.
 
+    /// <summary>Demo laps are 15s; the fuel burn average needs a few of them.</summary>
+    private static readonly TimeSpan FuelWarmup = TimeSpan.FromSeconds(35);
+
+    private static readonly TimeSpan WarmupCap = TimeSpan.FromSeconds(75);
+
+    /// <summary>
+    /// Every renderable target. "radar-danger" is a second view of the radar
+    /// rather than a separate widget - see <see cref="RenderRadarDanger"/>.
+    /// </summary>
+    private static readonly string[] AllTargets =
+        ["standings", "relative", "fuel", "radar", "radar-danger", "settings"];
+
     [STAThread]
     private static int Main(string[] args)
     {
-        var widget = args.Length > 0 ? args[0].ToLowerInvariant() : "standings";
-        var outPath = args.Length > 1
-            ? Path.GetFullPath(args[1])
-            : Path.Combine(Environment.CurrentDirectory, $"{widget}.png");
+        if (!TryParseArgs(args, out var targets, out var outDir, out var error))
+        {
+            Console.Error.WriteLine(error);
+            Console.Error.WriteLine($"Known targets: {string.Join(", ", AllTargets)}");
+            return 1;
+        }
 
         // Constructing App loads App.xaml's resources (fonts, brushes, badge
         // styles) via InitializeComponent. It ALSO queues App.OnStartup on this
@@ -46,154 +64,296 @@ internal static class Program
         var app = new IRacingOverlay.App.App();
         app.InitializeComponent();
 
-        if (!TryCaptureDemoFrame(out var snapshot, out var metadata))
+        var windows = BuildWindows(targets);
+        if (windows.Count == 0)
         {
-            Console.Error.WriteLine("Failed to capture a frame from the demo telemetry source.");
+            Console.Error.WriteLine("Nothing to render.");
             return 1;
         }
 
-        var window = BuildWindow(widget, snapshot!, metadata!);
-        if (window is null)
+        foreach (var (name, window) in windows)
         {
-            Console.Error.WriteLine($"Unknown widget '{widget}'. Known: standings, relative, fuel, radar, settings.");
-            return 1;
+            var path = Path.Combine(outDir, $"{name}.png");
+            RenderToPng((FrameworkElement)window.Content, path);
+            Console.WriteLine($"Wrote {path}");
         }
 
-        RenderToPng((FrameworkElement)window.Content, outPath);
-        Console.WriteLine($"Wrote {outPath}");
         return 0;
     }
 
-    /// <summary>Runs the demo source until it has produced one telemetry frame and a roster.</summary>
-    private static bool TryCaptureDemoFrame(out TelemetrySnapshot? snapshot, out SessionMetadata? metadata)
+    private static bool TryParseArgs(
+        string[] args, out List<string> targets, out string outDir, out string error)
     {
-        TelemetrySnapshot? snap = null;
-        SessionMetadata? meta = null;
+        targets = [];
+        outDir = Path.Combine(Environment.CurrentDirectory, "out");
+        error = string.Empty;
 
-        using var source = new SimulatedTelemetrySource();
-        source.TelemetryReceived += (_, s) => snap = s;
-        source.SessionMetadataReceived += (_, m) => meta = m;
-        source.Start();
-
-        for (var i = 0; i < 400 && (snap is null || meta is null); i++)
+        for (var i = 0; i < args.Length; i++)
         {
-            Thread.Sleep(10);
-        }
+            var arg = args[i];
 
-        source.Stop();
-        snapshot = snap;
-        metadata = meta;
-        return snap is not null && meta is not null;
-    }
-
-    // Add a case here to render another widget - each is just "view model, feed
-    // it the frame, hand it to its window".
-    private static Window? BuildWindow(string widget, TelemetrySnapshot snapshot, SessionMetadata metadata)
-    {
-        switch (widget)
-        {
-            case "standings":
+            if (arg is "--out" or "-o")
             {
-                var vm = new StandingsViewModel("Demo");
-                vm.ApplySessionMetadata(metadata);
-                vm.SetConnectionState(true);
-                vm.ApplyTelemetry(snapshot);
-                return new IRacingOverlay.App.StandingsWindow { DataContext = vm };
-            }
-
-            case "relative":
-            {
-                var vm = new RelativeViewModel("Demo");
-                vm.ApplySessionMetadata(metadata);
-                vm.SetConnectionState(true);
-                vm.ApplyTelemetry(snapshot);
-                return new IRacingOverlay.App.RelativeWindow { DataContext = vm };
-            }
-
-            case "fuel":
-            {
-                // Fed several frames rather than one: the burn figures come off a
-                // lap-over-lap calculator, so a single snapshot renders a panel of
-                // placeholders and tells you nothing about the layout.
-                var vm = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), "Demo");
-                vm.ApplySessionMetadata(metadata);
-                vm.SetConnectionState(true);
-                vm.ApplySettings(new OverlaySettings());
-                RunLaps(vm);
-                return new IRacingOverlay.App.FuelWindow { DataContext = vm };
-            }
-
-            case "settings":
-            {
-                // The settings window isn't telemetry-driven, but it does need a
-                // real SettingsService - which reads the user's actual
-                // settings.json. That's read-only here: nothing in this harness
-                // calls a setter, so no save is ever scheduled.
-                // isInstalled: false - read the source-build settings file, never the
-                // one an installed copy uses for real racing.
-                var settings = new IRacingOverlay.App.Services.SettingsService(isInstalled: false);
-                var widgets = WidgetIds.All
-                    .Select(id => (id, DisplayName: id.Replace("Window", string.Empty)))
-                    .ToList();
-
-                return new IRacingOverlay.App.SettingsWindow
+                if (i + 1 >= args.Length)
                 {
-                    DataContext = new SettingsViewModel(settings, widgets),
-                };
+                    error = "--out needs a directory.";
+                    return false;
+                }
+
+                outDir = Path.GetFullPath(args[++i]);
+                continue;
             }
 
-            case "radar":
+            if (arg == "--all")
             {
-                // Unlike the other widgets the radar needs *history*: it only shows
-                // positions once it has learned the track from a lap of the player's
-                // own heading. So it gets fed a live run of frames, not one snapshot.
-                var vm = new RadarViewModel("Demo");
-                vm.ApplySessionMetadata(metadata);
-                vm.SetConnectionState(true);
-                RunUntilMapped(vm, metadata);
-                return new IRacingOverlay.App.RadarWindow { DataContext = vm };
+                targets.AddRange(AllTargets);
+                continue;
             }
 
-            default:
-                return null;
+            var name = arg.ToLowerInvariant();
+            if (!AllTargets.Contains(name))
+            {
+                error = $"Unknown target '{arg}'.";
+                return false;
+            }
+
+            targets.Add(name);
         }
-    }
 
-    /// <summary>Drives the fuel view model through enough demo laps for the burn
-    /// calculator to have a rolling average, so the render shows real figures
-    /// instead of a panel of placeholders. Demo laps are 15s.</summary>
-    private static void RunLaps(FuelViewModel vm)
-    {
-        using var source = new SimulatedTelemetrySource();
-        source.SessionMetadataReceived += (_, m) => vm.ApplySessionMetadata(m);
-        source.TelemetryReceived += (_, s) => vm.ApplyTelemetry(s);
-        source.Start();
-
-        Thread.Sleep(35_000);
-        source.Stop();
-    }
-
-    /// <summary>Drives the radar view model off the demo source until the track map is
-    /// learned and cars are actually in range, so the render shows the live state rather
-    /// than the pre-session placeholder. Demo laps are 15s, so this is seconds, not minutes.</summary>
-    private static void RunUntilMapped(RadarViewModel vm, SessionMetadata metadata)
-    {
-        using var source = new SimulatedTelemetrySource();
-        source.SessionMetadataReceived += (_, m) => vm.ApplySessionMetadata(m);
-        source.TelemetryReceived += (_, s) => vm.ApplyTelemetry(s);
-        source.Start();
-
-        for (var i = 0; i < 600 && !vm.ShowRadar; i++)
+        // No target named: render the lot. Rendering everything is the common
+        // case (a theme or typography change touches all of them) and costs
+        // barely more than one, so it's the default rather than an opt-in.
+        if (targets.Count == 0)
         {
+            targets.AddRange(AllTargets);
+        }
+
+        targets = targets.Distinct().ToList();
+        outDir = Path.GetFullPath(outDir);
+        return true;
+    }
+
+    /// <summary>
+    /// Builds every requested window, sharing one demo session across all the
+    /// telemetry-driven view models. They're warmed together because the slow
+    /// part is wall-clock demo laps, not the rendering.
+    /// </summary>
+    private static List<(string Name, Window Window)> BuildWindows(List<string> targets)
+    {
+        var results = new List<(string, Window)>();
+
+        // The settings window isn't telemetry-driven, so it's built outside the
+        // demo session entirely.
+        var telemetryTargets = targets.Where(t => t != "settings").ToList();
+
+        if (telemetryTargets.Count > 0)
+        {
+            results.AddRange(RenderTelemetryWidgets(telemetryTargets));
+        }
+
+        if (targets.Contains("settings"))
+        {
+            results.Add(("settings", BuildSettingsWindow()));
+        }
+
+        return results;
+    }
+
+    private static List<(string Name, Window Window)> RenderTelemetryWidgets(List<string> targets)
+    {
+        var results = new List<(string, Window)>();
+
+        StandingsViewModel? standings = null;
+        RelativeViewModel? relative = null;
+        FuelViewModel? fuel = null;
+        RadarViewModel? radar = null;
+
+        if (targets.Contains("standings"))
+        {
+            standings = new StandingsViewModel("Demo");
+        }
+
+        if (targets.Contains("relative"))
+        {
+            relative = new RelativeViewModel("Demo");
+        }
+
+        if (targets.Contains("fuel"))
+        {
+            // The burn figures come off a lap-over-lap calculator, so a single
+            // snapshot renders a panel of placeholders and tells you nothing
+            // about the layout - hence the warmup below.
+            fuel = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), "Demo");
+            fuel.ApplySettings(new OverlaySettings());
+        }
+
+        if (targets.Contains("radar"))
+        {
+            // Unlike the others the radar needs *history*: it shows nothing until it
+            // has learned the track from a lap of the player's own heading.
+            radar = new RadarViewModel("Demo");
+        }
+
+        var live = new OverlayViewModelBase?[] { standings, relative, fuel, radar }
+            .Where(vm => vm is not null)
+            .Select(vm => vm!)
+            .ToList();
+
+        if (live.Count > 0)
+        {
+            WarmUp(live, radar, needsFuelLaps: fuel is not null);
+        }
+
+        if (standings is not null)
+        {
+            results.Add(("standings", new IRacingOverlay.App.StandingsWindow { DataContext = standings }));
+        }
+
+        if (relative is not null)
+        {
+            results.Add(("relative", new IRacingOverlay.App.RelativeWindow { DataContext = relative }));
+        }
+
+        if (fuel is not null)
+        {
+            results.Add(("fuel", new IRacingOverlay.App.FuelWindow { DataContext = fuel }));
+        }
+
+        if (radar is not null)
+        {
+            results.Add(("radar", new IRacingOverlay.App.RadarWindow { DataContext = radar }));
+        }
+
+        if (targets.Contains("radar-danger"))
+        {
+            results.Add(("radar-danger", RenderRadarDanger()));
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Drives one demo session, fanning every frame out to all the view models,
+    /// until they've each seen enough: the radar has learned the track, and the
+    /// fuel calculator has a rolling burn average.
+    /// </summary>
+    private static void WarmUp(
+        List<OverlayViewModelBase> viewModels, RadarViewModel? radar, bool needsFuelLaps)
+    {
+        using var source = new SimulatedTelemetrySource();
+
+        source.SessionMetadataReceived += (_, m) =>
+        {
+            foreach (var vm in viewModels)
+            {
+                vm.ApplySessionMetadata(m);
+            }
+        };
+
+        source.TelemetryReceived += (_, s) =>
+        {
+            foreach (var vm in viewModels)
+            {
+                vm.ApplyTelemetry(s);
+            }
+        };
+
+        foreach (var vm in viewModels)
+        {
+            vm.SetConnectionState(true);
+        }
+
+        source.Start();
+
+        var started = DateTime.UtcNow;
+        while (DateTime.UtcNow - started < WarmupCap)
+        {
+            var elapsed = DateTime.UtcNow - started;
+            var fuelReady = !needsFuelLaps || elapsed >= FuelWarmup;
+            var radarReady = radar is null || radar.ShowRadar;
+
+            if (fuelReady && radarReady)
+            {
+                break;
+            }
+
             Thread.Sleep(100);
         }
 
         source.Stop();
 
-        if (!vm.ShowRadar)
+        if (radar is not null && !radar.ShowRadar)
         {
-            Console.Error.WriteLine("Warning: radar never mapped the track; rendering whatever state it reached.");
+            Console.Error.WriteLine(
+                "Warning: radar never mapped the track; rendering whatever state it reached.");
         }
+    }
+
+    /// <summary>
+    /// Renders the radar's red proximity glow at full strength.
+    ///
+    /// The glow can't be produced from demo traffic: the demo field runs
+    /// nose-to-tail at zero lateral offset, which <c>RadarDanger</c> correctly
+    /// reads as queued traffic rather than a side-by-side. So this drives the
+    /// *spotter fallback* instead - iRacing's coarse CarLeftRight signal, which
+    /// the view model maps to a full-strength glow before the track is mapped.
+    /// The glow ellipses live outside both the positional and fallback subtrees
+    /// in RadarWindow.xaml, so this is the real thing rendered by the real
+    /// binding, not a mock.
+    ///
+    /// What this does NOT show is the *graded* glow the positional path
+    /// produces (a car drifting away fading out). That needs real side-by-side
+    /// geometry, which means the sim.
+    /// </summary>
+    private static Window RenderRadarDanger()
+    {
+        var vm = new RadarViewModel("Demo");
+        using var source = new SimulatedTelemetrySource();
+
+        source.SessionMetadataReceived += (_, m) => vm.ApplySessionMetadata(m);
+        source.TelemetryReceived += (_, s) => vm.ApplyTelemetry(s);
+        vm.SetConnectionState(true);
+        source.Start();
+
+        // Cycle the spotter signal to CarLeftRight (Clear -> CarLeft -> CarRight
+        // -> CarLeftRight) so both glows light. Deliberately kept short: this
+        // state only exists before the track map is ready.
+        var state = CarLeftRight.Off;
+        for (var i = 0; i < 50 && state != CarLeftRight.CarLeftRight; i++)
+        {
+            state = source.CycleCarLeftRight();
+        }
+
+        Thread.Sleep(500);
+        source.Stop();
+
+        if (vm.LeftDanger <= 0 || vm.RightDanger <= 0)
+        {
+            Console.Error.WriteLine(
+                $"Warning: radar-danger expected both glows lit, got "
+                + $"left={vm.LeftDanger:0.00} right={vm.RightDanger:0.00}.");
+        }
+
+        return new IRacingOverlay.App.RadarWindow { DataContext = vm };
+    }
+
+    private static Window BuildSettingsWindow()
+    {
+        // The settings window isn't telemetry-driven, but it does need a real
+        // SettingsService - which reads the user's actual settings.json. That's
+        // read-only here: nothing in this harness calls a setter, so no save is
+        // ever scheduled.
+        // isInstalled: false - read the source-build settings file, never the one
+        // an installed copy uses for real racing.
+        var settings = new IRacingOverlay.App.Services.SettingsService(isInstalled: false);
+        var widgets = WidgetIds.All
+            .Select(id => (id, DisplayName: id.Replace("Window", string.Empty)))
+            .ToList();
+
+        return new IRacingOverlay.App.SettingsWindow
+        {
+            DataContext = new SettingsViewModel(settings, widgets),
+        };
     }
 
     private static void RenderToPng(FrameworkElement content, string outPath)

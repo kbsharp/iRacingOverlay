@@ -493,3 +493,6 @@ $RECYCLE.BIN/
 # Claude Code: the shared permission allowlist (.claude/settings.json) is
 # checked in; per-user overrides are not.
 .claude/settings.local.json
+
+# Default output dir for scripts/render.ps1 - review artefacts, not source.
+out/

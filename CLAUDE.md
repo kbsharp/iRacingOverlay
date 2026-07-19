@@ -19,6 +19,7 @@ that isn't on PATH) and stop a running overlay that would lock the output DLLs:
 .\scripts\build.ps1
 .\scripts\test.ps1                  # -Filter FuelCalculatorTests to narrow
 .\scripts\run-demo.ps1              # detached launch, no iRacing needed
+.\scripts\render.ps1                # every widget -> out\*.png, then look at them
 ```
 
 Don't hand-write `$env:PATH` fix-ups in commands or docs — `scripts/_common.ps1`
@@ -146,9 +147,10 @@ Clean-architecture-lite; dependencies point inward, `App → Infrastructure → 
 
 - MVP scope: minimal but extensible. Proceed on reversible work without asking; stop for
   destructive or scope-changing decisions.
-- I can't see the rendered WPF UI from a headless session — but I *can* render a window
-  offscreen to a PNG and look at that, which beats guessing on any styling change. See
-  [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#debugging). Screen-capturing the running app
-  doesn't work: the widgets have no taskbar entry to target. Where a render still can't
-  settle it (motion, real track background, how it feels at racing speed), call it out
-  for a human eye rather than claiming it looks right.
+- I can't see the rendered WPF UI from a headless session — but `.\scripts\render.ps1`
+  writes every widget to `out\*.png`, and I can look at those. **Do that on any styling
+  change** rather than guessing; it's the highest-value habit in this repo. Screen-capturing
+  the running app doesn't work — the widgets have no taskbar entry to target. See
+  [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#debugging). Where a render still can't settle it
+  (motion, real track background, the graded radar glow, how it feels at racing speed), call
+  it out for a human eye rather than claiming it looks right.
