@@ -43,8 +43,8 @@ internal static class Program
     /// rather than a separate widget - see <see cref="RenderRadarDanger"/>.
     /// </summary>
     private static readonly string[] AllTargets =
-        ["standings", "relative", "fuel", "fuel-pit-exit", "radar", "radar-danger", "radar-unresolved", "delta",
-         "settings"];
+        ["standings", "relative", "relative-traffic", "fuel", "fuel-pit-exit", "radar", "radar-danger",
+         "radar-unresolved", "delta", "settings"];
 
     [STAThread]
     private static int Main(string[] args)
@@ -261,7 +261,171 @@ internal static class Program
             results.Add(("fuel-pit-exit", RenderFuelPitExit()));
         }
 
+        if (targets.Contains("relative-traffic"))
+        {
+            results.Add(("relative-traffic", RenderRelativeTraffic()));
+        }
+
         return results;
+    }
+
+    /// <summary>
+    /// Renders the relative with its multiclass traffic strip showing a
+    /// multi-lap forecast.
+    ///
+    /// The plain "relative" target does show the strip, but only ever its "this
+    /// lap" case: the demo runs a tight pack, so the nearest faster car is always
+    /// right on the player's gearbox. The forecast that earns its keep - a car a
+    /// couple of laps out, meeting the player in a sector it hasn't reached yet -
+    /// needs a gap the demo doesn't produce.
+    ///
+    /// So this stages the missing input the same way the pit-exit render does:
+    /// a real warmed demo frame, then one faster-class car placed a measured
+    /// couple of seconds back with the rest of that class moved clear ahead, so
+    /// the staged one is the threat shown. Everything downstream - the
+    /// forecaster, the sector mapping, the bindings - is the real thing.
+    /// </summary>
+    private static Window RenderRelativeTraffic()
+    {
+        var vm = new RelativeViewModel("Demo");
+        using var source = new SimulatedTelemetrySource();
+
+        SessionMetadata? metadata = null;
+        TelemetrySnapshot? latest = null;
+        source.SessionMetadataReceived += (_, m) =>
+        {
+            metadata = m;
+            vm.ApplySessionMetadata(m);
+        };
+        source.TelemetryReceived += (_, s) =>
+        {
+            latest = s;
+            vm.ApplyTelemetry(s);
+        };
+        vm.SetConnectionState(true);
+        source.Start();
+
+        var started = DateTime.UtcNow;
+        while ((latest is null || metadata is null) && DateTime.UtcNow - started < WarmupCap)
+        {
+            Thread.Sleep(50);
+        }
+
+        source.Stop();
+
+        if (latest is not { } frame || metadata is null)
+        {
+            Console.Error.WriteLine("Warning: relative-traffic never received a demo frame.");
+            return new IRacingOverlay.App.RelativeWindow { DataContext = vm };
+        }
+
+        vm.ApplyTelemetry(StageIncomingTraffic(frame, metadata));
+
+        if (!vm.HasTraffic)
+        {
+            Console.Error.WriteLine(
+                "Warning: relative-traffic expected a forecast, got none - "
+                + "the demo may have no faster class to stage.");
+        }
+
+        return new IRacingOverlay.App.RelativeWindow { DataContext = vm };
+    }
+
+    /// <summary>
+    /// Repositions the field so exactly one faster-class car is closing from a
+    /// couple of laps back: it is placed a measured 1.6 laps behind (so it reads
+    /// "next lap" and meets the player in a sector up the road), and every other
+    /// faster-class car is pushed clear ahead so it can't be the nearer threat.
+    /// Same-class and slower cars are left where the demo put them, so the pack
+    /// around the player still looks natural.
+    /// </summary>
+    private static TelemetrySnapshot StageIncomingTraffic(
+        TelemetrySnapshot frame, SessionMetadata metadata)
+    {
+        if (!metadata.DriversByCarIdx.TryGetValue(frame.PlayerCarIdx, out var playerDriver))
+        {
+            return frame;
+        }
+
+        var playerPace = playerDriver.ClassEstLapTimeSeconds;
+        var playerClass = playerDriver.ClassShortName;
+
+        double playerPct = 0.3, playerEst = 0;
+        foreach (var car in frame.Cars)
+        {
+            if (car.CarIdx == frame.PlayerCarIdx)
+            {
+                playerPct = car.LapDistPct;
+                playerEst = car.EstTimeSeconds;
+            }
+        }
+
+        // The nearest-idx faster class is the one we bring into shot; the rest of
+        // that class step aside.
+        var chosen = -1;
+        foreach (var car in frame.Cars.OrderBy(c => c.CarIdx))
+        {
+            if (car.CarIdx != frame.PlayerCarIdx
+                && metadata.DriversByCarIdx.TryGetValue(car.CarIdx, out var d)
+                && d.ClassShortName != playerClass
+                && d.ClassEstLapTimeSeconds > 0
+                && d.ClassEstLapTimeSeconds < playerPace)
+            {
+                chosen = car.CarIdx;
+                break;
+            }
+        }
+
+        const double targetLaps = 1.6;
+        var cars = new List<CarTelemetry>(frame.Cars.Count);
+        foreach (var car in frame.Cars)
+        {
+            if (car.CarIdx == frame.PlayerCarIdx
+                || !metadata.DriversByCarIdx.TryGetValue(car.CarIdx, out var driver)
+                || driver.ClassShortName == playerClass
+                || driver.ClassEstLapTimeSeconds <= 0
+                || driver.ClassEstLapTimeSeconds >= playerPace)
+            {
+                cars.Add(car); // player, same-class, or slower - leave it be
+                continue;
+            }
+
+            var pace = driver.ClassEstLapTimeSeconds;
+
+            if (car.CarIdx == chosen)
+            {
+                var gap = targetLaps * (playerPace - pace);
+                var est = playerEst - gap;
+                if (est < 0)
+                {
+                    est += pace; // just behind, across the line
+                }
+
+                cars.Add(car with
+                {
+                    LapDistPct = (float)(est / pace),
+                    EstTimeSeconds = (float)est,
+                    OnPitRoad = false,
+                    Surface = CarTrackSurface.OnTrack,
+                });
+            }
+            else
+            {
+                // Level on track but a few seconds up the road: same lap fraction
+                // (so no start/finish wrap can flip the sign) with a positive
+                // EstTime offset, which the forecaster reads as ahead and ignores.
+                // Staggered so the stepped-aside cars don't stack on one delta.
+                cars.Add(car with
+                {
+                    LapDistPct = (float)playerPct,
+                    EstTimeSeconds = (float)(playerEst + 3 + (car.CarIdx * 0.5)),
+                    OnPitRoad = false,
+                    Surface = CarTrackSurface.OnTrack,
+                });
+            }
+        }
+
+        return frame with { Cars = cars };
     }
 
     /// <summary>
