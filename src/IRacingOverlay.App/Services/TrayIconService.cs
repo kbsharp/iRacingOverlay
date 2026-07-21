@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 using IRacingOverlay.Core.Settings;
+using IRacingOverlay.Core.Telemetry;
 
 namespace IRacingOverlay.App.Services;
 
@@ -26,6 +27,7 @@ public sealed class TrayIconService : IDisposable
     // would be worse than no checkmark at all.
     private readonly Dictionary<string, ToolStripMenuItem> _widgetItems = [];
     private readonly List<(ToolStripMenuItem Item, double Scale)> _scaleItems = [];
+    private readonly List<(ToolStripMenuItem Item, int Hz)> _refreshItems = [];
 
     // Revealed only once an update has been downloaded and is ready to install.
     private readonly ToolStripMenuItem _updateItem;
@@ -76,6 +78,7 @@ public sealed class TrayIconService : IDisposable
 
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(BuildScaleMenu(settings.Current.Scale));
+        menu.Items.Add(BuildRefreshMenu(settings.Current.TelemetryRefreshHz));
         menu.Items.Add("Settings...", null, (_, _) => showSettings());
 
         menu.Items.Add(new ToolStripSeparator());
@@ -151,6 +154,24 @@ public sealed class TrayIconService : IDisposable
         return scaleMenu;
     }
 
+    private ToolStripMenuItem BuildRefreshMenu(int initialHz)
+    {
+        var refreshMenu = new ToolStripMenuItem("Refresh Rate");
+        foreach (var hz in TelemetryRefresh.AllowedHz)
+        {
+            // Radio-style, like UI Scale: the active rate is ticked, and the default
+            // is labelled so it's clear which one to come back to.
+            var label = hz == TelemetryRefresh.DefaultHz ? $"{hz} Hz (default)" : $"{hz} Hz";
+            var item = new ToolStripMenuItem(label) { Checked = hz == initialHz };
+            var rate = hz;
+            item.Click += (_, _) => _settings.SetTelemetryRefreshHz(rate);
+            _refreshItems.Add((item, rate));
+            refreshMenu.DropDownItems.Add(item);
+        }
+
+        return refreshMenu;
+    }
+
     // Re-point every checkmark at the settings, wherever the change came from.
     private void Sync(OverlaySettings settings)
     {
@@ -162,6 +183,11 @@ public sealed class TrayIconService : IDisposable
         foreach (var (item, scale) in _scaleItems)
         {
             item.Checked = IsSameScale(scale, settings.Scale);
+        }
+
+        foreach (var (item, hz) in _refreshItems)
+        {
+            item.Checked = hz == settings.TelemetryRefreshHz;
         }
     }
 

@@ -1,3 +1,5 @@
+using IRacingOverlay.Core.Telemetry;
+
 namespace IRacingOverlay.Core.Settings;
 
 /// <summary>A saved window position (top-left corner, in device-independent
@@ -53,6 +55,12 @@ public sealed record OverlaySettings
 
     /// <summary>Display units. Conversion happens at format time only.</summary>
     public UnitPreferences Units { get; init; } = new();
+
+    /// <summary>How often telemetry is polled, in hertz. Throttles the sim's 60 Hz
+    /// broadcast to one of <see cref="TelemetryRefresh.AllowedHz"/>; lower saves a
+    /// little CPU at the cost of choppier radar motion, 60 is the smoothest. See
+    /// <see cref="TelemetryRefresh.DefaultHz"/> for why 30 is the floor by default.</summary>
+    public int TelemetryRefreshHz { get; init; } = TelemetryRefresh.DefaultHz;
 
     /// <summary>Per-widget tuning numbers fed to the Core calculators.</summary>
     public WidgetTuning Tuning { get; init; } = new();

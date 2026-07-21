@@ -171,10 +171,11 @@ one test — *does it change a decision the driver makes in the car?* — with a
 July 2026 market snapshot against RaceLab and iOverlay and the judgement
 behind each call. The short version:
 
-- **Core pass:** finish the widgets we have — the carried-over polish list
-  (drag-to-resize, a speed readout, configurable refresh rate, tray-icon
-  pinning). The manufacturer badge on the relative is parked behind a couple of
-  open questions.
+- **Core pass:** finish the widgets we have — a configurable telemetry refresh
+  rate has landed (a tray submenu, 60–10 Hz); the carried-over polish list is now
+  drag-to-resize and tray-icon pinning. The manufacturer badge on the relative is
+  parked behind a couple of open questions, and a bare speed readout is parked too
+  (the car's own dashboard already shows it).
 - **The strategy layer** (nobody has these): the **pit-exit position
   projection** has landed on the fuel widget and the multiclass **traffic
   meeting-point forecast** on the relative; still to come is a push-vs-save fuel
