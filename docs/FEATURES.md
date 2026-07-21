@@ -271,6 +271,9 @@ the car is on pit road or in a pit stall, an optional
 [catch/defend trend](#catchdefend-pace-trend--corerelativepacetrendtracker)
 (off by default), and a signed time delta (`+n.n` / `-n.n`). Zebra striping is fixed per slot
 (`RelativeRowViewModel.IsAltRow`) so it stays stable as rows update in place.
+Below the rows, a
+[multiclass traffic forecast](#multiclass-traffic-forecast--corestrategytrafficforecaster)
+strip appears when a faster class is closing from behind.
 
 **Row hierarchy:** the delta is the headline — `16px` Bold, a clear step above
 the driver name at `13px`, with the position and car number recessive at
@@ -425,6 +428,59 @@ NotInWorld`, e.g. not yet spawned) are excluded per-frame.
   re-broadcasts session info; mid-session driver swaps may lag briefly.
 - No car manufacturer badge here yet — the standings has one (placeholder
   stage); extending it to the relative is a roadmap item.
+
+### Multiclass traffic forecast — `Core.Strategy.TrafficForecaster`
+
+A strip below the relative's rows, for the multiclass question a solo racer
+has no spotter for: faster traffic is coming — **where** does it reach me, and
+**when**? It reads as a sentence in the approaching class's own colour:
+
+```
+▌ GTP #7  reaches you  next lap · sector 3
+```
+
+Shown only when there's something to yield to, and **collapsed** (not just
+hidden) otherwise, so the panel gives the line back: single-class racing never
+carries it, and neither does a multiclass session until a faster car is close
+enough to plan around.
+
+**Every part is measured or published, none invented** — the same discipline
+as the [pit-exit projection](#pit-exit-projection--corestrategy-pitlosstracker--pitexitprojector):
+
+- **The gap** is the same on-track separation the relative's own deltas use —
+  iRacing's `CarIdxEstTime`, corrected across the start/finish line
+  (`RelativeCalculator.TrackGapSeconds`, shared so the forecast measures the gap
+  the same way the rows do). A real separation, not a model.
+- **The closing rate** is the difference between the two classes' estimated lap
+  times (`RosterDriver.ClassEstLapTimeSeconds`) — the sim's own per-class pace.
+  A same-class car is the [catch/defend trend](#catchdefend-pace-trend--corerelativepacetrendtracker)'s
+  job and never appears here; a slower class isn't a threat and is dropped
+  (`MinClosingSecondsPerLap` = 0.3 s/lap).
+- **The meeting point** is where the player will be after that many laps
+  (`frac(playerPct + lapsToContact)`), named by the timing **sector** it lands
+  in (`TrackSectors.SectorAt`, from the sim's `SplitTimeInfo` sector boundaries
+  carried on `SessionMetadata.SectorStartPcts`). With no boundaries reported the
+  strip names no sector and shows only the timing.
+
+**Only the car worth acting on:** the nearest faster-class car currently
+**behind** the player and within `MaxLapsToContact` = 3 laps. A warning you
+can't act on yet is noise; this is the one that changes the next corner. Cars
+in the pits (either side) are ignored, as is a player in the lane.
+
+**Timing** (`TrafficFormat`): "this lap" while it arrives before the player
+next crosses the line, "next lap" through the one after, then "in N laps".
+The sector is the driver's own unit off their timing screen, so nothing here
+has to be taught before it reads.
+
+**Known limitations:**
+- Pace is per-**class**, not per-car: a slow car in a fast class is forecast at
+  its class's pace. Coarse, but it's the sim's own figure and the sector call is
+  checkable a lap later.
+- It assumes today's pace holds. A faster car stuck in its own battle isn't
+  really closing at class pace, so the forecast is advisory — like every readout
+  here, right by default and visibly wrong when it's wrong, never oracular.
+- It forecasts the car **now behind** you; one still more than half a lap back
+  enters the window (and the forecast) as it comes round, not before.
 
 ### Projected iRating — `IRatingChipViewModel` / `Core.Rating`
 
@@ -1613,6 +1669,9 @@ on the content root (see the tray icon section).
 | `Strategy/PitLossTrackerTests.cs` | Learning the lane cost: both-edges-required measurement, entry taken from the last on-track frame, already-in-lane and disconnect cases ignored, median over samples, implausible stops rejected, rolling window, session reset |
 | `Strategy/PitExitProjectorTests.cs` | Rejoin projection: no-loss/non-race suppression, position and places lost, empty road behind, car ahead/behind naming and gaps, class vs overall counting, lapped cars sorting by time, unclassified gaps and pace cars ignored |
 | `Formatting/PitExitFormatTests.cs` | Projection as a sentence: position, suppressed zero-loss arrow, whole-second cost vs one-decimal gaps, class-leader and last-place degradations, clear track |
+| `Strategy/TrafficForecasterTests.cs` | Faster-class car behind and closing forecast (gap, rate, laps, sector); same-class/slower/ahead/too-far/in-pits/off-roster/player-in-pits/null-metadata all suppressed; most-imminent picked across classes; forecast without sector boundaries |
+| `Session/TrackSectorsTests.cs` | Lap fraction → 1-based sector, projected position wrapped past the line, no-boundaries/non-finite → null, single sector |
+| `Formatting/TrafficFormatTests.cs` | Car label (class + number, number omitted when missing), "when · where" sentence, sector dropped when unknown, empty for no threat |
 
 ## Not yet implemented
 
@@ -1621,10 +1680,10 @@ Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
 existing km/h / mph preference, a configurable telemetry refresh rate,
 per-car/track settings profiles, and pinning the tray icon — plus the remaining
 items from the July 2026 competitive review (track map, push-vs-save fuel
-tradeoff, multiclass traffic forecast). Extending the manufacturer badge to the
-relative is parked behind open research questions; the radar density pass and the
-pit-exit projection have since landed. The parked list and non-goals are recorded
-there too.
+tradeoff). Extending the manufacturer badge to the relative is parked behind
+open research questions; the radar density pass, the pit-exit projection and the
+multiclass traffic forecast have since landed. The parked list and non-goals are
+recorded there too.
 
 (Click-through, running at Windows startup, and the settings surface itself have
 since landed — see [Settings](#settings--settingswindow--settingsviewmodel--coresettings).)
