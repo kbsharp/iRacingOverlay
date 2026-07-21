@@ -120,11 +120,35 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
         var maxFuelPct = info.DriverInfo?.DriverCarMaxFuelPct ?? 0f;
         var tankCapacityLiters = tankLiters > 0 && maxFuelPct > 0 ? tankLiters * maxFuelPct : 0d;
 
+        var sectorStartPcts = ParseSectorStartPcts(info);
+
         SessionMetadataReceived?.Invoke(
             this,
             new SessionMetadata(
                 drivers, sessionTypes, setupName, setupIsModified, trackLengthMeters, incidentLimit,
-                sessionLaps, tankCapacityLiters));
+                sessionLaps, tankCapacityLiters, sectorStartPcts));
+    }
+
+    /// <summary>
+    /// The lap fraction each timing sector begins at, from the sim's
+    /// SplitTimeInfo. Absent on some builds/sessions, where it stays null and the
+    /// traffic forecast simply names no sector rather than guessing one.
+    /// </summary>
+    private static IReadOnlyList<double>? ParseSectorStartPcts(IRacingSdkSessionInfo info)
+    {
+        var sectors = info.SplitTimeInfo?.Sectors;
+        if (sectors is null || sectors.Count == 0)
+        {
+            return null;
+        }
+
+        var starts = new List<double>(sectors.Count);
+        foreach (var sector in sectors)
+        {
+            starts.Add(sector.SectorStartPct);
+        }
+
+        return starts;
     }
 
     private void HandleTelemetryData()

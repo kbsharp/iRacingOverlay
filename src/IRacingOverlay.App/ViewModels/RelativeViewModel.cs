@@ -3,6 +3,7 @@ using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Formatting;
 using IRacingOverlay.Core.Relative;
 using IRacingOverlay.Core.Session;
+using IRacingOverlay.Core.Strategy;
 using IRacingOverlay.Core.Telemetry;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
@@ -36,6 +37,10 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     private string _incidentsText = "0x";
     private IncidentSeverity _incidentLevel = IncidentSeverity.Ok;
     private string _lapCounterText = string.Empty;
+    private bool _hasTraffic;
+    private string _trafficCarLabel = string.Empty;
+    private string _trafficMeetingText = string.Empty;
+    private Brush _trafficClassBrush = Brushes.Gray;
     private string _flagText = string.Empty;
     private bool _hasFlag;
     private Brush _flagBackground = Brushes.Transparent;
@@ -139,6 +144,42 @@ public sealed class RelativeViewModel : OverlayViewModelBase
     {
         get => _lapCounterText;
         private set => SetProperty(ref _lapCounterText, value);
+    }
+
+    // ---- Multiclass traffic forecast --------------------------------------
+    //
+    // A faster class is coming up behind - where does it reach you, and when?
+    // Absent in single-class racing (nothing faster to yield to) and until the
+    // nearest one is close enough to plan around, so the strip is a signal
+    // rather than a permanent fixture.
+
+    /// <summary>Whether the incoming-traffic strip is shown at all.</summary>
+    public bool HasTraffic
+    {
+        get => _hasTraffic;
+        private set => SetProperty(ref _hasTraffic, value);
+    }
+
+    /// <summary>The approaching car, coloured by its class, e.g. "GTP #63".</summary>
+    public string TrafficCarLabel
+    {
+        get => _trafficCarLabel;
+        private set => SetProperty(ref _trafficCarLabel, value);
+    }
+
+    /// <summary>When and where it catches you, e.g. "next lap · sector 2".</summary>
+    public string TrafficMeetingText
+    {
+        get => _trafficMeetingText;
+        private set => SetProperty(ref _trafficMeetingText, value);
+    }
+
+    /// <summary>The approaching class's colour, so the strip reads in the hue the
+    /// rows already use for that class.</summary>
+    public Brush TrafficClassBrush
+    {
+        get => _trafficClassBrush;
+        private set => SetProperty(ref _trafficClassBrush, value);
     }
 
     public string FlagText
@@ -263,8 +304,24 @@ public sealed class RelativeViewModel : OverlayViewModelBase
         (FlagBackground, FlagBorder, FlagForeground) = FlagPalette.Resolve(flag);
     }
 
+    /// <summary>
+    /// The forecast is pure, so it re-renders happily alongside the rows on both
+    /// a telemetry frame and a settings replay - no tracker state to advance.
+    /// </summary>
+    private void UpdateTraffic(TelemetrySnapshot snapshot)
+    {
+        var threat = TrafficForecaster.Compute(snapshot, _metadata);
+
+        HasTraffic = threat.HasThreat;
+        TrafficCarLabel = TrafficFormat.CarLabel(threat);
+        TrafficMeetingText = TrafficFormat.Meeting(threat);
+        TrafficClassBrush = ClassColorBrush.Resolve(RatingFormat.NormalizeHexColor(threat.ClassColorRaw));
+    }
+
     private void UpdateRows(TelemetrySnapshot snapshot)
     {
+        UpdateTraffic(snapshot);
+
         var computed = RelativeCalculator.Compute(snapshot, _metadata, _slotsPerSide);
         _trends.Update(snapshot, _metadata, computed);
 

@@ -34,6 +34,11 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     // line. Track length is never shown as a number, only used for the geometry.
     private const double DemoTrackLengthMeters = 3000.0;
 
+    // Three timing sectors, so the multiclass traffic forecast can name where a
+    // faster car catches the player rather than only when. Arbitrary splits of
+    // the demo lap - the sim reports real ones per track.
+    private static readonly double[] DemoSectorStartPcts = [0.0, 0.4, 0.72];
+
     // Lap-fraction spacing between adjacent cars in the pack around the player.
     // ~0.006 of a 3000 m lap = ~18 m per grid slot, so the nearest few land
     // inside the radar's range.
@@ -541,7 +546,8 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
             DemoTrackLengthMeters,
             DemoIncidentLimit,
             new Dictionary<int, int> { [sessionNum] = DemoRaceLaps },
-            TankCapacityLiters);
+            TankCapacityLiters,
+            DemoSectorStartPcts);
     }
 
     private sealed record SimDriver(

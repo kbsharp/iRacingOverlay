@@ -373,6 +373,39 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
+                <!-- Multiclass traffic forecast: the nearest faster class coming
+                     up behind, and where it reaches you. Collapsed - not just
+                     hidden - when there's nothing to yield to, so the panel gives
+                     the line back rather than reserving an empty strip. The class
+                     hue is the same one the rows use, so "GTP" reads instantly;
+                     the meeting is a sentence off the driver's own timing screen
+                     (a sector) and a lap count, nothing to be taught. -->
+                <StackPanel Orientation="Horizontal"
+                            Margin="0,5,0,0"
+                            Visibility="{Binding HasTraffic, Converter={StaticResource BoolToVis}}">
+                    <Border Width="3" Height="13" CornerRadius="1.5"
+                            VerticalAlignment="Center"
+                            Background="{Binding TrafficClassBrush}" />
+                    <TextBlock Text="{Binding TrafficCarLabel}"
+                               Margin="7,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
+                               Foreground="{Binding TrafficClassBrush}" />
+                    <TextBlock Text="reaches you"
+                               Margin="6,0,0,0"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource Caption}" />
+                    <TextBlock Text="{Binding TrafficMeetingText}"
+                               Margin="5,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
+                               Foreground="{StaticResource TextPrimary}" />
+                </StackPanel>
+
             </StackPanel>
         </Border>
     </Grid>
