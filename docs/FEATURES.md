@@ -919,6 +919,14 @@ takes over.
 Self-pacing against your own best lap: how far up or down the lap in progress
 is, as a signed number over a bar that grows from its centre.
 
+**Ships off by default.** Unlike the other four widgets, the delta bar starts
+hidden and is opt-in from the tray menu. It restates a number iRacing already
+shows in its own black box, so it earns a standing panel only for drivers who
+want it always up; keeping it out of the default layout leaves that layout to
+the readouts the sim doesn't already give you. The choice is the sole entry in
+`OverlaySettings.DefaultOffWidgets`, so an absent settings key hides it on a
+fresh install and for an existing file alike.
+
 **Layout:** a 176-wide panel in the shared material, on the fuel widget's
 10px/6px spacing rhythm. Header (`DELTA` + connection dot/status), the delta at
 30px `FontDisplay` centred, a 7px bar, then a footer reading `VS BEST` and the
@@ -1131,7 +1139,8 @@ stop the app was closing the terminal that launched it.
   fallback if the resource can't be loaded, because the tray icon is the only
   way to quit the app.
 - Context menu: a **checkbox per widget** (Standings, Relative, Fuel,
-  Radar), **Dev Controls** (demo mode only), a **UI Scale** submenu
+  Radar, Delta — the last unticked by default), **Dev Controls** (demo mode
+  only), a **UI Scale** submenu
   (100/125/150/175%), **Settings...**, **Check for updates**, **Exit** — plus a
   **Restart to install update** item that stays hidden until an update has been
   downloaded (see Auto-update below). Double-click the icon = show the Relative.
