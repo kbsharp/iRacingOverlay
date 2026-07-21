@@ -99,18 +99,28 @@ public static class RelativeCalculator
         return FallbackLapTimeSeconds;
     }
 
-    private static double ComputeDelta(in CarTelemetry other, in CarTelemetry player, double lapTime)
+    private static double ComputeDelta(in CarTelemetry other, in CarTelemetry player, double lapTime) =>
+        TrackGapSeconds(other, player, lapTime);
+
+    /// <summary>
+    /// The nearest on-track time gap between two cars, in seconds: positive when
+    /// <paramref name="other"/> is ahead, negative when behind. Built from
+    /// iRacing's CarIdxEstTime and corrected by one lap across the start/finish
+    /// line, exactly as the relative's own deltas are - shared so the traffic
+    /// forecast measures the gap the same way rather than a second opinion.
+    /// </summary>
+    public static double TrackGapSeconds(in CarTelemetry other, in CarTelemetry player, double lapTimeSeconds)
     {
         double delta = other.EstTimeSeconds - player.EstTimeSeconds;
         var distDiff = other.LapDistPct - player.LapDistPct;
 
         if (distDiff > 0.5f)
         {
-            delta -= lapTime;
+            delta -= lapTimeSeconds;
         }
         else if (distDiff < -0.5f)
         {
-            delta += lapTime;
+            delta += lapTimeSeconds;
         }
 
         return delta;

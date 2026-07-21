@@ -12,6 +12,10 @@ namespace IRacingOverlay.Core.Session;
 /// <param name="TankCapacityLiters">The player car's usable tank capacity - the
 /// scale for the fuel widget's tank gauge. 0 when the sim hasn't reported it,
 /// which hides the gauge rather than drawing it against a guessed maximum.</param>
+/// <param name="SectorStartPcts">The lap fraction where each timing sector begins
+/// (from the sim's SplitTimeInfo), ascending from 0; null when the sim hasn't
+/// reported them. Lets a track position be named by its sector - see
+/// <see cref="TrackSectors"/>.</param>
 public sealed record SessionMetadata(
     IReadOnlyDictionary<int, RosterDriver> DriversByCarIdx,
     IReadOnlyDictionary<int, string> SessionTypesByNum,
@@ -20,7 +24,8 @@ public sealed record SessionMetadata(
     double TrackLengthMeters = 0,
     int? IncidentLimit = null,
     IReadOnlyDictionary<int, int>? SessionLapsByNum = null,
-    double TankCapacityLiters = 0)
+    double TankCapacityLiters = 0,
+    IReadOnlyList<double>? SectorStartPcts = null)
 {
     /// <summary>The scheduled lap count for a session, or null when it is timed.</summary>
     public int? LapsForSession(int sessionNum) =>
