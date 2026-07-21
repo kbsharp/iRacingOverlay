@@ -289,6 +289,10 @@ public partial class App : System.Windows.Application
     /// </summary>
     private void ApplySettings(OverlaySettings settings)
     {
+        // The telemetry source isn't a widget, but it's driven by the same
+        // settings pass: retune the poll rate live (no-op if unchanged).
+        _telemetrySource?.SetRefreshRateHz(settings.TelemetryRefreshHz);
+
         foreach (var widget in _widgets)
         {
             if (widget.Window.Content is FrameworkElement root)

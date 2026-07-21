@@ -116,6 +116,35 @@ public class OverlaySettingsSerializerTests
         Assert.Equal(new UnitPreferences(), settings.Units);
         Assert.Equal(new WidgetTuning(), settings.Tuning);
         Assert.False(settings.RunAtStartup);
+        // Absent from an old file, the poll rate must land on the 30 Hz default,
+        // not the 0 an int property would deserialize to and then sanitize to 10.
+        Assert.Equal(30, settings.TelemetryRefreshHz);
+    }
+
+    [Fact]
+    public void Deserialize_TelemetryRefreshHz_RoundTripsAnOfferedRate()
+    {
+        var json = OverlaySettingsSerializer.Serialize(new OverlaySettings { TelemetryRefreshHz = 60 });
+
+        Assert.Equal(60, OverlaySettingsSerializer.Deserialize(json).TelemetryRefreshHz);
+    }
+
+    [Fact]
+    public void Deserialize_TelemetryRefreshHz_OffListValueIsSnappedToAnOfferedRate()
+    {
+        // A hand-edited 45 isn't an achievable divisor of the 60 Hz broadcast, so it
+        // must be snapped rather than persisted as a rate the SDK can't deliver.
+        var settings = OverlaySettingsSerializer.Deserialize("""{ "telemetryRefreshHz": 45 }""");
+
+        Assert.Contains(settings.TelemetryRefreshHz, IRacingOverlay.Core.Telemetry.TelemetryRefresh.AllowedHz);
+    }
+
+    [Fact]
+    public void Deserialize_TelemetryRefreshHz_ZeroIsSanitizedNotLeftToDivideByZero()
+    {
+        var settings = OverlaySettingsSerializer.Deserialize("""{ "telemetryRefreshHz": 0 }""");
+
+        Assert.Contains(settings.TelemetryRefreshHz, IRacingOverlay.Core.Telemetry.TelemetryRefresh.AllowedHz);
     }
 
     [Fact]

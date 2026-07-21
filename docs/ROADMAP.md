@@ -117,6 +117,12 @@ extends an existing widget rather than adding a new one.
   where the sim resets it to zero exactly as it becomes worth reading, and it
   shows nothing in the pits, on an in-lap, or before there's a lap to compare
   against. See [FEATURES.md](FEATURES.md#delta--deltawindow--deltaviewmodel--coredeltadeltacalculator).
+
+  **Now ships off by default** (opt-in from the tray), the one widget that does.
+  It restates a number iRacing already shows in its own black box, so it earns a
+  standing panel only for drivers who want it always up — the same test that
+  parked the speed readout. The other four, which the sim doesn't already put in
+  one place, stay on.
 - ~~**Radar density pass**~~ — **done**, and the audit found a defect rather than a
   spacing question. `PixelsPerMeter` was a constant while the range it depicts is a
   setting (15–200 m), so the canvas and the range disagreed at every value except
@@ -163,8 +169,18 @@ extends an existing widget rather than adding a new one.
   nose-to-tail queue is left alone. Cars outside the overlap box keep their
   geometric placement, so the corner-angled read of the field ahead is untouched.
   See [FEATURES.md](FEATURES.md#radar--radarwindow--radarviewmodel--coreradar).
-- Carried-over polish: drag-to-resize widgets, configurable telemetry refresh
-  rate, pinning the tray icon.
+- ~~**Configurable telemetry refresh rate**~~ — **done**. A tray **Refresh Rate**
+  submenu (60/30/20/15/10 Hz, 30 the default) sets how often the sim's feed is
+  polled. The offered rates are exactly the integer divisors of iRacing's 60 Hz
+  broadcast, so the number shown is the number delivered — a free-form slider would
+  have to round to one of these anyway and then lie about it. The default and its
+  reasoning are unchanged (30 Hz is the radar's floor for motion that slides rather
+  than steps); the control just exposes the knob for anyone who wants 60 for
+  smoothness or less for CPU. Applied live — IRSDKSharper reads `UpdateInterval`
+  every frame, so it takes effect next frame with no reconnect — and the demo
+  source retimes to match. The Hz→divisor logic lives in `Core.Telemetry.
+  TelemetryRefresh` (tested); see [FEATURES.md](FEATURES.md#infrastructure-adapters).
+- Carried-over polish: drag-to-resize widgets, pinning the tray icon.
 
 ## Needs research first
 

@@ -12,12 +12,6 @@ namespace IRacingOverlay.Infrastructure.Telemetry;
 /// </summary>
 public sealed class IrsdkTelemetrySource : ITelemetrySource
 {
-    // iRacing broadcasts 60 data frames per second; we process every 2nd (~30 Hz).
-    // The text widgets would be happy at 15, but the radar is not: its blips move
-    // continuously, and at 15 Hz a car alongside visibly steps rather than slides.
-    // 30 Hz is the cheapest rate at which that reads as motion.
-    private const int FramesPerUpdate = 2;
-
     private const int MaxCars = 64;
 
     private readonly IRacingSdk _sdk = new();
@@ -42,7 +36,9 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
 
     public IrsdkTelemetrySource()
     {
-        _sdk.UpdateInterval = FramesPerUpdate;
+        // A safe default until the app pushes the persisted rate; the sim's own
+        // 60 Hz feed is throttled to this many frames per delivered snapshot.
+        _sdk.UpdateInterval = TelemetryRefresh.FramesPerUpdate(TelemetryRefresh.DefaultHz);
         _sdk.OnConnected += HandleConnected;
         _sdk.OnDisconnected += HandleDisconnected;
         _sdk.OnSessionInfo += HandleSessionInfo;
@@ -51,6 +47,11 @@ public sealed class IrsdkTelemetrySource : ITelemetrySource
     }
 
     public void Start() => _sdk.Start();
+
+    /// <summary>Retunes the poll rate live. IRSDKSharper reads UpdateInterval on
+    /// every frame of its own loop, so a change here takes effect on the next one
+    /// whether the SDK is started or not - no restart, no dropped connection.</summary>
+    public void SetRefreshRateHz(int hz) => _sdk.UpdateInterval = TelemetryRefresh.FramesPerUpdate(hz);
 
     public void Stop()
     {

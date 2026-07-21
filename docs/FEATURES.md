@@ -1032,11 +1032,15 @@ fire on background threads; all marshalling to the UI thread happens in
 ## Infrastructure adapters
 
 **`IrsdkTelemetrySource`** (live): wraps IRSDKSharper's `IRacingSdk`.
-- Throttles the sim's 60Hz data frames to ~30Hz (`UpdateInterval = 2`).
-  The text widgets would read fine at 15Hz, but the radar would not: its blips
-  move continuously, and at 15Hz a car drawing alongside visibly steps rather
-  than slides. 30Hz is the cheapest rate at which that reads as motion; CPU cost
-  is still negligible.
+- Throttles the sim's 60Hz data frames to the configured refresh rate by setting
+  `UpdateInterval` to the matching frame divisor (`Core.Telemetry.TelemetryRefresh`).
+  The default is 30Hz: the text widgets would read fine at 15Hz, but the radar
+  would not — its blips move continuously, and at 15Hz a car drawing alongside
+  visibly steps rather than slides, so 30Hz is the cheapest rate at which that
+  reads as motion. The tray's **Refresh Rate** submenu offers 60/30/20/15/10Hz;
+  the change is applied live (IRSDKSharper reads `UpdateInterval` every frame), so
+  it takes effect on the next frame with no reconnect. Higher is smoother, lower
+  saves CPU, though the cost at 30Hz is already negligible.
 - Reuses fixed-size buffers (`MaxCars = 64`) for the `CarIdx*` array reads
   every frame — no per-frame array allocation.
 - SDK variables read: `SessionTime`, `SessionNum`, `SessionTimeRemain`,
@@ -1065,8 +1069,10 @@ fire on background threads; all marshalling to the UI thread happens in
   `DriverSetupIsModified` for the fuel widget's setup strip.
 
 **`SimulatedTelemetrySource`** (`--demo`): drives the app without iRacing
-running, on a `System.Threading.Timer` ticking at the same ~30Hz as live
-mode. Ticks are **non-reentrant**: a tick arriving while the previous one is
+running, on a `System.Threading.Timer` ticking at the same configured rate as
+live mode (default ~30Hz); it retimes the timer and advances its sim clock by the
+actual tick period, so a lower rate only coarsens motion rather than slowing the
+demo down. Ticks are **non-reentrant**: a tick arriving while the previous one is
 still delivering its events is dropped (a `Monitor.TryEnter` guard), so
 consumers see sequential, in-order events exactly as they do from the live
 source's single read loop — a slow handler throttles the feed rather than
@@ -1141,7 +1147,8 @@ stop the app was closing the terminal that launched it.
 - Context menu: a **checkbox per widget** (Standings, Relative, Fuel,
   Radar, Delta — the last unticked by default), **Dev Controls** (demo mode
   only), a **UI Scale** submenu
-  (100/125/150/175%), **Settings...**, **Check for updates**, **Exit** — plus a
+  (100/125/150/175%), a **Refresh Rate** submenu (60/30/20/15/10Hz, 30 the
+  default), **Settings...**, **Check for updates**, **Exit** — plus a
   **Restart to install update** item that stays hidden until an update has been
   downloaded (see Auto-update below). Double-click the icon = show the Relative.
 - The widget items are **checkboxes, not "Show" commands**. A menu that can only
@@ -1669,8 +1676,9 @@ on the content root (see the tray icon section).
 | `Formatting/StandingsFormatTests.cs` | Lap-time (m:ss.fff) and gap ("+n.n"/"+nL"/blank) formatting |
 | `Delta/DeltaCalculatorTests.cs` | No reading before a reference lap, live delta, tone by direction + deadband, bar fill and full-scale clamp, hold at the line, hold expiry, lap counter rewinding, pit/off-track suppression, held delta dropped on pit entry, session-change reset |
 | `Formatting/DeltaFormatTests.cs` | Signed two-decimal delta formatting, midpoint rounding, no negative zero |
-| `Settings/OverlaySettingsSerializerTests.cs` | JSON round-trip (incl. the widget/unit/tuning fields), a removed feature's stale field ignored, missing/corrupt file → defaults, out-of-range scale sanitizing, unknown-field tolerance, pre-settings-window file shape still loading with every widget enabled, null maps/records → empty defaults, per-widget scale and tuning clamping |
-| `Settings/OverlaySettingsTests.cs` | Sparse-map defaults: absent key = enabled / shared scale / interactive; overrides win; widget ids distinct |
+| `Settings/OverlaySettingsSerializerTests.cs` | JSON round-trip (incl. the widget/unit/tuning fields), a removed feature's stale field ignored, missing/corrupt file → defaults, out-of-range scale sanitizing, unknown-field tolerance, pre-settings-window file shape still loading with every shipped-on widget enabled and delta still off, null maps/records → empty defaults, per-widget scale and tuning clamping, refresh-rate round-trip / off-list snap / zero sanitized / absent → 30 |
+| `Settings/OverlaySettingsTests.cs` | Sparse-map defaults: absent key = enabled / shared scale / interactive (delta the one opt-in widget, off unless explicitly enabled); refresh-rate default 30; overrides win; widget ids distinct |
+| `Telemetry/TelemetryRefreshTests.cs` | Default is an offered rate; offered rates are exact 60Hz divisors; frames-per-update per rate and round-trip; off-list snapped to nearest (ties toward smoother); out-of-range/zero/negative clamped, never a divide-by-zero |
 | `Settings/WidgetTuningTests.cs` | Defaults match the previously hardcoded constants, in-band values untouched, out-of-band clamped, non-finite → default not band edge |
 | `Settings/UnitPreferencesTests.cs` | Metric defaults, valid choices preserved, undefined enum value → metric |
 | `Formatting/UnitFormatTests.cs` | Fuel L/gal, temperature °C/°F, speed kph/mph conversion; placeholders; equal precision across units; agreement with `TelemetryFormat.ToKph` |
@@ -1685,11 +1693,11 @@ on the content root (see the tray icon section).
 ## Not yet implemented
 
 Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
-[README](../README.md#roadmap)): drag-to-resize widgets, a speed readout for the
-existing km/h / mph preference, a configurable telemetry refresh rate,
-per-car/track settings profiles, and pinning the tray icon — plus the remaining
-items from the July 2026 competitive review (track map, push-vs-save fuel
-tradeoff). Extending the manufacturer badge to the relative is parked behind
+[README](../README.md#roadmap)): drag-to-resize widgets, per-car/track settings
+profiles, and pinning the tray icon — plus the remaining items from the July 2026
+competitive review (track map, push-vs-save fuel tradeoff). A bare speed readout
+is parked (the car's own dashboard already shows speed). Extending the
+manufacturer badge to the relative is parked behind
 open research questions; the radar density pass, the pit-exit projection and the
 multiclass traffic forecast have since landed. The parked list and non-goals are
 recorded there too.

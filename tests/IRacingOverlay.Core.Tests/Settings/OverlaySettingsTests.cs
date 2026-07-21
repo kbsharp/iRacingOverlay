@@ -122,6 +122,13 @@ public class OverlaySettingsTests
         Assert.True(OverlaySettingsSerializer.Deserialize(json).ShowPaceTrend);
     }
 
+    // The telemetry poll rate defaults to 30 Hz - the radar's floor for smooth
+    // motion - and a fresh settings object must carry that, not 0.
+
+    [Fact]
+    public void TelemetryRefreshHz_DefaultsToThirty()
+        => Assert.Equal(30, new OverlaySettings().TelemetryRefreshHz);
+
     [Fact]
     public void WidgetIds_NoLongerListsTheStandaloneSetupWidget()
     {

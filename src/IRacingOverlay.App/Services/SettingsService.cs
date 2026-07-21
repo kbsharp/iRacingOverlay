@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows.Threading;
 using IRacingOverlay.Core.Settings;
+using IRacingOverlay.Core.Telemetry;
 
 namespace IRacingOverlay.App.Services;
 
@@ -103,6 +104,11 @@ public sealed class SettingsService
     /// <summary>Replaces the display units.</summary>
     public void SetUnits(UnitPreferences units)
         => Update(_current with { Units = units.Sanitized() });
+
+    /// <summary>Records the telemetry poll rate (hertz). Sanitized to an allowed
+    /// divisor so a stray value can't be persisted.</summary>
+    public void SetTelemetryRefreshHz(int hz)
+        => Update(_current with { TelemetryRefreshHz = TelemetryRefresh.Sanitize(hz) });
 
     /// <summary>Replaces the per-widget tuning numbers.</summary>
     public void SetTuning(WidgetTuning tuning)

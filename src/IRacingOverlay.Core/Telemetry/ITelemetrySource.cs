@@ -22,4 +22,11 @@ public interface ITelemetrySource : IDisposable
     void Start();
 
     void Stop();
+
+    /// <summary>Sets how often telemetry snapshots are delivered, in hertz. The
+    /// live source throttles the sim's 60 Hz broadcast to the nearest divisor; the
+    /// demo source retimes its own tick. The rate is snapped to
+    /// <see cref="TelemetryRefresh.AllowedHz"/>, and it's safe to call before or
+    /// after <see cref="Start"/> — the change takes effect on the next frame.</summary>
+    void SetRefreshRateHz(int hz);
 }

@@ -12,7 +12,6 @@ namespace IRacingOverlay.Infrastructure.Telemetry;
 /// </summary>
 public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
 {
-    private const double TickSeconds = 1.0 / 30; // match the live source's ~30 Hz
     private const int PlayerIdx = 0;
     private const double PlayerLapSeconds = 15;  // short laps so estimates appear fast
     private const float StartingFuelLiters = 45f;
@@ -115,6 +114,13 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
     private int _presetIndex;
 
     private Timer? _timer;
+
+    // Wall-clock seconds between ticks - the demo's equivalent of the live
+    // source's poll rate. Tracks the configured refresh rate so the sim clock
+    // (and fuel burn) advance in real time at any Hz; guarded by _gate, since
+    // SetRefreshRateHz mutates it from the UI thread while Tick reads it.
+    private double _tickSeconds = 1.0 / TelemetryRefresh.DefaultHz;
+
     private double _sessionTime;
     private float _fuel = StartingFuelLiters;
     private int _wetnessIndex = 1; // VeryLightlyWet, matching the original fixed demo value
@@ -161,7 +167,28 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
 
     public void Start()
     {
-        _timer ??= new Timer(Tick, null, TimeSpan.Zero, TimeSpan.FromSeconds(TickSeconds));
+        double period;
+        lock (_gate)
+        {
+            period = _tickSeconds;
+        }
+
+        _timer ??= new Timer(Tick, null, TimeSpan.Zero, TimeSpan.FromSeconds(period));
+    }
+
+    /// <summary>Retimes the demo tick to match the configured rate. The physics
+    /// advance by the tick period, so lowering the rate only coarsens motion - the
+    /// sim clock still runs in real time.</summary>
+    public void SetRefreshRateHz(int hz)
+    {
+        double period;
+        lock (_gate)
+        {
+            _tickSeconds = 1.0 / TelemetryRefresh.Sanitize(hz);
+            period = _tickSeconds;
+        }
+
+        _timer?.Change(TimeSpan.Zero, TimeSpan.FromSeconds(period));
     }
 
     public void Stop()
@@ -320,7 +347,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
                     announceConnection = true;
                 }
 
-                _sessionTime += TickSeconds;
+                _sessionTime += _tickSeconds;
                 snapshot = BuildSnapshot();
             }
 
@@ -390,7 +417,7 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
 
         // Vary the burn a little per lap so average and last-lap figures differ.
         var litersPerLap = BaseLitersPerLap * (1f + 0.06f * MathF.Sin(player.Lap * 1.7f));
-        _fuel = Math.Clamp(_fuel - litersPerLap * (float)(TickSeconds / PlayerLapSeconds), 0f, TankCapacityLiters);
+        _fuel = Math.Clamp(_fuel - litersPerLap * (float)(_tickSeconds / PlayerLapSeconds), 0f, TankCapacityLiters);
 
         // A plausible lap delta: it accumulates across the lap towards a per-lap
         // outcome, with a little wobble through the corners, and lands on that

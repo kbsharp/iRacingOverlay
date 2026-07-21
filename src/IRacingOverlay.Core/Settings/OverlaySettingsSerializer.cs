@@ -1,5 +1,6 @@
 using System.Text.Json;
 using IRacingOverlay.Core.Rating;
+using IRacingOverlay.Core.Telemetry;
 
 namespace IRacingOverlay.Core.Settings;
 
@@ -47,6 +48,10 @@ public static class OverlaySettingsSerializer
                 WidgetScales = SanitizeScales(parsed.WidgetScales),
                 Units = (parsed.Units ?? new UnitPreferences()).Sanitized(),
                 Tuning = (parsed.Tuning ?? new WidgetTuning()).Sanitized(),
+                // Snap a hand-edited or future-version rate to an exact divisor of
+                // the 60 Hz broadcast, so it can never poll at 0 or an unachievable
+                // rate. An absent key keeps the DefaultHz initializer untouched.
+                TelemetryRefreshHz = TelemetryRefresh.Sanitize(parsed.TelemetryRefreshHz),
             };
         }
         catch (JsonException)
