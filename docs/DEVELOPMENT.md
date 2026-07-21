@@ -118,8 +118,8 @@ of seconds, so it hasn't been worth adding.
   .\scripts\render.ps1 fuel relative    # just these two
   ```
 
-  Targets: `standings`, `relative`, `fuel`, `fuel-pit-exit`, `radar`,
-  `radar-danger`, `radar-unresolved`, `delta`, `settings`.
+  Targets: `standings`, `relative`, `relative-traffic`, `fuel`, `fuel-pit-exit`,
+  `radar`, `radar-danger`, `radar-unresolved`, `delta`, `settings`.
   **Rendering everything is the default** and costs barely more than rendering
   one — all the view models are fed from a single demo session, and the slow part
   is wall-clock demo laps (the fuel burn average needs ~35 s of them), not the
@@ -145,6 +145,14 @@ of seconds, so it hasn't been worth adding.
   So this target stages the missing input — it takes a warmed-up demo frame and
   replays it with three cars actually crossing in and back out of the lane. Only
   the stops are staged; the tracker, projector and bindings downstream are real.
+
+  `relative-traffic` is the relative with its multiclass traffic strip showing a
+  *multi-lap* forecast. The plain `relative` target does show the strip, but only
+  its "this lap" case: the demo runs a tight pack, so the nearest faster car is
+  always on the player's gearbox. So this target stages the gap the demo can't —
+  it places one faster-class car a measured ~1.6 laps back and moves the rest of
+  that class clear ahead. Only the positions are staged; the forecaster, the
+  sector mapping and the bindings are real.
 
   **What a render still can't settle** — say so rather than claiming it looks
   right: the *graded* glow (a car fading out as it drifts away) needs real

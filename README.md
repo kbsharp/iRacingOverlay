@@ -17,7 +17,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   your own row highlighted in amber. A session strip on top shows session type + time
   remaining, the lap counter (`L8/25`), a flag chip when one is flying, brake bias,
   track/air temps, a wetness badge, and your incidents against the session's limit
-  (`2x/17x`, warming to amber then red as you approach it).
+  (`2x/17x`, warming to amber then red as you approach it). In multiclass racing a
+  **traffic forecast** strip appears when a faster class is closing from behind,
+  naming where it reaches you — "GTP #7 reaches you next lap, sector 3".
 - **Fuel**: a strategy calculator — fuel level and laps in tank, average/last-lap burn,
   and the numbers you act on: fuel to finish, the margin you'll finish with (green spare
   / red short), fuel to add at the next stop, and a save-per-lap target. In a race it also
@@ -174,9 +176,9 @@ behind each call. The short version:
   pinning). The manufacturer badge on the relative is parked behind a couple of
   open questions.
 - **The strategy layer** (nobody has these): the **pit-exit position
-  projection** has landed on the fuel widget; still to come are a push-vs-save
-  fuel tradeoff readout and a multiclass **traffic meeting-point forecast** —
-  race-engineer calls no current overlay makes.
+  projection** has landed on the fuel widget and the multiclass **traffic
+  meeting-point forecast** on the relative; still to come is a push-vs-save fuel
+  tradeoff readout — race-engineer calls no current overlay makes.
 - **Mid-term:** a **track map** built from the shape the radar already
   learns (no track database), a weather forecast strip, per-session-type
   settings profiles.

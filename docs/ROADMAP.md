@@ -205,7 +205,7 @@ suites. All three answer the same kind of question — the one a solo racer
 has no engineer for — and they share plumbing: field gaps, pace trends, and
 the learned track shape.
 
-The flagship has landed; the two below are what's left. Building it moved the
+Two of the three have landed; one is what's left. Building them moved the
 common ground on a bit: `Core.Strategy` now exists, and with it the habit these
 three share — when the sim won't tell you a number, measure it off the field
 rather than modelling it from a constant nobody can check.
@@ -253,11 +253,37 @@ rather than modelling it from a constant nobody can check.
   number (learned from laps where burn was lower) and the catch/defend
   forecast: *"saving to 2.1 L/lap costs ~0.4s/lap and drops you to P7 by
   the flag — pitting costs P9"*. Strategy as one glanceable sentence.
-- **Multiclass traffic forecast**. iOverlay warns when faster traffic is
-  already behind you; with our learned track geometry plus per-class pace
-  we can forecast the *meeting point*: "GTP leader catches you in sector 2
-  next lap". For multiclass/endurance racing this is the difference between
-  being a mobile chicane and cooperating with the pass.
+- ~~**Multiclass traffic forecast**~~ — **done**. iOverlay warns when faster
+  traffic is already behind you; this forecasts the *meeting point*. A strip on
+  the relative names the nearest faster class closing from behind and where it
+  arrives — `GTP #7 reaches you next lap · sector 3` — in that class's own colour.
+
+  It ships built exactly on the plumbing this section promised: the gap is the
+  relative's own on-track `EstTime` delta (now shared as
+  `RelativeCalculator.TrackGapSeconds`), and the closing rate is the sim's
+  per-class estimated-lap-time difference, so a same-class car (the catch/defend
+  trend's job) or a slower one never appears. The **meeting point** is where the
+  player will be after that many laps, named by the timing sector it lands in —
+  which needed the one new input the sim already had and the app wasn't reading:
+  `SplitTimeInfo`'s sector boundaries, now carried on `SessionMetadata`. Every
+  part is measured or published; the sector is a unit off the driver's own
+  timing screen, so nothing here has to be taught before it reads.
+
+  It self-hides where it has no job: **collapsed** in single-class racing, and
+  absent until the nearest faster car is within three laps — a warning you can't
+  act on is noise. It needs no toggle for the same reason the pit-exit strip
+  doesn't: it is either a live decision or it isn't on screen.
+
+  **The honest limitation**, stated on the widget's own terms in
+  [FEATURES.md](FEATURES.md): pace is per-*class*, not per-car, and it assumes
+  today's pace holds — a car stuck in its own battle isn't really closing at
+  class pace. So it is advisory, and like every other readout here it is right
+  by default and visibly wrong when it's wrong, rather than oracular.
+
+  **Needs a human eye in the sim**: whether the three-lap horizon and the
+  "this lap / next lap / in N laps" granularity feel right at racing speed, with
+  the real gaps a live multiclass field produces rather than the demo's tight
+  pack.
 
 ## Awareness — mid-term
 
@@ -324,7 +350,7 @@ Revisit only once the core above is strong:
 | Safety direction (CPI vs your baseline) | ❌ | ❌ | built, then removed — see above |
 | Battle catch/defend forecast | ❌ | ❌ | built **(unique)**, off by default — legibility, see above |
 | Pit-exit position projection | ❌ | ❌ | ✅ **(unique)** — learned lane cost, stated on the strip |
-| Traffic meeting-point forecast | ❌ | behind-only warning | → bet **(unique)** |
+| Traffic meeting-point forecast | ❌ | behind-only warning | ✅ **(unique)** — faster class + sector, on the relative |
 | Setup-file reminder | ❌ | ❌ | ✅ **(unique)** |
 | Per-session profiles | auto layouts | ✅ | ❌ → mid-term |
 | Input trace | ✅ | ✅ | parked |
