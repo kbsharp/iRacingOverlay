@@ -22,9 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
+      # No setup-dotnet step on purpose - see the note in ci.yml: the runner
+      # image ships the .NET 8 SDK and global.json pins which one we accept.
 
       # Never ship a red tree: build + test before doing any packaging work.
       # CI already gates main, but a tag can be cut from any ref, and a release
