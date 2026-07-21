@@ -9,6 +9,12 @@ on:
   pull_request:
     branches: [main]
 
+# A newer push to the same branch makes the in-flight run irrelevant. Windows
+# runner minutes bill at 2x, so cancel rather than let superseded runs finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test:
     runs-on: windows-latest # WPF build requires Windows
@@ -16,10 +22,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
-
+      # No setup-dotnet step on purpose: the windows-latest image already ships
+      # the .NET 8 SDK, and global.json pins which one we accept. Installing
+      # 8.0.x here re-downloaded an SDK we already had, for ~28s a run. If a
+      # future image drops .NET 8, global.json fails the build loudly instead of
+      # silently building on the next major.
       - name: Build
         run: dotnet build -c Release
 

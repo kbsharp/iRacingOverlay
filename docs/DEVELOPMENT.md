@@ -17,6 +17,13 @@ fails with a clear message) and every other script dot-sources it. Prefer them
 over raw `dotnet` commands, and don't copy a `$env:PATH` fix-up into a new
 script or doc — that's the one thing `_common.ps1` exists to keep in one place.
 
+`global.json` pins the build to the .NET 8 SDK (`rollForward: latestFeature`, so
+any 8.0.x patch works but 9/10 won't be picked up silently). It is also what lets
+CI skip `actions/setup-dotnet` entirely — the GitHub Windows image already ships
+an 8.0.x SDK, and re-downloading one cost ~28s per run. If a future runner image
+drops .NET 8, the build fails with a clear SDK-not-found error rather than
+quietly compiling against the next major.
+
 No iRacing SDK install is needed — telemetry comes from the
 [IRSDKSharper](https://github.com/mherbold/IRSDKSharper) NuGet package, restored
 automatically on build.
@@ -26,6 +33,7 @@ automatically on build.
 ```
 IRacingOverlay.sln
 Directory.Build.props          # shared MSBuild settings (see below)
+global.json                    # pins the SDK to .NET 8 (see Prerequisites)
 src/
   IRacingOverlay.Core/          # domain logic - pure, tested, no UI/SDK deps
   IRacingOverlay.Infrastructure/# ITelemetrySource adapters (live + demo)
