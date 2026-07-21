@@ -163,9 +163,8 @@ extends an existing widget rather than adding a new one.
   nose-to-tail queue is left alone. Cars outside the overlap box keep their
   geometric placement, so the corner-angled read of the field ahead is untouched.
   See [FEATURES.md](FEATURES.md#radar--radarwindow--radarviewmodel--coreradar).
-- Carried-over polish: drag-to-resize widgets, a speed readout for the existing
-  km/h / mph preference, configurable telemetry refresh rate, pinning the tray
-  icon.
+- Carried-over polish: drag-to-resize widgets, configurable telemetry refresh
+  rate, pinning the tray icon.
 
 ## Needs research first
 
@@ -315,6 +314,13 @@ Revisit only once the core above is strong:
 
 - **Input telemetry trace** (throttle/brake/steering).
 - **Lap-time log/graph** (stint review).
+- **Speed readout** (km/h / mph for the existing unit preference). Demoted here
+  from the core pass, for the same reason the delta bar is now opt-in: it
+  restates a number the driver already owns — the car's own dashboard has a
+  speedometer a glance away — so a dedicated panel changes no decision the sim
+  isn't already answering. It's cheap to add if a specific use turns up (a
+  pit-lane limiter cue, say, which *would* be a decision), but as a bare speed
+  block it stays parked.
 
 ## Non-goals — on purpose
 

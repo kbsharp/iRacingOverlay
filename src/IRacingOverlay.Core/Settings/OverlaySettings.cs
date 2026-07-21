@@ -27,10 +27,19 @@ public sealed record OverlaySettings
     public IReadOnlyDictionary<string, WindowPosition> Windows { get; init; }
         = new Dictionary<string, WindowPosition>();
 
-    /// <summary>Per-widget on/off. Absent key = enabled, so adding a widget
-    /// doesn't leave it invisible for existing users.</summary>
+    /// <summary>Per-widget on/off. Absent key = the widget's default (see
+    /// <see cref="DefaultOffWidgets"/>), so adding a widget doesn't silently
+    /// disable one users already had.</summary>
     public IReadOnlyDictionary<string, bool> EnabledWidgets { get; init; }
         = new Dictionary<string, bool>();
+
+    /// <summary>Widgets that ship switched off — a fresh install, and any settings
+    /// file with no explicit entry, hides them until the user opts in. The delta
+    /// bar is opt-in because it restates a number iRacing already shows in its own
+    /// black box; it earns a panel only for drivers who want it always up, so it
+    /// stays out of the default four-widget layout rather than crowding it.</summary>
+    private static readonly IReadOnlySet<string> DefaultOffWidgets =
+        new HashSet<string> { WidgetIds.Delta };
 
     /// <summary>Per-widget scale override. Absent key = use <see cref="Scale"/>.
     /// A standings table and a radar rarely want the same size.</summary>
@@ -77,9 +86,13 @@ public sealed record OverlaySettings
     /// <see cref="WidgetVisibility.ShouldShow"/>.</summary>
     public bool HideWhenSimClosed { get; init; } = true;
 
-    /// <summary>True unless the user has explicitly switched this widget off.</summary>
+    /// <summary>Whether a widget shows: the user's explicit choice if they've made
+    /// one, otherwise the widget's default — on for most, off for the opt-in ones
+    /// in <see cref="DefaultOffWidgets"/>.</summary>
     public bool IsWidgetEnabled(string widgetId)
-        => !EnabledWidgets.TryGetValue(widgetId, out var enabled) || enabled;
+        => EnabledWidgets.TryGetValue(widgetId, out var enabled)
+            ? enabled
+            : !DefaultOffWidgets.Contains(widgetId);
 
     /// <summary>The scale to apply to a widget: its own override if it has one,
     /// otherwise the shared <see cref="Scale"/>.</summary>

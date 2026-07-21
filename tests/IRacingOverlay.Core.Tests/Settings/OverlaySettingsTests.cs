@@ -24,6 +24,31 @@ public class OverlaySettingsTests
         Assert.True(settings.IsWidgetEnabled(WidgetIds.Fuel));
     }
 
+    // The delta bar is the one widget that ships off: it restates a number the sim
+    // already shows in its black box, so it's opt-in rather than part of the
+    // default layout. An absent key means off for it, on for everything else.
+
+    [Fact]
+    public void IsWidgetEnabled_Delta_DefaultsToOff()
+        => Assert.False(new OverlaySettings().IsWidgetEnabled(WidgetIds.Delta));
+
+    [Fact]
+    public void IsWidgetEnabled_Delta_AbsentFromExistingFile_StaysOff()
+        => Assert.False(
+            OverlaySettingsSerializer.Deserialize("""{ "scale": 1.0 }""")
+                .IsWidgetEnabled(WidgetIds.Delta));
+
+    [Fact]
+    public void IsWidgetEnabled_Delta_ExplicitlyEnabled_IsTrue()
+    {
+        var settings = new OverlaySettings
+        {
+            EnabledWidgets = new Dictionary<string, bool> { [WidgetIds.Delta] = true },
+        };
+
+        Assert.True(settings.IsWidgetEnabled(WidgetIds.Delta));
+    }
+
     // The setup readout used to be a widget of its own, on by default. Folding it
     // into the fuel panel must not take it away from anyone who had it, so the new
     // toggle defaults to on - including for a settings file written before the

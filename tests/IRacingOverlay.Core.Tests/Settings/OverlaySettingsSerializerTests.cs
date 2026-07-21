@@ -98,16 +98,20 @@ public class OverlaySettingsSerializerTests
     [Fact]
     public void Deserialize_SettingsFileFromBeforeTheseFieldsExisted_GetsDefaults()
     {
-        // The shape the app shipped with. It must still load, and every widget
-        // must still be on - a silently disabled overlay after an update would be
-        // indistinguishable from a broken one.
+        // The shape the app shipped with. It must still load, and every widget that
+        // ships on must still be on - a silently disabled overlay after an update
+        // would be indistinguishable from a broken one. The delta bar is the sole
+        // opt-in widget, so it stays off for a legacy file just as for a fresh one.
         var json = """{ "scale": 1.25, "windows": { "FuelWindow": { "left": 80, "top": 140 } } }""";
 
         var settings = OverlaySettingsSerializer.Deserialize(json);
 
         Assert.Equal(1.25, settings.Scale);
         Assert.Equal(new WindowPosition(80, 140), settings.Windows["FuelWindow"]);
-        Assert.All(WidgetIds.All, id => Assert.True(settings.IsWidgetEnabled(id)));
+        Assert.All(
+            WidgetIds.All.Where(id => id != WidgetIds.Delta),
+            id => Assert.True(settings.IsWidgetEnabled(id)));
+        Assert.False(settings.IsWidgetEnabled(WidgetIds.Delta));
         Assert.All(WidgetIds.All, id => Assert.False(settings.IsClickThrough(id)));
         Assert.Equal(new UnitPreferences(), settings.Units);
         Assert.Equal(new WidgetTuning(), settings.Tuning);
