@@ -538,8 +538,10 @@ A strategy calculator, not just a burn-rate readout — the numbers shown are
 the ones a driver acts on mid-race.
 
 **Layout:** 252px wide, same borderless/transparent/topmost/draggable
-behaviour as the relative. Default position on first launch (`Left=80, Top=140`),
-then restored from saved settings.
+behaviour as the relative. Default position on first launch (`Left=600, Top=24`,
+heading the right-hand column — which currently overlaps the standings' right
+edge by ~40px until dragged; the fix is queued in
+[ROADMAP.md](ROADMAP.md#next-up)), then restored from saved settings.
 
 Spacing is deliberately on the **same rhythm as the list widgets**: a 10px panel
 inset and 6px between blocks, with the headline readout at 26px and the labelled
@@ -1873,11 +1875,14 @@ on the content root (see the tray icon section).
 ## Not yet implemented
 
 Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
-[README](../README.md#roadmap)): drag-to-resize widgets, per-session-type settings
-profiles, and pinning the tray icon — plus the remaining item from the July 2026
-competitive review (a weather forecast strip). A bare speed readout is parked
+[README](../README.md#roadmap)): the [July 2026 audit](AUDIT-2026-07.md)'s
+queue — a defaults pass (track map opt-in, first-run overlap fix), a
+colour-blind friendly palette, drag-to-resize, multi-stop fuel honesty — then
+a weather forecast strip, per-session-type settings profiles, and pinning the
+tray icon. A bare speed readout is parked
 (the car's own dashboard already shows speed). Extending the manufacturer badge
-to the relative is parked behind open research questions; the radar density pass,
+to the relative — and a rejoin indicator / slow-car-ahead warning — is parked
+behind open research questions; the radar density pass,
 the pit-exit projection, the multiclass traffic forecast, the push-or-save
 tradeoff and the track map have since landed. The parked list and non-goals are
 recorded there too.
