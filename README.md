@@ -37,7 +37,8 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   corners. It hides itself when nobody's near and reappears the moment a car comes into
   range. iRacing exposes no position for other cars, so the radar learns the track's shape
   from your own driving over the first lap; until it's learned, it falls back to iRacing's
-  coarse left/right spotter signal.
+  coarse left/right spotter signal. Being purely visual, it also works as a spotter
+  for drivers who can't use the audio ones.
 - **Track map**: the circuit from above with the whole field on it, so you can see where
   the pack has strung out, which way a rival went and how much clear track is ahead.
   It needs **no track database** — like the radar it learns the shape from your own
@@ -55,7 +56,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
 and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) for exactly what's
 implemented (every field, calculation, and known limitation);
 [docs/STYLE.md](docs/STYLE.md) for the visual language and the active styling
-refinement pass.
+refinement pass; [docs/AUDIT-2026-07.md](docs/AUDIT-2026-07.md) for the July
+2026 deep-dive audit — the honest state of the product, the accuracy and
+accessibility reviews, and the live market check.
 
 ## Install (for the team)
 
@@ -176,18 +179,21 @@ the pattern for adding a new widget, and debugging notes; see
 
 The full roadmap lives in [docs/ROADMAP.md](docs/ROADMAP.md), built around
 one test — *does it change a decision the driver makes in the car?* — with a
-July 2026 market snapshot against RaceLab and iOverlay and the judgement
-behind each call. The short version:
+July 2026 market snapshot against RaceLab, iOverlay and irDashies and the
+judgement behind each call. The short version:
 
-- **The strategy layer is done** (nobody else has these): the **pit-exit position
-  projection** and the **push-or-save tradeoff** on the fuel widget, and the
-  multiclass **traffic meeting-point forecast** on the relative — race-engineer
-  calls no current overlay makes.
+- **The strategy layer is done** (no other overlay draws these): the **pit-exit
+  position projection** and the **push-or-save tradeoff** on the fuel widget, and
+  the multiclass **traffic meeting-point forecast** on the relative —
+  race-engineer calls no current overlay makes.
 - **Just landed:** the **track map**, built from the shape the radar already
-  learns — the one thing both competitors ship that we didn't, and ours needs no
-  track database.
-- **Next up:** a weather forecast strip, per-session-type settings profiles, plus
-  the carried-over polish — drag-to-resize and tray-icon pinning.
+  learns — the one thing both paid competitors ship that we didn't, and ours
+  needs no track database.
+- **Next up**, reordered by the [July 2026 audit](docs/AUDIT-2026-07.md): a
+  defaults pass (the track map goes opt-in, the first-run overlap goes), a
+  **colour-blind friendly palette** (no mainstream overlay has one),
+  drag-to-resize, honest multi-stop fuel numbers — then the weather forecast
+  strip and per-session-type profiles.
 - **Waiting on research:** the manufacturer badge on the relative, and a bare
   speed readout is parked (the car's own dashboard already shows it).
 - **Parked or out, on purpose:** input trace and lap graphs wait until the
