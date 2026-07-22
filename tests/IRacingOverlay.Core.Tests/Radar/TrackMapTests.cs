@@ -105,4 +105,36 @@ public class TrackMapTests
         // Just before the line (bucket 99) should find bucket 0 by wrapping.
         Assert.Equal(0.7, map.HeadingAt(0.995), precision: 6);
     }
+
+    /// <summary>A new track means the learned shape is now someone else's circuit,
+    /// and serving it would place cars against a track nobody is driving.</summary>
+    [Fact]
+    public void Reset_ForgetsTheLearnedShape()
+    {
+        var map = new TrackMap(bucketCount: 100);
+        for (var i = 0; i < 60; i++)
+        {
+            map.Sample((i + 0.5) / 100.0, headingRad: 1.5);
+        }
+
+        map.Reset();
+
+        Assert.Equal(0.0, map.Coverage);
+        Assert.False(map.IsReady);
+        Assert.Equal(0.0, map.HeadingAt(0.1), precision: 6);
+    }
+
+    /// <summary>After a reset the next sample must start a fresh run, not fill in
+    /// every bucket back to wherever the player was on the old track.</summary>
+    [Fact]
+    public void Reset_DoesNotSmearTheNextSampleBackToTheOldPosition()
+    {
+        var map = new TrackMap(bucketCount: 100);
+        map.Sample(0.105, headingRad: 1.5); // bucket 10
+
+        map.Reset();
+        map.Sample(0.135, headingRad: 0.2); // bucket 13
+
+        Assert.Equal(0.01, map.Coverage, precision: 6);
+    }
 }
