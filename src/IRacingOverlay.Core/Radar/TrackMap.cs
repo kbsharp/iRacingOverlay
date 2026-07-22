@@ -42,6 +42,20 @@ public sealed class TrackMap
     public bool IsReady => Coverage >= 0.55;
 
     /// <summary>
+    /// Forget the learned shape. Called when the sim moves to a different track:
+    /// the buckets are keyed by lap fraction, so last track's headings would keep
+    /// being served for this one - a radar placing cars against a circuit nobody
+    /// is driving, and a map drawing its outline.
+    /// </summary>
+    public void Reset()
+    {
+        Array.Clear(_headings);
+        Array.Clear(_filled);
+        _filledCount = 0;
+        _lastBucket = -1;
+    }
+
+    /// <summary>
     /// Record the player's heading at a point on the lap. Silently ignores
     /// out-of-range or non-finite inputs. Callers gate on the player actually
     /// moving; see the type remarks.
