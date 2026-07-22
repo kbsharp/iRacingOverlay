@@ -294,6 +294,53 @@
                 </StackPanel>
             </Grid>
 
+            <!-- Push-or-save: what the "SAVE TO" figure above actually costs.
+                 The target on its own tells a driver what to burn but not whether
+                 driving to it beats simply stopping - so both ways out are priced
+                 in seconds, the one unit that lets them be compared at a glance.
+
+                 The headline is the total rather than the per-lap rate on purpose:
+                 the total is what weighs against a stop, and a bare rate with
+                 nothing to compare it to is the failure that switched the
+                 catch/defend column off. No verdict and no colour - two numbers in
+                 the same unit already say which is cheaper, and a hue here would
+                 collide with the green/red the margin badge owns. Absent while the
+                 tank reaches the finish, and until the driver's own laps have said
+                 what saving costs them. -->
+            <StackPanel Visibility="{Binding HasFuelSave, Converter={StaticResource BoolToVis}}">
+                <Border Height="1" Background="{StaticResource Separator}" Margin="0,6,0,6" />
+
+                <DockPanel Margin="0,0,0,3">
+                    <!-- "SAVING COSTS 7.1s", not "IF YOU SAVE 7.1s" - the parallel
+                         with the pit line below was tempting, but it read at a
+                         glance as saving seven seconds rather than spending them. -->
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="SAVING COSTS"
+                               VerticalAlignment="Bottom"
+                               Margin="0,0,6,1"
+                               Style="{StaticResource Caption}" />
+
+                    <TextBlock DockPanel.Dock="Right"
+                               Text="{Binding FuelSaveAlternativeText}"
+                               VerticalAlignment="Bottom"
+                               Margin="6,0,0,1"
+                               Style="{StaticResource Caption}" />
+
+                    <TextBlock Text="{Binding FuelSaveCostText}"
+                               HorizontalAlignment="Left"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Typography.NumeralAlignment="Tabular"
+                               Foreground="{StaticResource TextPrimary}" />
+                </DockPanel>
+
+                <TextBlock Text="{Binding FuelSaveWorkingText}"
+                           FontFamily="{StaticResource FontSmall}"
+                           FontSize="11"
+                           Foreground="{StaticResource TextSecondary}"
+                           TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
             <!-- Pit-exit projection: what stopping actually costs, which is the
                  decision being made. Everything above answers "can I reach the
                  finish"; this answers "and where does that leave me".

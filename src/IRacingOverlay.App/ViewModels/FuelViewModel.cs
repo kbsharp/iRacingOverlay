@@ -27,6 +27,7 @@ public sealed class FuelViewModel : OverlayViewModelBase
     private readonly LapTimeTracker _lapTimeTracker;
     private readonly SetupReminderTracker _setupTracker = new();
     private readonly PitLossTracker _pitLossTracker = new();
+    private readonly SaveCostTracker _saveCostTracker = new();
 
     private string _fuelLevelText = TelemetryFormat.Placeholder;
     private string _fuelLapsText = TelemetryFormat.Placeholder;
@@ -49,6 +50,11 @@ public sealed class FuelViewModel : OverlayViewModelBase
     private GridLength _gaugeEmptyWeight = new(1, GridUnitType.Star);
     private GridLength _gaugeTickWeight = new(0, GridUnitType.Star);
     private GridLength _gaugeTickRestWeight = new(1, GridUnitType.Star);
+
+    private bool _hasFuelSave;
+    private string _fuelSaveCostText = TelemetryFormat.Placeholder;
+    private string _fuelSaveAlternativeText = string.Empty;
+    private string _fuelSaveWorkingText = string.Empty;
 
     private bool _hasPitExit;
     private string _pitExitPositionText = TelemetryFormat.Placeholder;
@@ -259,6 +265,40 @@ public sealed class FuelViewModel : OverlayViewModelBase
     }
 
     /// <summary>
+    /// Whether the push-or-save tradeoff is shown at all. False while the fuel in
+    /// the tank reaches the finish - there is no decision then - and false until
+    /// the driver's own laps have said what saving costs them.
+    /// </summary>
+    public bool HasFuelSave
+    {
+        get => _hasFuelSave;
+        private set => SetProperty(ref _hasFuelSave, value);
+    }
+
+    /// <summary>The whole bill for saving to the flag, e.g. "5.6s" - the figure
+    /// that compares directly with a stop.</summary>
+    public string FuelSaveCostText
+    {
+        get => _fuelSaveCostText;
+        private set => SetProperty(ref _fuelSaveCostText, value);
+    }
+
+    /// <summary>What stopping costs instead, e.g. "vs 29s to pit"; empty until
+    /// enough stops have been seen to know.</summary>
+    public string FuelSaveAlternativeText
+    {
+        get => _fuelSaveAlternativeText;
+        private set => SetProperty(ref _fuelSaveAlternativeText, value);
+    }
+
+    /// <summary>The working behind the headline, e.g. "0.4s/lap slower for 14 laps".</summary>
+    public string FuelSaveWorkingText
+    {
+        get => _fuelSaveWorkingText;
+        private set => SetProperty(ref _fuelSaveWorkingText, value);
+    }
+
+    /// <summary>
     /// Whether the pit-exit projection is shown at all. False outside a race, and
     /// false until enough stops have been observed to know what the lane costs -
     /// the strip is absent rather than showing a guessed figure.
@@ -329,9 +369,13 @@ public sealed class FuelViewModel : OverlayViewModelBase
 
         _lapTimeTracker.Update(snapshot.Lap, snapshot.SessionTimeSeconds);
 
-        // Stateful, like the lap-time tracker: it watches for pit-road edges, so
-        // it belongs here rather than in Render, which replays the same frame.
+        // Stateful, like the lap-time tracker: they watch for lap and pit-road
+        // edges, so they belong here rather than in Render, which replays the same
+        // frame.
         _pitLossTracker.Update(snapshot);
+        _saveCostTracker.Update(
+            snapshot.Lap, snapshot.FuelLevelLiters, snapshot.SessionTimeSeconds,
+            PlayerOnPitRoad(snapshot));
 
         Render(snapshot, _fuelCalculator.Update(snapshot.Lap, snapshot.FuelLevelLiters));
         RenderSetup(snapshot);
@@ -387,7 +431,41 @@ public sealed class FuelViewModel : OverlayViewModelBase
         MarginLabel = strategy.WillFinish ? "LAPS SPARE" : "LAPS SHORT";
 
         RenderGauge(fuel, strategy.FuelToFinishLiters);
+        RenderFuelSave(strategy, estimate);
         RenderPitExit(snapshot);
+    }
+
+    /// <summary>
+    /// Prices saving against stopping. Pure, like the pit-exit projection - both
+    /// trackers feeding it are updated in <see cref="ApplyTelemetry"/>.
+    /// </summary>
+    private void RenderFuelSave(in FuelStrategy strategy, in FuelEstimate estimate)
+    {
+        var plan = FuelSavePlanner.Compute(
+            strategy,
+            estimate.AverageLitersPerLap,
+            _saveCostTracker.Cost,
+            _pitLossTracker.MedianLossSeconds);
+
+        HasFuelSave = plan.HasPlan;
+        FuelSaveCostText = FuelSaveFormat.TotalCost(plan);
+        FuelSaveAlternativeText = FuelSaveFormat.Alternative(plan);
+        FuelSaveWorkingText = FuelSaveFormat.Working(plan);
+    }
+
+    /// <summary>The player's own pit-road state, which the save-cost tracker needs
+    /// to throw out in- and out-laps. Only the per-car arrays carry it.</summary>
+    private static bool PlayerOnPitRoad(TelemetrySnapshot snapshot)
+    {
+        foreach (var car in snapshot.Cars)
+        {
+            if (car.CarIdx == snapshot.PlayerCarIdx)
+            {
+                return car.OnPitRoad || car.Surface == CarTrackSurface.InPitStall;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

@@ -43,8 +43,8 @@ internal static class Program
     /// rather than a separate widget - see <see cref="RenderRadarDanger"/>.
     /// </summary>
     private static readonly string[] AllTargets =
-        ["standings", "relative", "relative-traffic", "fuel", "fuel-pit-exit", "radar", "radar-danger",
-         "radar-unresolved", "delta", "settings"];
+        ["standings", "relative", "relative-traffic", "fuel", "fuel-pit-exit", "fuel-save", "radar",
+         "radar-danger", "radar-unresolved", "delta", "settings"];
 
     [STAThread]
     private static int Main(string[] args)
@@ -259,6 +259,11 @@ internal static class Program
         if (targets.Contains("fuel-pit-exit"))
         {
             results.Add(("fuel-pit-exit", RenderFuelPitExit()));
+        }
+
+        if (targets.Contains("fuel-save"))
+        {
+            results.Add(("fuel-save", RenderFuelSave()));
         }
 
         if (targets.Contains("relative-traffic"))
@@ -498,6 +503,124 @@ internal static class Program
         }
 
         return new IRacingOverlay.App.FuelWindow { DataContext = vm };
+    }
+
+    /// <summary>
+    /// Renders the fuel widget with its push-or-save strip showing.
+    ///
+    /// The demo can't produce this one either, and for two reasons that are both
+    /// the feature working. It runs a comfortable timed race, so there is never a
+    /// save to make; and every demo lap takes exactly the same time whatever it
+    /// burns, so the save-cost tracker correctly concludes it has learned nothing.
+    ///
+    /// So the stint is staged: a real warmed-up demo frame supplies the session,
+    /// the roster and the tank, then ten laps are replayed through it where burn
+    /// and lap time move together the way they do in a car - lean laps slower,
+    /// thirsty laps quicker - and the tank is left short of the finish. Three pit
+    /// -road crossings supply the other half of the comparison. Everything
+    /// downstream is the real tracker, planner, formatter and bindings.
+    /// </summary>
+    private static Window RenderFuelSave()
+    {
+        // 1.5s of lap time for every litre per lap, across a 2.2-2.7 L range.
+        const double secondsPerLiter = 1.5;
+        const double leanestBurn = 2.2;
+        const double lapSecondsAtLeanest = 90;
+        const int lapsRemaining = 14;
+
+        var vm = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), "Demo");
+        vm.ApplySettings(new OverlaySettings());
+
+        if (CaptureDemoFrame(vm) is not { } frame)
+        {
+            Console.Error.WriteLine("Warning: fuel-save never received a demo frame.");
+            return new IRacingOverlay.App.FuelWindow { DataContext = vm };
+        }
+
+        // Alternating rich and lean laps, so the burn range the fit needs is one a
+        // driver would actually produce rather than a ramp.
+        double[] burns = [2.5, 2.2, 2.6, 2.3, 2.7, 2.4, 2.5, 2.3, 2.6, 2.4];
+
+        // Land on a tank that is short: 14 laps at ~2.45 L needs ~34 L, and 29.4 L
+        // leaves a 2.1 L/lap save target - a real lift-and-coast, and well inside
+        // the range these laps were driven over.
+        var fuel = 29.4 + burns.Sum();
+        var time = 0.0;
+        var lap = 1;
+
+        // The stop cost, staged the same way the pit-exit render does it - three
+        // crossings, because that is the tracker's threshold.
+        var atStart = Racing(frame, lap, fuel, time, lapsRemaining);
+        foreach (var carIdx in PitStopCarIndexes(atStart))
+        {
+            var before = FindF2(atStart, carIdx);
+
+            vm.ApplyTelemetry(WithCar(atStart, carIdx, inLane: false, f2: before));
+            vm.ApplyTelemetry(WithCar(atStart, carIdx, inLane: true, f2: before));
+            vm.ApplyTelemetry(WithCar(atStart, carIdx, inLane: false, f2: before + 29));
+        }
+
+        foreach (var burn in burns)
+        {
+            vm.ApplyTelemetry(Racing(frame, lap, fuel, time, lapsRemaining));
+
+            lap++;
+            time += lapSecondsAtLeanest - secondsPerLiter * (burn - leanestBurn);
+            fuel -= burn;
+
+            vm.ApplyTelemetry(Racing(frame, lap, fuel, time, lapsRemaining));
+        }
+
+        if (!vm.HasFuelSave)
+        {
+            Console.Error.WriteLine(
+                "Warning: fuel-save expected a priced tradeoff, got none - "
+                + "the staged stint taught the tracker nothing.");
+        }
+
+        return new IRacingOverlay.App.FuelWindow { DataContext = vm };
+    }
+
+    /// <summary>One staged racing frame: the demo's field and session, with the
+    /// player's lap, tank and clock set, and a lap-limited race length so the
+    /// strategy doesn't depend on the demo's four-minute countdown.</summary>
+    private static TelemetrySnapshot Racing(
+        TelemetrySnapshot frame, int lap, double fuel, double time, int lapsRemaining) =>
+        frame with
+        {
+            Lap = lap,
+            FuelLevelLiters = (float)fuel,
+            SessionTimeSeconds = time,
+            SessionLapsRemain = lapsRemaining,
+        };
+
+    /// <summary>Runs the demo just long enough to capture a frame and the session
+    /// metadata (roster, classes, tank capacity), feeding both to the view model.</summary>
+    private static TelemetrySnapshot? CaptureDemoFrame(FuelViewModel vm)
+    {
+        using var source = new SimulatedTelemetrySource();
+
+        SessionMetadata? metadata = null;
+        TelemetrySnapshot? latest = null;
+        source.SessionMetadataReceived += (_, m) => metadata = m;
+        source.TelemetryReceived += (_, s) => latest = s;
+        vm.SetConnectionState(true);
+        source.Start();
+
+        var started = DateTime.UtcNow;
+        while ((latest is null || metadata is null) && DateTime.UtcNow - started < WarmupCap)
+        {
+            Thread.Sleep(50);
+        }
+
+        source.Stop();
+
+        if (metadata is not null)
+        {
+            vm.ApplySessionMetadata(metadata);
+        }
+
+        return latest;
     }
 
     /// <summary>Three cars that aren't the player and aren't already in the lane.</summary>
