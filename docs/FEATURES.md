@@ -339,7 +339,7 @@ the roster's `ClassEstLapTimeSeconds` when available, else a 120s fallback
 > small numbers. It has to be explained before it reads, which is the test the
 > removed safety chip failed in a louder way. Staged rather than deleted because
 > the fix is presentational, not conceptual; see
-> [ROADMAP.md](ROADMAP.md#core-pass--finish-the-widgets-we-have) for what a
+> [ROADMAP.md](ROADMAP.md#what-shipped-and-what-it-taught) for what a
 > legible version needs. When off, the column collapses to zero width and the
 > name column reclaims the space.
 

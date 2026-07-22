@@ -173,18 +173,15 @@ one test — *does it change a decision the driver makes in the car?* — with a
 July 2026 market snapshot against RaceLab and iOverlay and the judgement
 behind each call. The short version:
 
-- **Core pass:** finish the widgets we have — a configurable telemetry refresh
-  rate has landed (a tray submenu, 60–10 Hz); the carried-over polish list is now
-  drag-to-resize and tray-icon pinning. The manufacturer badge on the relative is
-  parked behind a couple of open questions, and a bare speed readout is parked too
-  (the car's own dashboard already shows it).
-- **The strategy layer** (nobody has these): all three have landed — the
-  **pit-exit position projection** and the **push-or-save tradeoff** on the fuel
-  widget, and the multiclass **traffic meeting-point forecast** on the relative.
-  Race-engineer calls no current overlay makes.
-- **Mid-term:** a **track map** built from the shape the radar already
-  learns (no track database), a weather forecast strip, per-session-type
-  settings profiles.
+- **The strategy layer is done** (nobody else has these): the **pit-exit position
+  projection** and the **push-or-save tradeoff** on the fuel widget, and the
+  multiclass **traffic meeting-point forecast** on the relative — race-engineer
+  calls no current overlay makes.
+- **Next up:** a **track map** built from the shape the radar already learns (no
+  track database), a weather forecast strip, per-session-type settings profiles,
+  plus the carried-over polish — drag-to-resize and tray-icon pinning.
+- **Waiting on research:** the manufacturer badge on the relative, and a bare
+  speed readout is parked (the car's own dashboard already shows it).
 - **Parked or out, on purpose:** input trace and lap graphs wait until the
   core is strong; VR, gimmick data blocks (heart rate, G-force), column
   customization, streaming tools and team sharing are non-goals.
