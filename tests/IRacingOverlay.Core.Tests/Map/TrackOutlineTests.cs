@@ -16,6 +16,25 @@ public class TrackOutlineTests
         Assert.Null(TrackOutline.Build(map, CircleLength));
     }
 
+    /// <summary>The radar is happy at 55% because it only ever looks at the stretch
+    /// around the player, which is always learned. The outline draws the whole lap,
+    /// and an unlearned bucket comes out as a straight line through track nobody has
+    /// driven yet - a wrong shape the driver can't see is wrong.</summary>
+    [Fact]
+    public void Build_MapReadyForTheRadarButHalfTheLapUnseen_StillDrawsNothing()
+    {
+        var buckets = 100;
+        var map = new TrackMap(buckets);
+        for (var i = 0; i < 60; i++)
+        {
+            var pct = (i + 0.5) / buckets;
+            map.Sample(pct, (2 * Math.PI * pct) + (Math.PI / 2));
+        }
+
+        Assert.True(map.IsReady);
+        Assert.Null(TrackOutline.Build(map, CircleLength));
+    }
+
     [Fact]
     public void Build_UnknownTrackLength_ReturnsNull()
         => Assert.Null(TrackOutline.Build(CircleMap(), trackLengthMeters: 0));
@@ -172,7 +191,7 @@ public class TrackOutlineTests
     {
         var buckets = 100;
         var map = new TrackMap(buckets);
-        for (var i = 0; i < 70; i++)
+        for (var i = 0; i < 92; i++)
         {
             var pct = (i + 0.5) / buckets;
             map.Sample(pct, (2 * Math.PI * pct) + (Math.PI / 2));
@@ -181,7 +200,7 @@ public class TrackOutlineTests
         var outline = TrackOutline.Build(map, CircleLength);
 
         Assert.NotNull(outline);
-        Assert.Equal(0.7, outline.Coverage, precision: 6);
+        Assert.Equal(0.92, outline.Coverage, precision: 6);
     }
 
     /// <summary>Anticlockwise in the world must come out clockwise on screen, because
