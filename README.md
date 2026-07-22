@@ -38,6 +38,12 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   range. iRacing exposes no position for other cars, so the radar learns the track's shape
   from your own driving over the first lap; until it's learned, it falls back to iRacing's
   coarse left/right spotter signal.
+- **Track map**: the circuit from above with the whole field on it, so you can see where
+  the pack has strung out, which way a rival went and how much clear track is ahead.
+  It needs **no track database** — like the radar it learns the shape from your own
+  driving, so it's never missing a circuit and never out of date after a resurface.
+  Cars are dots in their class colour, yours ringed; the first lap shows how much of the
+  track it has learned so far instead of half a shape.
 - **Delta**: how far up or down the lap you're on is against your best of the session —
   a signed number and a bar growing from the centre, green when you're up, red when
   you're down. It uses iRacing's own delta rather than a second opinion, but adds the
@@ -177,9 +183,11 @@ behind each call. The short version:
   projection** and the **push-or-save tradeoff** on the fuel widget, and the
   multiclass **traffic meeting-point forecast** on the relative — race-engineer
   calls no current overlay makes.
-- **Next up:** a **track map** built from the shape the radar already learns (no
-  track database), a weather forecast strip, per-session-type settings profiles,
-  plus the carried-over polish — drag-to-resize and tray-icon pinning.
+- **Just landed:** the **track map**, built from the shape the radar already
+  learns — the one thing both competitors ship that we didn't, and ours needs no
+  track database.
+- **Next up:** a weather forecast strip, per-session-type settings profiles, plus
+  the carried-over polish — drag-to-resize and tray-icon pinning.
 - **Waiting on research:** the manufacturer badge on the relative, and a bare
   speed readout is parked (the car's own dashboard already shows it).
 - **Parked or out, on purpose:** input trace and lap graphs wait until the

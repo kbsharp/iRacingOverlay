@@ -998,10 +998,89 @@ takes over.
   sim that a car actually on your left shows on your left — if mirrored, it's a
   one-line sign flip in `RadarBlipViewModel`/`RadarGeometry`.
 - No audio cue — visual only.
-- Demo mode synthesises a weaving circuit (`SimulatedTelemetrySource.DemoHeading`,
-  3000 m) and seats the field in a pack around the player, so the radar populates
-  with visibly angled cars; the dev panel's "Cycle radar" button still steps the
-  `CarLeftRight` fallback through its states.
+- Demo mode synthesises a circuit (`SimulatedTelemetrySource.DemoHeading`, 3000 m
+  — a full turn over the lap plus a three-lobed weave, so it is a closed lap with
+  real corners) and seats the field in a pack around the player, so the radar
+  populates with visibly angled cars; the dev panel's "Cycle radar" button still
+  steps the `CarLeftRight` fallback through its states.
+
+### Track map — `TrackMapWindow` / `TrackMapViewModel` + `Core.Map`
+
+The circuit seen from above with the whole field placed on it, so a glance
+answers *where is everyone* — where the pack has strung out, which way a rival
+went, how much clear track is ahead — as against the radar's *who is beside me
+right now*.
+
+**No track database.** Both competitors ship a track map and both need a stored
+outline per circuit; ours is walked out of the shape the radar already learns
+from the player's own driving, so it is never missing a track and never stale
+after a resurface. The cost is the first lap, which the widget spends saying so.
+
+**Layout:** a 208 px square canvas in the standard panel, with the usual `TRACK`
+caption and connection dot. Square because the outline is scaled uniformly into a
+unit box — a rectangle would only add blank space on one axis for every circuit
+whose proportions don't match it. Fixed position on first launch (`Left=1180,
+Top=470`). On by default.
+
+**How it works.** `Core.Map` is pure and tested:
+- **`TrackOutline.Build`** walks the learned `TrackMap` (the radar's, shared by
+  type not by instance — each view model owns one): a heading plus a distance is a
+  step, so one step per bucket traces the outline of the track itself. Two
+  corrections make the trace presentable. **Closure** — small heading errors
+  accumulate over a lap, so the raw walk ends short of where it started; the miss
+  is spread back over the lap in proportion to distance travelled (the surveyor's
+  compass rule), which shuts the loop without visibly bending any one part of it.
+  **Normalisation** — the result is scaled *uniformly* and centred into the unit
+  box; a circuit stretched to fill a square stops being the circuit the driver
+  knows, and the spare space either side of a long thin track is the honest cost
+  of that. `At(lapDistPct)` interpolates between buckets, so a car crosses the
+  drawn line smoothly rather than snapping.
+- **`TrackMapCalculator`** picks the field: everyone in the roster who is in the
+  world, with pit-lane cars **kept and flagged** (unlike the radar, which drops
+  them — "my rival is in the lane" is exactly what the map gets glanced at for).
+  The player is placed last in the list so their mark draws on top.
+- **`TrackMap.Reset`** clears the learned shape; both this widget and the radar
+  call it when the session's track length changes, since the buckets are keyed by
+  lap fraction and last circuit's headings would otherwise keep being served.
+
+`TrackMapViewModel` samples the player's heading exactly as the radar does (on
+track, >3 m/s), rebuilds the outline when coverage has grown 5% since the drawn
+one, and updates car slots in place. The outline is published as a frozen
+`PointCollection` — telemetry arrives on a background thread, and an unfrozen
+`Freezable` belongs to the thread that made it.
+
+**Visual behaviour:**
+- The track is drawn as a dark casing under a grey tarmac ribbon. The casing is
+  what makes it read as a circuit rather than a wire: where the lap doubles back
+  on itself the two passes stay separate instead of merging into one smudge.
+- **Start/finish** is a white tick across the ribbon, square to the direction of
+  travel. Without it a closed loop has no anchor and could be any circuit.
+- Cars are dots in **iRacing's own class colour** — the same hue they have on the
+  standings and relative. Your own car is a size up with the warm amber ring that
+  means "this is you" everywhere else in the app. Nothing else is drawn on them:
+  at map scale a field of numbered marks is mush, and the shape of the field is
+  what the eye is there to pick up.
+- Cars **in the pit lane** are drawn at 40% opacity. Their lap fraction runs along
+  the lane rather than the racing line, so the mark is a rougher statement than
+  the ones around it and is drawn as one.
+- **While learning**, the canvas shows the coverage percentage over `LEARNING
+  TRACK` instead of a part-drawn circuit. An empty panel reads as a broken widget;
+  a number that climbs reads as one doing its job.
+
+**Known limitations:**
+- **Needs ~one lap to learn the track** (per session / track), like the radar.
+- The outline is the *player's line*, not the track's centreline — it is drawn
+  from where you actually drove, so a lap with a wide moment leaves a wide corner
+  until a later lap overwrites those buckets.
+- Cars are placed by lap fraction alone, so **all cars sit on one line**: two cars
+  side by side on track are one dot on the map, and a car in the pits is drawn on
+  the racing line (faded) rather than in the lane. iRacing publishes no lateral
+  position, so this is the same limit the radar hits.
+- **No sector or corner labels, no flag state per sector, and no lap-ahead/behind
+  distinction** — every car on the map is drawn at its position round the lap
+  whatever lap it is on.
+- Rendered offscreen for review via `.\scripts\render.ps1 track-map` (finished
+  circuit) and `track-map-learning` (the first-lap state).
 
 ### Delta — `DeltaWindow` / `DeltaViewModel` / `Core.Delta.DeltaCalculator`
 
@@ -1735,7 +1814,7 @@ on the content root (see the tray icon section).
 
 ## Test coverage
 
-671 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+693 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -1758,7 +1837,9 @@ on the content root (see the tray icon section).
 | `Formatting/RatingFormatTests.cs` | License tier parsing, projected-change trend + magnitude, CarClassColor normalisation (decimal-packed and hex forms) |
 | `Formatting/SetupFormatTests.cs` | Setup file name display formatting |
 | `Formatting/RadarFormatTests.cs` | CarLeftRight classification into the four proximity booleans (radar fallback) |
-| `Radar/TrackMapTests.cs` | Heading-bucket fill/coverage/readiness, gap-fill between samples (incl. across the line), teleport guard, nearest-bucket lookup |
+| `Radar/TrackMapTests.cs` | Heading-bucket fill/coverage/readiness, gap-fill between samples (incl. across the line), teleport guard, nearest-bucket lookup, reset forgetting the shape without smearing the next sample |
+| `Map/TrackOutlineTests.cs` | Tracing the circuit: not-ready/zero-length guards, a circle coming out circular, the unit box, loop closure with headings that don't add up, aspect ratio kept on a long thin track, interpolation and wrapping between buckets, Y flipped into screen space, coverage carried, a lap that goes nowhere refused |
+| `Map/TrackMapCalculatorTests.cs` | Placing the field: the whole grid rather than a range, the player drawn last, roster number + class colour, not-in-world and pace/spectator exclusion, pit cars kept and flagged, no-metadata fallback |
 | `Radar/RadarGeometryTests.cs` | Local-frame placement: straight → ahead/behind at 0°, left/right corners → offset + rotated, reference-heading cancellation, start/finish wrap |
 | `Radar/RadarCalculatorTests.cs` | Blip building: map-not-ready/zero-length guards, range gating, pit/pace-car exclusion, roster colour+number |
 | `Radar/TrackLengthParserTests.cs` | `WeekendInfo:TrackLength` km/mi parsing, missing/invalid → 0 |
@@ -1785,13 +1866,13 @@ on the content root (see the tray icon section).
 ## Not yet implemented
 
 Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
-[README](../README.md#roadmap)): drag-to-resize widgets, per-car/track settings
-profiles, and pinning the tray icon — plus the remaining items from the July 2026
-competitive review (track map, weather forecast strip). A bare speed readout
-is parked (the car's own dashboard already shows speed). Extending the
-manufacturer badge to the relative is parked behind open research questions; the
-radar density pass, the pit-exit projection, the multiclass traffic forecast and
-the push-or-save tradeoff have since landed. The parked list and non-goals are
+[README](../README.md#roadmap)): drag-to-resize widgets, per-session-type settings
+profiles, and pinning the tray icon — plus the remaining item from the July 2026
+competitive review (a weather forecast strip). A bare speed readout is parked
+(the car's own dashboard already shows speed). Extending the manufacturer badge
+to the relative is parked behind open research questions; the radar density pass,
+the pit-exit projection, the multiclass traffic forecast, the push-or-save
+tradeoff and the track map have since landed. The parked list and non-goals are
 recorded there too.
 
 (Click-through, running at Windows startup, and the settings surface itself have

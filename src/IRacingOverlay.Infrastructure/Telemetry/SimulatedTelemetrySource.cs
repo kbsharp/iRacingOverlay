@@ -463,12 +463,20 @@ public sealed class SimulatedTelemetrySource : ITelemetrySource, IDemoControls
         };
     }
 
-    /// <summary>The demo track's heading (radians) at a point on the lap - a weaving
-    /// circuit with a few corners. The radar records this as the player laps and
-    /// reuses it to place the field, so cars visibly angle through the corners and
-    /// run parallel on the straights.</summary>
+    /// <summary>
+    /// The demo track's heading (radians) at a point on the lap. The radar records
+    /// this as the player laps and reuses it to place the field, so cars visibly
+    /// angle through the corners and run parallel on the straights; the track map
+    /// walks the same headings into the circuit's outline.
+    ///
+    /// A full turn over the lap plus a three-lobed weave, so it is a closed
+    /// circuit with real corners - including a couple that turn back on
+    /// themselves. It used to be the weave alone, which reads fine on a radar
+    /// (that only ever looks at a few metres of it) but is an open line rather
+    /// than a lap, so it drew a snake instead of a track.
+    /// </summary>
     private static float DemoHeading(double lapDistPct) =>
-        (float)(1.5 * Math.Sin(2 * Math.PI * lapDistPct * 3));
+        (float)((2 * Math.PI * lapDistPct) + (0.6 * Math.Sin(2 * Math.PI * lapDistPct * 3)));
 
     private bool IsInPits(SimDriver driver) => driver.CarIdx == PlayerIdx ? _playerInPits : driver.InPits;
 

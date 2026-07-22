@@ -132,7 +132,19 @@ public sealed class RadarViewModel : OverlayViewModelBase
         }
     }
 
-    public override void ApplySessionMetadata(SessionMetadata metadata) => _metadata = metadata;
+    public override void ApplySessionMetadata(SessionMetadata metadata)
+    {
+        // A different track length means a different track, and the buckets are
+        // keyed by lap fraction - so last circuit's headings would keep being
+        // served, placing cars against a track nobody is driving.
+        if (_metadata is not null
+            && Math.Abs(metadata.TrackLengthMeters - _metadata.TrackLengthMeters) > 1.0)
+        {
+            _trackMap.Reset();
+        }
+
+        _metadata = metadata;
+    }
 
     public override void ApplySettings(OverlaySettings settings)
         => _rangeMeters = settings.Tuning.RadarRangeMeters;

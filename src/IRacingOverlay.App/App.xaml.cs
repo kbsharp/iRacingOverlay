@@ -104,6 +104,7 @@ public partial class App : System.Windows.Application
         var fuelViewModel = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), connectedLabel);
         var radarViewModel = new RadarViewModel(connectedLabel);
         var deltaViewModel = new DeltaViewModel(connectedLabel);
+        var trackMapViewModel = new TrackMapViewModel(connectedLabel);
 
         _telemetrySource = demoMode
             ? new SimulatedTelemetrySource()
@@ -124,6 +125,8 @@ public partial class App : System.Windows.Application
                 new RadarWindow { DataContext = radarViewModel }, radarViewModel),
             new OverlayWidget(WidgetIds.Delta, "Delta",
                 new DeltaWindow { DataContext = deltaViewModel }, deltaViewModel),
+            new OverlayWidget(WidgetIds.TrackMap, "Track Map",
+                new TrackMapWindow { DataContext = trackMapViewModel }, trackMapViewModel),
         ]);
 
         if (_telemetrySource is IDemoControls demoControls)
