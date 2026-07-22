@@ -37,13 +37,6 @@ illegibility isn't.**
 ## Next up
 
 - **Carried-over polish** — drag-to-resize widgets, pinning the tray icon.
-- **Track map** *(mid-term, the biggest remaining gap)* — both competitors ship
-  one (iOverlay ships two), and it feeds real decisions: where the yellow is,
-  where your rival is, where traffic is building. Ours has a twist neither can
-  claim: `Core.Radar.TrackMap` already learns the circuit's shape from the
-  player's own driving, so it needs **no track database** and is never missing a
-  track or stale after a resurface. Draw the learned line, place every car on it
-  from `LapDistPct`, colour by class.
 - **Weather forecast strip** *(mid-term)* — we show current temps and wetness;
   with dynamic weather the decision-shaped question is "what's it doing in 20
   minutes?", which is a tyre and pit call.
@@ -81,6 +74,11 @@ Renders and tests can't settle these; they need a human eye at racing speed.
 - **Traffic forecast** — do the three-lap horizon and the "this lap / next lap /
   in N laps" granularity feel right against the gaps a real multiclass field
   produces, rather than the demo's tight pack?
+- **Track map fidelity** — the outline is the *player's line*, not a surveyed
+  centreline, and it is drawn from whatever laps you happened to drive. Does a
+  real circuit come out recognisable, or does a wide moment leave a corner shaped
+  wrong until it's driven again? And is a 208 px square enough to place a rival
+  at a glance on a long track like Spa, where the whole lap has to fit?
 - **Push-or-save strip** — does a driver's natural burn variation reach the 6%
   spread the fit requires often enough for the strip to appear when it's wanted?
   If it usually needs you to have *already* been saving, the thresholds want
@@ -125,6 +123,7 @@ Landed — the reasoning that survives is in [FEATURES.md](FEATURES.md):
 | **Configurable refresh rate** | The offered rates are exactly the divisors of iRacing's 60 Hz broadcast, so the number shown is the number delivered. A free-form slider would round and then lie. |
 | **Pit-exit projection** | Lane length isn't published, so the cost is *measured* — off the whole field's stops, because a figure that waits for your own first stop arrives after the decision. The strip states the loss it used, so it's falsifiable rather than oracular. |
 | **Traffic forecast** | Gap from the relative's own `EstTime` delta, closing rate from the sim's per-class pace, meeting point named by timing sector. Self-hides in single-class racing and beyond three laps — a warning you can't act on is noise. |
+| **Track map** | The gap both competitors filled with a track database, filled instead by walking the shape the radar already learns: a heading plus a distance is a step, so a lap of steps *is* the outline. No database means no missing circuit and nothing stale after a resurface — and the first lap, which the widget spends saying how much it has learned rather than drawing half a track. Cars are class-coloured dots and nothing else; at map scale a field of numbered marks is mush. |
 | **Push-or-save tradeoff** | Both ways out priced in seconds. What saving costs is regressed from the driver's own laps, and the fit is refused more often than it's offered (sign checked, outliers dropped, no reading past the observed burn range). No verdict: two numbers in the same unit are the sentence. |
 
 Built and then withdrawn — these two are the live guidance:
@@ -158,7 +157,7 @@ not a way to keep something that doesn't work.**
 | Standings / relative / fuel | ✅ | ✅ | ✅ |
 | Positions gained vs the grid | ✅ | ✅ (column) | ✅ per class |
 | Proximity radar | ✅ (radar + bars) | spotter indicator | ✅ corner-angled, learned geometry |
-| Track map | ✅ | ✅ (2 forms) | ❌ → next up (no track DB needed) |
+| Track map | ✅ | ✅ (2 forms) | ✅ learned from your own driving, **no track DB** |
 | Delta bar | ✅ | via columns | ✅ vs your session best, held at the line |
 | Projected iRating | gain shown | gain shown | ✅ full zero-sum model |
 | Pit-exit position projection | ❌ | ❌ | ✅ **(unique)** — learned lane cost, stated on the strip |

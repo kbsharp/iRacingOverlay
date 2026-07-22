@@ -127,7 +127,8 @@ of seconds, so it hasn't been worth adding.
   ```
 
   Targets: `standings`, `relative`, `relative-traffic`, `fuel`, `fuel-pit-exit`,
-  `fuel-save`, `radar`, `radar-danger`, `radar-unresolved`, `delta`, `settings`.
+  `fuel-save`, `radar`, `radar-danger`, `radar-unresolved`, `delta`, `track-map`,
+  `track-map-learning`, `settings`.
   **Rendering everything is the default** and costs barely more than rendering
   one — all the view models are fed from a single demo session, and the slow part
   is wall-clock demo laps (the fuel burn average needs ~35 s of them), not the
@@ -163,6 +164,12 @@ of seconds, so it hasn't been worth adding.
   a tank that's short — plus three pit-road crossings for the other half of the
   comparison. Only the stint is staged; the trackers, planner and formatter are
   real.
+
+  `track-map-learning` is the track map's first lap, before there is a circuit to
+  draw. Nothing is staged: it runs the demo for a few seconds and renders whatever
+  coverage that reached, which is the widget's real behaviour on every out-lap.
+  The plain `track-map` target waits for the outline instead, so the pair covers
+  both states the widget has.
 
   `relative-traffic` is the relative with its multiclass traffic strip showing a
   *multi-lap* forecast. The plain `relative` target does show the strip, but only

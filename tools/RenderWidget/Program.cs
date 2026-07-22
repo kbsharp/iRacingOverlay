@@ -44,7 +44,7 @@ internal static class Program
     /// </summary>
     private static readonly string[] AllTargets =
         ["standings", "relative", "relative-traffic", "fuel", "fuel-pit-exit", "fuel-save", "radar",
-         "radar-danger", "radar-unresolved", "delta", "settings"];
+         "radar-danger", "radar-unresolved", "delta", "track-map", "track-map-learning", "settings"];
 
     [STAThread]
     private static int Main(string[] args)
@@ -176,6 +176,7 @@ internal static class Program
         FuelViewModel? fuel = null;
         RadarViewModel? radar = null;
         DeltaViewModel? delta = null;
+        TrackMapViewModel? trackMap = null;
 
         if (targets.Contains("standings"))
         {
@@ -211,14 +212,21 @@ internal static class Program
             delta = new DeltaViewModel("Demo");
         }
 
-        var live = new OverlayViewModelBase?[] { standings, relative, fuel, radar, delta }
+        if (targets.Contains("track-map"))
+        {
+            // Needs the same history the radar does: there is no circuit to draw
+            // until a lap of the player's own heading has been learned.
+            trackMap = new TrackMapViewModel("Demo");
+        }
+
+        var live = new OverlayViewModelBase?[] { standings, relative, fuel, radar, delta, trackMap }
             .Where(vm => vm is not null)
             .Select(vm => vm!)
             .ToList();
 
         if (live.Count > 0)
         {
-            WarmUp(live, radar, needsLaps: fuel is not null || delta is not null);
+            WarmUp(live, radar, trackMap, needsLaps: fuel is not null || delta is not null);
         }
 
         if (standings is not null)
@@ -244,6 +252,16 @@ internal static class Program
         if (delta is not null)
         {
             results.Add(("delta", new IRacingOverlay.App.DeltaWindow { DataContext = delta }));
+        }
+
+        if (trackMap is not null)
+        {
+            results.Add(("track-map", new IRacingOverlay.App.TrackMapWindow { DataContext = trackMap }));
+        }
+
+        if (targets.Contains("track-map-learning"))
+        {
+            results.Add(("track-map-learning", RenderTrackMapLearning()));
         }
 
         if (targets.Contains("radar-danger"))
@@ -673,7 +691,10 @@ internal static class Program
     /// behind them.
     /// </summary>
     private static void WarmUp(
-        List<OverlayViewModelBase> viewModels, RadarViewModel? radar, bool needsLaps)
+        List<OverlayViewModelBase> viewModels,
+        RadarViewModel? radar,
+        TrackMapViewModel? trackMap,
+        bool needsLaps)
     {
         using var source = new SimulatedTelemetrySource();
 
@@ -708,12 +729,13 @@ internal static class Program
             var elapsed = DateTime.UtcNow - started;
             var fuelReady = !needsLaps || elapsed >= FuelWarmup;
             var radarReady = radar is null || radar.ShowRadar;
+            var mapReady = trackMap is null || trackMap.HasOutline;
 
             // At least one frame, always. Widgets that need neither laps nor a
             // track map (standings, relative) otherwise satisfied both checks on
             // the first pass and were rendered before any telemetry arrived -
             // an empty panel that looks like a styling result rather than a bug.
-            if (Volatile.Read(ref frames) > 0 && fuelReady && radarReady)
+            if (Volatile.Read(ref frames) > 0 && fuelReady && radarReady && mapReady)
             {
                 break;
             }
@@ -734,6 +756,41 @@ internal static class Program
             Console.Error.WriteLine(
                 "Warning: radar never mapped the track; rendering whatever state it reached.");
         }
+
+        if (trackMap is not null && !trackMap.HasOutline)
+        {
+            Console.Error.WriteLine(
+                "Warning: track-map never learned the circuit; rendering whatever state it reached.");
+        }
+    }
+
+    /// <summary>
+    /// Renders the track map's first-lap state: no circuit yet, so it shows how
+    /// much of the lap it has learned instead. Half a demo lap of samples produces
+    /// it directly - this is the widget's real behaviour on every out-lap, not a
+    /// staged one.
+    /// </summary>
+    private static Window RenderTrackMapLearning()
+    {
+        var vm = new TrackMapViewModel("Demo");
+        using var source = new SimulatedTelemetrySource();
+
+        source.SessionMetadataReceived += (_, m) => vm.ApplySessionMetadata(m);
+        source.TelemetryReceived += (_, s) => vm.ApplyTelemetry(s);
+        vm.SetConnectionState(true);
+        source.Start();
+
+        // Demo laps are 15s; a few seconds is a believable fraction of an out-lap.
+        Thread.Sleep(4000);
+        source.Stop();
+
+        if (vm.HasOutline)
+        {
+            Console.Error.WriteLine(
+                "Warning: track-map-learning expected a part-learned track, got a finished one.");
+        }
+
+        return new IRacingOverlay.App.TrackMapWindow { DataContext = vm };
     }
 
     /// <summary>
