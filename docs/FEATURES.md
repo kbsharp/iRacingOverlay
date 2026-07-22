@@ -576,6 +576,7 @@ unchanged, only the space around them.
   buffer (0 when already enough).
 - **Save to**: the burn rate per lap that would still make it to the finish
   on current fuel without stopping — a save target when the driver is short.
+  What driving to it *costs* is priced by the push-or-save strip below.
 
 **`FuelCalculator`** (per-lap burn): detects lap changes from raw
 `(lap, fuelLevel)` frames.
@@ -785,6 +786,94 @@ time-based reasoning that keeps the standings' laps-down from flickering.
 - The demo can't produce it (its one pitted car never leaves the box), so
   `render.ps1 fuel-pit-exit` stages three real pit-road crossings on a warmed-up
   demo frame and runs them through the real tracker, projector and bindings.
+
+### Push-or-save tradeoff — `Core.Strategy` (`SaveCostTracker` + `FuelSavePlanner`)
+
+A strip on the fuel widget that prices the two ways out of being short on fuel,
+both in seconds, so they can be compared at a glance.
+
+```
+SAVING COSTS   7.1s                        vs 29s to pit
+0.5s/lap slower for 14 laps
+```
+
+The widget already showed a **save target** ("SAVE TO 2.10 /lap"). What it never
+said was what driving to that number costs — so a driver could see the target and
+still have no idea whether saving beat simply stopping. This answers that, and
+answers it with the pit loss the pit-exit strip already learned.
+
+**`SaveCostTracker` — learning what saving costs *this* driver.** How much a
+lift-and-coast costs depends on the car, the track, the tyres and the driver, so
+there is no constant to look up. It's measured: every completed clean lap
+contributes one point of `(litres burned, lap time)`, and the least-squares slope
+through the window is the exchange rate — **seconds of lap time per litre per
+lap**.
+
+- Window of the last **12 laps** — a stint's worth, since tyres go off and the
+  track rubbers in.
+- Needs **6 clean laps** in the window. A slope through four points is a
+  coincidence.
+- Lap detection mirrors `FuelCalculator` (single clean lap step, no mid-lap refuel
+  over 0.2 L, re-baselines on a lap-counter decrease), and additionally drops any
+  lap that **touched pit road** — an in- or out-lap is neither a normal burn nor a
+  normal lap time. A lap that *starts* in the lane is dropped too.
+- Laps slower than **105%** of the window's best are discarded as traffic, a
+  mistake or a spin. Such a lap burns less fuel *and* loses time, which is the
+  exact opposite of the relationship being measured — one of them can flip the
+  slope's sign on its own.
+- The burn range has to be **≥ 6% of the mean burn**. Below that every lap was
+  driven the same way, and the slope is lap-time noise divided by almost nothing.
+- The **sign is checked, not assumed**. Burning more means driving harder, so lap
+  time should fall as litres rise; a fit that comes out the other way is noise
+  winning, and the tracker reports nothing instead.
+- Those last two guards jointly bound how steep a reported rate can get: no kept
+  lap is more than 5% off the best, so the fit has only that much lap time to
+  spread across a burn range that must be real. A wild exchange rate has nowhere
+  to come from.
+
+**`FuelSavePlanner` — pricing the choice.** Takes the `FuelStrategy` (save target,
+laps remaining, whether saving is needed at all), the current burn, the learned
+exchange rate and the learned pit loss:
+
+- Cost per lap = exchange rate × (current burn − save target).
+- Total = cost per lap × whole laps remaining — **the figure that compares with a
+  stop**.
+- Returns nothing while `WillFinish` is true. Making it on what's in the tank is
+  not a decision, and the strip only exists while there is one.
+- Returns nothing when the target is **more than one observed burn range below the
+  leanest lap driven**. Past that the slope would describe driving nobody has
+  done, which is how a measured number turns into a modelled one.
+- No verdict is returned. Two numbers in the same unit are the sentence; a
+  recommendation would only hide which of them was doing the work.
+
+**Displayed fields:**
+- **Total cost of saving** ("7.1s") — a tenth below ten seconds, whole seconds
+  above. Quoting "34.2s" against a pit loss shown as "29s" would claim a precision
+  neither estimate has.
+- **The alternative** ("vs 29s to pit") — omitted until 3 stops have been observed.
+  The strip still prices saving in that case; it just has nothing honest to weigh
+  it against yet.
+- **The working** ("0.5s/lap slower for 14 laps") — the rate with its unit and the
+  laps it runs for, which is the part a driver can check on the next lap.
+- **No colour and no toggle.** A hue here would collide with the green/red the
+  margin badge owns, and the strip is either a live decision or it isn't on
+  screen — the same reason the pit-exit and traffic strips carry no setting.
+
+**Known limitations:**
+- **It can only price saving once you've varied your burn.** A driver who has
+  driven every lap identically gets no strip, because their own laps genuinely
+  haven't said what saving costs them. That is the honest state, not a gap.
+- The exchange rate is a straight line through a stint. Real fuel saving isn't
+  linear at the extremes — the last tenth of a litre costs more than the first —
+  which is why the planner refuses to read far past the observed range.
+- It assumes saving to the target *removes* the stop. It doesn't model a shorter
+  splash, and "Add" upstream still assumes one stop covers the rest of the race.
+- Both halves are estimates of *typical* behaviour: the pit loss is what the field
+  has been taking, not what your stop will take (see the pit-exit strip's
+  limitations), and the save cost is your recent laps, not this one.
+- The demo can't produce it — its race is comfortable and its lap times don't
+  respond to burn — so `render.ps1 fuel-save` stages a ten-lap stint plus three
+  pit-road crossings and runs them through the real trackers, planner and bindings.
 
 ### Radar — `RadarWindow` / `RadarViewModel` + `Core.Radar`
 
@@ -1646,7 +1735,7 @@ on the content root (see the tray icon section).
 
 ## Test coverage
 
-585 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+671 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -1689,17 +1778,20 @@ on the content root (see the tray icon section).
 | `Strategy/TrafficForecasterTests.cs` | Faster-class car behind and closing forecast (gap, rate, laps, sector); same-class/slower/ahead/too-far/in-pits/off-roster/player-in-pits/null-metadata all suppressed; most-imminent picked across classes; forecast without sector boundaries |
 | `Session/TrackSectorsTests.cs` | Lap fraction → 1-based sector, projected position wrapped past the line, no-boundaries/non-finite → null, single sector |
 | `Formatting/TrafficFormatTests.cs` | Car label (class + number, number omitted when missing), "when · where" sentence, sector dropped when unknown, empty for no threat |
+| `Strategy/SaveCostTrackerTests.cs` | Learning seconds-per-litre from the player's laps: sample minimum, exchange rate recovered from spread, flat-burn and inverted fits rejected, slow outlier lap discarded, refuel/pit-touched/pit-started/skipped laps not recorded, rolling window, reset |
+| `Strategy/FuelSavePlannerTests.cs` | Pricing save vs stop: both sides in seconds, suppressed when the tank already reaches the finish or the cost isn't learned, priced without a pit loss, extrapolation limit at one observed range (inclusive), target above current burn, whole-lap rounding, zero pit loss treated as unknown |
+| `Formatting/FuelSaveFormatTests.cs` | Total cost precision (tenth under 10s, whole above), "vs 29s to pit" alternative and its absence, working line with unit + lap count, singular last lap, placeholders for no plan |
 
 ## Not yet implemented
 
 Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
 [README](../README.md#roadmap)): drag-to-resize widgets, per-car/track settings
 profiles, and pinning the tray icon — plus the remaining items from the July 2026
-competitive review (track map, push-vs-save fuel tradeoff). A bare speed readout
+competitive review (track map, weather forecast strip). A bare speed readout
 is parked (the car's own dashboard already shows speed). Extending the
-manufacturer badge to the relative is parked behind
-open research questions; the radar density pass, the pit-exit projection and the
-multiclass traffic forecast have since landed. The parked list and non-goals are
+manufacturer badge to the relative is parked behind open research questions; the
+radar density pass, the pit-exit projection, the multiclass traffic forecast and
+the push-or-save tradeoff have since landed. The parked list and non-goals are
 recorded there too.
 
 (Click-through, running at Windows startup, and the settings surface itself have

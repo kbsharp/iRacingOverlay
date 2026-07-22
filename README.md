@@ -25,7 +25,9 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   / red short), fuel to add at the next stop, and a save-per-lap target. In a race it also
   projects **where a stop would put you back on track** — "if you pit now: P12 ▼6, 19.4s
   behind #63, 33.9s clear of #33" — using the pit-lane cost it learns by watching the
-  whole field stop, and it shows that cost so you can see what the answer assumed. A strip along
+  whole field stop, and it shows that cost so you can see what the answer assumed. When the
+  tank won't reach the finish it also prices the alternative — "saving costs 7.1s, vs 29s to
+  pit; 0.5s/lap slower for 14 laps" — learning what saving costs *you* from your own laps. A strip along
   the bottom shows the **loaded setup file** and pulses the panel for the first minute of
   Qualifying or Race — a reminder to catch the classic "raced on the qualifying setup"
   mistake before it costs you a fuel-short race. Switch the strip off in Settings if you
@@ -176,10 +178,10 @@ behind each call. The short version:
   drag-to-resize and tray-icon pinning. The manufacturer badge on the relative is
   parked behind a couple of open questions, and a bare speed readout is parked too
   (the car's own dashboard already shows it).
-- **The strategy layer** (nobody has these): the **pit-exit position
-  projection** has landed on the fuel widget and the multiclass **traffic
-  meeting-point forecast** on the relative; still to come is a push-vs-save fuel
-  tradeoff readout — race-engineer calls no current overlay makes.
+- **The strategy layer** (nobody has these): all three have landed — the
+  **pit-exit position projection** and the **push-or-save tradeoff** on the fuel
+  widget, and the multiclass **traffic meeting-point forecast** on the relative.
+  Race-engineer calls no current overlay makes.
 - **Mid-term:** a **track map** built from the shape the radar already
   learns (no track database), a weather forecast strip, per-session-type
   settings profiles.

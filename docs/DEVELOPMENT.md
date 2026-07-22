@@ -127,7 +127,7 @@ of seconds, so it hasn't been worth adding.
   ```
 
   Targets: `standings`, `relative`, `relative-traffic`, `fuel`, `fuel-pit-exit`,
-  `radar`, `radar-danger`, `radar-unresolved`, `delta`, `settings`.
+  `fuel-save`, `radar`, `radar-danger`, `radar-unresolved`, `delta`, `settings`.
   **Rendering everything is the default** and costs barely more than rendering
   one — all the view models are fed from a single demo session, and the slow part
   is wall-clock demo laps (the fuel burn average needs ~35 s of them), not the
@@ -153,6 +153,16 @@ of seconds, so it hasn't been worth adding.
   So this target stages the missing input — it takes a warmed-up demo frame and
   replays it with three cars actually crossing in and back out of the lane. Only
   the stops are staged; the tracker, projector and bindings downstream are real.
+
+  `fuel-save` is the fuel widget with its push-or-save strip showing. The demo
+  can't produce this one either, for two reasons that are both the feature
+  working: it runs a comfortable timed race, so there is never a save to make,
+  and every demo lap takes the same time whatever it burns, so `SaveCostTracker`
+  correctly concludes it has learned nothing. So the target stages a stint — ten
+  laps where burn and lap time move together the way they do in a car, ending on
+  a tank that's short — plus three pit-road crossings for the other half of the
+  comparison. Only the stint is staged; the trackers, planner and formatter are
+  real.
 
   `relative-traffic` is the relative with its multiclass traffic strip showing a
   *multi-lap* forecast. The plain `relative` target does show the strip, but only
