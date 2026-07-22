@@ -44,6 +44,21 @@ public sealed class TrackOutline
     /// </summary>
     private const double MinExtentFraction = 0.01;
 
+    /// <summary>
+    /// How much of the lap must be learned before a shape is drawn at all -
+    /// deliberately a far higher bar than <see cref="TrackMap.IsReady"/>, which the
+    /// radar is content with.
+    ///
+    /// The radar only ever looks a few tens of metres either side of the player,
+    /// and that stretch is always learned. The outline draws the <b>whole lap</b>,
+    /// where an unlearned bucket is filled from the nearest heading that was - so
+    /// a half-mapped lap comes out as a real circuit with a straight line drawn
+    /// through everything not yet driven. That is not an approximation the driver
+    /// can see is one. Since a single clean lap fills every bucket, the extra wait
+    /// is the back half of the out-lap, and the widget spends it saying so.
+    /// </summary>
+    private const double MinCoverage = 0.9;
+
     private readonly TrackPoint[] _points;
 
     private TrackOutline(TrackPoint[] points, double coverage)
@@ -64,14 +79,15 @@ public sealed class TrackOutline
 
     /// <summary>
     /// Traces the outline from a learned track map, or null when there is nothing
-    /// honest to draw - an unready map, an unknown track length, or a walk that
-    /// collapses to a point (a stationary car's worth of samples).
+    /// honest to draw - too little of the lap seen (<see cref="MinCoverage"/>), an
+    /// unknown track length, or a walk that collapses to a point (a stationary
+    /// car's worth of samples).
     /// </summary>
     public static TrackOutline? Build(TrackMap map, double trackLengthMeters)
     {
         ArgumentNullException.ThrowIfNull(map);
 
-        if (!map.IsReady || trackLengthMeters <= 0)
+        if (map.Coverage < MinCoverage || trackLengthMeters <= 0)
         {
             return null;
         }

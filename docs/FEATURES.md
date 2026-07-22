@@ -1034,7 +1034,13 @@ Top=470`). On by default.
   box; a circuit stretched to fill a square stops being the circuit the driver
   knows, and the spare space either side of a long thin track is the honest cost
   of that. `At(lapDistPct)` interpolates between buckets, so a car crosses the
-  drawn line smoothly rather than snapping.
+  drawn line smoothly rather than snapping. It also holds a **higher readiness bar
+  than the radar**: 90% of the lap, not `TrackMap.IsReady`'s 55%. The radar only
+  ever looks at the stretch around the player, which is always learned; the
+  outline draws the whole lap, where an unlearned bucket is filled from the
+  nearest heading that was — so a half-mapped lap comes out as a real-looking
+  circuit with a straight line through everything not yet driven. A single clean
+  lap fills every bucket, so the extra wait is the back half of the out-lap.
 - **`TrackMapCalculator`** picks the field: everyone in the roster who is in the
   world, with pit-lane cars **kept and flagged** (unlike the radar, which drops
   them — "my rival is in the lane" is exactly what the map gets glanced at for).
@@ -1068,7 +1074,8 @@ one, and updates car slots in place. The outline is published as a frozen
   a number that climbs reads as one doing its job.
 
 **Known limitations:**
-- **Needs ~one lap to learn the track** (per session / track), like the radar.
+- **Needs one lap to learn the track** (per session / track) — a little longer
+  than the radar, which starts placing cars at 55% coverage.
 - The outline is the *player's line*, not the track's centreline — it is drawn
   from where you actually drove, so a lap with a wide moment leaves a wide corner
   until a later lap overwrites those buckets.
@@ -1814,7 +1821,7 @@ on the content root (see the tray icon section).
 
 ## Test coverage
 
-693 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+694 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -1838,7 +1845,7 @@ on the content root (see the tray icon section).
 | `Formatting/SetupFormatTests.cs` | Setup file name display formatting |
 | `Formatting/RadarFormatTests.cs` | CarLeftRight classification into the four proximity booleans (radar fallback) |
 | `Radar/TrackMapTests.cs` | Heading-bucket fill/coverage/readiness, gap-fill between samples (incl. across the line), teleport guard, nearest-bucket lookup, reset forgetting the shape without smearing the next sample |
-| `Map/TrackOutlineTests.cs` | Tracing the circuit: not-ready/zero-length guards, a circle coming out circular, the unit box, loop closure with headings that don't add up, aspect ratio kept on a long thin track, interpolation and wrapping between buckets, Y flipped into screen space, coverage carried, a lap that goes nowhere refused |
+| `Map/TrackOutlineTests.cs` | Tracing the circuit: not-ready/zero-length guards, the higher coverage bar (radar-ready but half the lap unseen still draws nothing), a circle coming out circular, the unit box, loop closure with headings that don't add up, aspect ratio kept on a long thin track, interpolation and wrapping between buckets, Y flipped into screen space, coverage carried, a lap that goes nowhere refused |
 | `Map/TrackMapCalculatorTests.cs` | Placing the field: the whole grid rather than a range, the player drawn last, roster number + class colour, not-in-world and pace/spectator exclusion, pit cars kept and flagged, no-metadata fallback |
 | `Radar/RadarGeometryTests.cs` | Local-frame placement: straight → ahead/behind at 0°, left/right corners → offset + rotated, reference-heading cancellation, start/finish wrap |
 | `Radar/RadarCalculatorTests.cs` | Blip building: map-not-ready/zero-length guards, range gating, pit/pace-car exclusion, roster colour+number |
