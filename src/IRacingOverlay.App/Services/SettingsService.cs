@@ -123,6 +123,11 @@ public sealed class SettingsService
     public void SetHideWhenSimClosed(bool hideWhenSimClosed)
         => Update(_current with { HideWhenSimClosed = hideWhenSimClosed });
 
+    /// <summary>Records whether the colour-blind-friendly palette is on. The
+    /// <see cref="Changed"/> event drives the live repaint in the composition root.</summary>
+    public void SetColorBlindPalette(bool colorBlindPalette)
+        => Update(_current with { ColorBlindPalette = colorBlindPalette });
+
     /// <summary>Records whether the fuel widget carries the setup strip and its
     /// start-of-session pulse.</summary>
     public void SetShowSetupReminder(bool showSetupReminder)

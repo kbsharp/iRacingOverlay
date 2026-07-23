@@ -69,7 +69,7 @@
                                     <Setter Property="Fill" Value="{StaticResource Warning}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                            <Setter Property="Fill" Value="{StaticResource Positive}" />
+                                            <Setter Property="Fill" Value="{DynamicResource Positive}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -167,7 +167,7 @@
                                             <Setter Property="Foreground" Value="{StaticResource Warning}" />
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding IncidentLevel}" Value="Critical">
-                                            <Setter Property="Foreground" Value="{StaticResource Negative}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource Negative}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -259,10 +259,10 @@
                                                 <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding LapDifference}" Value="LapAhead">
-                                                        <Setter Property="Foreground" Value="{StaticResource LapAheadText}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource LapAheadText}" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding LapDifference}" Value="LapBehind">
-                                                        <Setter Property="Foreground" Value="{StaticResource LapBehindText}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource LapBehindText}" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding InPits}" Value="True">
                                                         <Setter Property="Opacity" Value="0.5" />
@@ -310,7 +310,7 @@
                                                 <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding TrendTone}" Value="Gain">
-                                                        <Setter Property="Foreground" Value="{StaticResource Positive}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource Positive}" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding TrendTone}" Value="Threat">
                                                         <Setter Property="Foreground" Value="{StaticResource Warning}" />

@@ -622,6 +622,18 @@
                 </StackPanel>
             </Border>
 
+            <!-- Accessibility -->
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <TextBlock Text="ACCESSIBILITY" Style="{StaticResource SectionHeading}" />
+
+                    <CheckBox Content="Colour-blind friendly palette"
+                              IsChecked="{Binding ColorBlindPalette}" Margin="0,2,0,0" />
+                    <TextBlock Style="{StaticResource Hint}"
+                               Text="Re-picks the colours that carry a meaning by hue alone - gaining vs losing, the fastest lap, the lapped/lapping name tints, the radar's proximity glow - onto values that stay apart under red-green colour blindness. iRacing's own class and licence colours are left as they are. Applies instantly." />
+                </StackPanel>
+            </Border>
+
             <!-- General -->
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>

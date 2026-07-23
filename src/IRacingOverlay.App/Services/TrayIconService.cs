@@ -28,6 +28,7 @@ public sealed class TrayIconService : IDisposable
     private readonly Dictionary<string, ToolStripMenuItem> _widgetItems = [];
     private readonly List<(ToolStripMenuItem Item, double Scale)> _scaleItems = [];
     private readonly List<(ToolStripMenuItem Item, int Hz)> _refreshItems = [];
+    private readonly ToolStripMenuItem _colorBlindItem;
 
     // Revealed only once an update has been downloaded and is ready to install.
     private readonly ToolStripMenuItem _updateItem;
@@ -79,6 +80,18 @@ public sealed class TrayIconService : IDisposable
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(BuildScaleMenu(settings.Current.Scale));
         menu.Items.Add(BuildRefreshMenu(settings.Current.TelemetryRefreshHz));
+
+        // The flagship accessibility toggle sits in the tray, not buried in the
+        // settings dialog, because being found is the whole point of a first-mover
+        // colour-vision mode. CheckOnClick + Sync keep it in step with the dialog.
+        _colorBlindItem = new ToolStripMenuItem("Colour-blind palette")
+        {
+            CheckOnClick = true,
+            Checked = settings.Current.ColorBlindPalette,
+        };
+        _colorBlindItem.Click += (_, _) => _settings.SetColorBlindPalette(_colorBlindItem.Checked);
+        menu.Items.Add(_colorBlindItem);
+
         menu.Items.Add("Settings...", null, (_, _) => showSettings());
 
         menu.Items.Add(new ToolStripSeparator());
@@ -189,6 +202,8 @@ public sealed class TrayIconService : IDisposable
         {
             item.Checked = hz == settings.TelemetryRefreshHz;
         }
+
+        _colorBlindItem.Checked = settings.ColorBlindPalette;
     }
 
     private static bool IsSameScale(double a, double b) => Math.Abs(a - b) < 0.001;

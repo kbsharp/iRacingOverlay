@@ -2,12 +2,14 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using IRacingOverlay.App.Services;
 using IRacingOverlay.App.ViewModels;
 using IRacingOverlay.Core.Fuel;
 using IRacingOverlay.Core.Rating;
 using IRacingOverlay.Core.Session;
 using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Telemetry;
+using IRacingOverlay.Core.Theme;
 using IRacingOverlay.Infrastructure.Telemetry;
 // App has UseWindowsForms on, so these names are ambiguous across the two SDKs'
 // global usings - same workaround the App project itself needs (see CLAUDE.md).
@@ -49,7 +51,7 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        if (!TryParseArgs(args, out var targets, out var outDir, out var error))
+        if (!TryParseArgs(args, out var targets, out var outDir, out var colorBlind, out var error))
         {
             Console.Error.WriteLine(error);
             Console.Error.WriteLine($"Known targets: {string.Join(", ", AllTargets)}");
@@ -65,6 +67,15 @@ internal static class Program
         // because the resources live on Application.Current.Resources.
         var app = new IRacingOverlay.App.App();
         app.InitializeComponent();
+
+        // --colorblind renders every widget in the colour-blind palette, so a
+        // styling pass can compare it to the default (and run the PNGs through a
+        // CVD simulation) rather than guess. Applied to the same live brushes the
+        // running app swaps, so what renders is what ships.
+        if (colorBlind)
+        {
+            PaletteService.Apply(app.Resources, PaletteVariant.ColorBlindFriendly);
+        }
 
         var windows = BuildWindows(targets);
         if (windows.Count == 0)
@@ -90,15 +101,22 @@ internal static class Program
     }
 
     private static bool TryParseArgs(
-        string[] args, out List<string> targets, out string outDir, out string error)
+        string[] args, out List<string> targets, out string outDir, out bool colorBlind, out string error)
     {
         targets = [];
         outDir = Path.Combine(Environment.CurrentDirectory, "out");
+        colorBlind = false;
         error = string.Empty;
 
         for (var i = 0; i < args.Length; i++)
         {
             var arg = args[i];
+
+            if (arg is "--colorblind" or "--colour-blind")
+            {
+                colorBlind = true;
+                continue;
+            }
 
             if (arg is "--out" or "-o")
             {

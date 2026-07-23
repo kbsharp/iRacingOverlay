@@ -51,7 +51,7 @@
                                     <Setter Property="Fill" Value="{StaticResource Warning}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                            <Setter Property="Fill" Value="{StaticResource Positive}" />
+                                            <Setter Property="Fill" Value="{DynamicResource Positive}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -90,10 +90,10 @@
                                         <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Tone}" Value="Faster">
-                                        <Setter Property="Foreground" Value="{StaticResource Positive}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource Positive}" />
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Tone}" Value="Slower">
-                                        <Setter Property="Foreground" Value="{StaticResource Negative}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource Negative}" />
                                     </DataTrigger>
                                     <!-- Declared last so it wins: with no reading at
                                          all the tone is Neutral, but the placeholder

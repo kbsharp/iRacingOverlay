@@ -226,6 +226,19 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>Whether the colour-blind-friendly palette is on. Repaints every
+    /// meaning-hue live through the settings service - see
+    /// <see cref="OverlaySettings.ColorBlindPalette"/>.</summary>
+    public bool ColorBlindPalette
+    {
+        get => _settings.Current.ColorBlindPalette;
+        set
+        {
+            _settings.SetColorBlindPalette(value);
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>Whether the fuel widget shows the loaded setup and pulses at the
     /// start of a Qualify/Race. The flash length below only matters while this is
     /// on.</summary>
@@ -304,6 +317,8 @@ public sealed class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(ShowSetupReminder));
             OnPropertyChanged(nameof(ShowManufacturerBadges));
             OnPropertyChanged(nameof(ShowPaceTrend));
+            // Also driven from the tray, so keep the checkbox in step with it.
+            OnPropertyChanged(nameof(ColorBlindPalette));
         }
         finally
         {

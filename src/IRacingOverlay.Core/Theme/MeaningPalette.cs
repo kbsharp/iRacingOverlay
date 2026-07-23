@@ -76,9 +76,11 @@ public static class MeaningPalette
             // "gaining" never reads as the accent/branding blue (#39A7FF) it sits by.
             [MeaningColor.Positive] = Argb.Parse("#25D3C0"),   // teal
             [MeaningColor.Negative] = Argb.Parse("#FF9538"),   // orange
-            // Pushed toward magenta so the red component keeps it clear of the two
-            // blues (accent, lap-behind) once green sensitivity drops.
-            [MeaningColor.FastestLap] = Argb.Parse("#DB7BDD"), // magenta-violet
+            // A saturated blue-violet, not magenta: magenta (red+blue) desaturates to
+            // near-grey once you're green-blind, whereas a blue-dominant violet stays
+            // a clear cool highlight - and keeps iRacing's own purple association.
+            // Bluer/more saturated than the default so it doesn't wash out under CVD.
+            [MeaningColor.FastestLap] = Argb.Parse("#9C7CFF"), // blue-violet
             // Off red, onto amber - amber vs blue is clean under CVD.
             [MeaningColor.LapAhead] = Argb.Parse("#FFA24D"),   // amber
             // Blue survives CVD and is already distinct from the amber above.
@@ -88,9 +90,12 @@ public static class MeaningPalette
         };
 
     // The proximity glow keeps the same alpha ramp in both variants - only the hue
-    // moves. Default: iRacing-red. Colour-blind: magenta-red, whose blue component
-    // stays bright under protanopia (pure red goes dark - the worst place to lose
-    // salience) while still reading as "hot".
+    // moves. Default: iRacing-red. Colour-blind: a hot orange-red. Pure red is the
+    // worst possible danger hue for a protan (the L-cone loss dims long wavelengths
+    // most); orange-red carries more green energy, so it stays brighter and more
+    // salient under protanopia while still reading unmistakably as "hot", not the
+    // amber of a caution. (Magenta was tried and rejected - it desaturates to khaki
+    // under protanopia, dimmer than the red it replaced.)
     private static readonly IReadOnlyList<GlowStop> DefaultGlow =
     [
         new GlowStop(Argb.Parse("#FFFF2A2A"), 0.0),
@@ -100,9 +105,9 @@ public static class MeaningPalette
 
     private static readonly IReadOnlyList<GlowStop> ColorBlindGlow =
     [
-        new GlowStop(Argb.Parse("#FFFF3D8A"), 0.0),
-        new GlowStop(Argb.Parse("#B8FF2E7E"), 0.45),
-        new GlowStop(Argb.Parse("#00FF3D8A"), 1.0),
+        new GlowStop(Argb.Parse("#FFFF5A2A"), 0.0),
+        new GlowStop(Argb.Parse("#B8FF4A1E"), 0.45),
+        new GlowStop(Argb.Parse("#00FF5A2A"), 1.0),
     ];
 
     /// <summary>The solid meaning-hues for a variant, keyed by signal.</summary>
