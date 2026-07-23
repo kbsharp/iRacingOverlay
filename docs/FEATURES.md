@@ -538,10 +538,10 @@ A strategy calculator, not just a burn-rate readout — the numbers shown are
 the ones a driver acts on mid-race.
 
 **Layout:** 252px wide, same borderless/transparent/topmost/draggable
-behaviour as the relative. Default position on first launch (`Left=600, Top=24`,
-heading the right-hand column — which currently overlaps the standings' right
-edge by ~40px until dragged; the fix is queued in
-[ROADMAP.md](ROADMAP.md#next-up)), then restored from saved settings.
+behaviour as the relative. Default position on first launch (`Left=664, Top=24`,
+heading the right-hand column clear of the standings' right edge — it used to
+start at `Left=600`, ~40px over that edge, until the July 2026 defaults pass
+nudged it right), then restored from saved settings.
 
 Spacing is deliberately on the **same rhythm as the list widgets**: a 10px panel
 inset and 6px between blocks, with the headline readout at 26px and the labelled
@@ -1022,7 +1022,15 @@ after a resurface. The cost is the first lap, which the widget spends saying so.
 caption and connection dot. Square because the outline is scaled uniformly into a
 unit box — a rectangle would only add blank space on one axis for every circuit
 whose proportions don't match it. Fixed position on first launch (`Left=1180,
-Top=470`). On by default.
+Top=470`).
+
+**Ships off by default.** With the delta, the track map is the second opt-in
+widget: it's the least decision-dense panel — the shape of the field at a glance,
+not a call to make — and unlike the radar it doesn't hide itself when it has
+nothing to say. So it stays out of the default layout (standings + relative +
+fuel, with the radar self-hiding) and is one tray click away for the drivers who
+want it. Its key is in `OverlaySettings.DefaultOffWidgets`, so an absent settings
+key hides it on a fresh install and for an existing file alike.
 
 **How it works.** `Core.Map` is pure and tested:
 - **`TrackOutline.Build`** walks the learned `TrackMap` (the radar's, shared by
@@ -1100,9 +1108,9 @@ is, as a signed number over a bar that grows from its centre.
 hidden and is opt-in from the tray menu. It restates a number iRacing already
 shows in its own black box, so it earns a standing panel only for drivers who
 want it always up; keeping it out of the default layout leaves that layout to
-the readouts the sim doesn't already give you. The choice is the sole entry in
-`OverlaySettings.DefaultOffWidgets`, so an absent settings key hides it on a
-fresh install and for an existing file alike.
+the readouts the sim doesn't already give you. Its key sits in
+`OverlaySettings.DefaultOffWidgets` (alongside the track map's), so an absent
+settings key hides it on a fresh install and for an existing file alike.
 
 **Layout:** a 176-wide panel in the shared material, on the fuel widget's
 10px/6px spacing rhythm. Header (`DELTA` + connection dot/status), the delta at

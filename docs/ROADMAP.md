@@ -50,13 +50,6 @@ illegibility isn't.**
 Reordered by the [July 2026 audit](AUDIT-2026-07.md) — first-impression and
 accessibility items first:
 
-- **Defaults pass** — the track map joins the delta in `DefaultOffWidgets`:
-  it's the least decision-dense panel and the only default-on widget that
-  doesn't hide itself, and its constituency knows to want it (one tray click).
-  Standings + relative + fuel is the right first impression; the radar stays
-  on because a self-hiding widget costs nothing. Same pass fixes the
-  first-run overlap: the fuel widget's default `600,24` sits ~40px over the
-  standings' right edge until dragged.
 - **Colour-blind friendly palette** — one preset, not per-deficiency modes:
   gain/loss moves off the green/red axis (near-identical luminance under
   deutan/protan vision), fastest-lap purple and the lapped/lapping tints get
@@ -179,6 +172,7 @@ Landed — the reasoning that survives is in [FEATURES.md](FEATURES.md):
 | **Traffic forecast** | Gap from the relative's own `EstTime` delta, closing rate from the sim's per-class pace, meeting point named by timing sector. Self-hides in single-class racing and beyond three laps — a warning you can't act on is noise. |
 | **Track map** | The gap both competitors filled with a track database, filled instead by walking the shape the radar already learns: a heading plus a distance is a step, so a lap of steps *is* the outline. No database means no missing circuit and nothing stale after a resurface — and the first lap, which the widget spends saying how much it has learned rather than drawing half a track. Cars are class-coloured dots and nothing else; at map scale a field of numbered marks is mush. |
 | **Push-or-save tradeoff** | Both ways out priced in seconds. What saving costs is regressed from the driver's own laps, and the fit is refused more often than it's offered (sign checked, outliers dropped, no reading past the observed burn range). No verdict: two numbers in the same unit are the sentence. |
+| **Defaults pass** | The default layout is the first impression, so it's the three readouts the sim doesn't give you — standings + relative + fuel — with the radar self-hiding. The track map joined the delta as opt-in: least decision-dense, and unlike the radar it doesn't hide itself. Same pass moved the fuel widget clear of the standings' right edge (`600` → `664`), which it had overlapped by ~40px on first run. |
 
 Built and then withdrawn — these two are the live guidance:
 

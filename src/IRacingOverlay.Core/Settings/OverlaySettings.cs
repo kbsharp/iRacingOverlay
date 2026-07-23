@@ -38,10 +38,15 @@ public sealed record OverlaySettings
     /// <summary>Widgets that ship switched off — a fresh install, and any settings
     /// file with no explicit entry, hides them until the user opts in. The delta
     /// bar is opt-in because it restates a number iRacing already shows in its own
-    /// black box; it earns a panel only for drivers who want it always up, so it
-    /// stays out of the default four-widget layout rather than crowding it.</summary>
+    /// black box; it earns a panel only for drivers who want it always up. The
+    /// track map is opt-in as the least decision-dense panel — it's the shape of
+    /// the field at a glance, not a call to make — and unlike the radar it doesn't
+    /// hide itself, so it earns its screen space only for drivers who want it. Both
+    /// stay out of the default layout (standings + relative + fuel, radar
+    /// self-hiding) rather than crowding a first impression; each is one tray
+    /// click away.</summary>
     private static readonly IReadOnlySet<string> DefaultOffWidgets =
-        new HashSet<string> { WidgetIds.Delta };
+        new HashSet<string> { WidgetIds.Delta, WidgetIds.TrackMap };
 
     /// <summary>Per-widget scale override. Absent key = use <see cref="Scale"/>.
     /// A standings table and a radar rarely want the same size.</summary>

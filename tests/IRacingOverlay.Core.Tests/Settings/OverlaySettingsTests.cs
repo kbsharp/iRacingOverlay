@@ -49,6 +49,32 @@ public class OverlaySettingsTests
         Assert.True(settings.IsWidgetEnabled(WidgetIds.Delta));
     }
 
+    // The track map joined the delta as opt-in in the July 2026 defaults pass: it's
+    // the least decision-dense panel and doesn't self-hide, so it stays out of the
+    // default layout. Same sparse-key rules as the delta - off on a fresh install
+    // and for a file written before it was added.
+
+    [Fact]
+    public void IsWidgetEnabled_TrackMap_DefaultsToOff()
+        => Assert.False(new OverlaySettings().IsWidgetEnabled(WidgetIds.TrackMap));
+
+    [Fact]
+    public void IsWidgetEnabled_TrackMap_AbsentFromExistingFile_StaysOff()
+        => Assert.False(
+            OverlaySettingsSerializer.Deserialize("""{ "scale": 1.0 }""")
+                .IsWidgetEnabled(WidgetIds.TrackMap));
+
+    [Fact]
+    public void IsWidgetEnabled_TrackMap_ExplicitlyEnabled_IsTrue()
+    {
+        var settings = new OverlaySettings
+        {
+            EnabledWidgets = new Dictionary<string, bool> { [WidgetIds.TrackMap] = true },
+        };
+
+        Assert.True(settings.IsWidgetEnabled(WidgetIds.TrackMap));
+    }
+
     // The setup readout used to be a widget of its own, on by default. Folding it
     // into the fuel panel must not take it away from anyone who had it, so the new
     // toggle defaults to on - including for a settings file written before the
