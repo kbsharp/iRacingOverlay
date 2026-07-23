@@ -10,7 +10,7 @@
         ResizeMode="NoResize"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="Manual"
-        Left="600"
+        Left="664"
         Top="24"
         FontFamily="{StaticResource FontText}"
         MouseLeftButtonDown="OnDragWindow">
