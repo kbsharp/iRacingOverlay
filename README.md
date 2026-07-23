@@ -188,9 +188,10 @@ judgement behind each call. The short version:
   race-engineer calls no current overlay makes.
 - **Just landed:** the **track map**, built from the shape the radar already
   learns — the one thing both paid competitors ship that we didn't, and ours
-  needs no track database.
+  needs no track database; and a **defaults pass** that keeps the first-run
+  layout to standings + relative + fuel (the track map joins the delta as
+  opt-in) and moves the fuel widget clear of the standings' edge.
 - **Next up**, reordered by the [July 2026 audit](docs/AUDIT-2026-07.md): a
-  defaults pass (the track map goes opt-in, the first-run overlap goes), a
   **colour-blind friendly palette** (no mainstream overlay has one),
   drag-to-resize, honest multi-stop fuel numbers — then the weather forecast
   strip and per-session-type profiles.
