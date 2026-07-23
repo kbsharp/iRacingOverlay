@@ -153,8 +153,10 @@ public sealed class TrayIconService : IDisposable
     private ToolStripMenuItem BuildScaleMenu(double initialScale)
     {
         var scaleMenu = new ToolStripMenuItem("UI Scale");
-        foreach (var (label, value) in new[] { ("100%", 1.0), ("125%", 1.25), ("150%", 1.5), ("175%", 1.75) })
+        foreach (var value in LayoutGuard.ScalePresets)
         {
+            var label = FormattableString.Invariant($"{value * 100:0}%");
+
             // Radio-style: the current scale is ticked, and picking a new one moves
             // the tick. initialScale reflects the persisted choice restored at launch.
             var item = new ToolStripMenuItem(label) { Checked = IsSameScale(value, initialScale) };

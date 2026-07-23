@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
+using IRacingOverlay.App.Controls;
 using IRacingOverlay.App.Services;
 using IRacingOverlay.App.ViewModels;
 using IRacingOverlay.Core.Fuel;
@@ -186,6 +187,7 @@ public partial class App : System.Windows.Application
         foreach (var widget in _widgets)
         {
             widget.Window.Closing += HideInsteadOfClose;
+            TrackResizeGrip(widget);
             RestorePosition(widget.Window);
 
             if (ShouldShow(widget, settings))
@@ -394,6 +396,39 @@ public partial class App : System.Windows.Application
             window.Left = position.Left;
             window.Top = position.Top;
         }
+    }
+
+    /// <summary>
+    /// Listens for the corner grip's resize on a widget's window. The grip is a
+    /// line of XAML inside the widget and knows nothing about settings or widget
+    /// ids; its event bubbles up to the window, where this - the one place that
+    /// knows which widget a window is - applies and records the new scale.
+    /// A window with no grip (the dev control panel) simply never raises it.
+    /// </summary>
+    private void TrackResizeGrip(OverlayWidget widget)
+        => widget.Window.AddHandler(
+            WidgetResizeGrip.ScaleChangedEvent,
+            new EventHandler<WidgetScaleEventArgs>((_, e) => ResizeWidget(widget, e)));
+
+    /// <summary>
+    /// Applies a scale arrived at by dragging the widget's corner grip.
+    ///
+    /// The transform is set here rather than by going through
+    /// <see cref="ApplySettings"/>, because this fires on every mouse move of the
+    /// drag: re-running the full settings pass at frame rate would repaint every
+    /// brush and re-push units and tuning into every view model to move one window.
+    /// The same reasoning as window dragging, which records positions without
+    /// announcing them - so the change is only broadcast once, when the drag ends
+    /// and the settings window needs to catch up with it.
+    /// </summary>
+    private void ResizeWidget(OverlayWidget widget, WidgetScaleEventArgs e)
+    {
+        if (widget.Window.Content is FrameworkElement root)
+        {
+            root.LayoutTransform = new ScaleTransform(e.Scale, e.Scale);
+        }
+
+        _settingsService?.SetWidgetScale(widget.Id, e.Scale, notify: e.IsFinal);
     }
 
     /// <summary>Persists a window's position whenever the user drags it (debounced

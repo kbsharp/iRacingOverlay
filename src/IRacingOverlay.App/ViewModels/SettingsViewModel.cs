@@ -29,13 +29,24 @@ public sealed class WidgetSettingsViewModel : ObservableObject
         _isEnabled = settings.Current.IsWidgetEnabled(id);
         _isClickThrough = settings.Current.IsClickThrough(id);
         _scale = settings.Current.ScaleFor(id);
+
+        foreach (var preset in LayoutGuard.ScalePresets)
+        {
+            ScaleOptions.Add(preset);
+        }
+
+        OfferCurrentScale();
     }
 
     public string DisplayName { get; }
 
-    /// <summary>The scales offered per widget - the tray's four, so the two
-    /// surfaces can't disagree about what's available.</summary>
-    public IReadOnlyList<double> ScaleOptions { get; } = [1.0, 1.25, 1.5, 1.75];
+    /// <summary>
+    /// The scales offered for this widget: the shared presets, plus this widget's
+    /// current size when a corner-grip drag has left it somewhere in between. Without
+    /// that extra entry a dragged widget would show an empty box here - the list
+    /// would be claiming a size the widget doesn't have.
+    /// </summary>
+    public ObservableCollection<double> ScaleOptions { get; } = [];
 
     public bool IsEnabled
     {
@@ -74,13 +85,53 @@ public sealed class WidgetSettingsViewModel : ObservableObject
     }
 
     /// <summary>Re-reads from settings after an external change (the tray toggling
-    /// the same widget, or Reset). Assigns the backing fields directly so it
-    /// doesn't write back and loop.</summary>
+    /// the same widget, a corner-grip drag, or Reset). Assigns the backing fields
+    /// directly so it doesn't write back and loop.</summary>
     public void Refresh(OverlaySettings settings)
     {
         SetProperty(ref _isEnabled, settings.IsWidgetEnabled(_id), nameof(IsEnabled));
         SetProperty(ref _isClickThrough, settings.IsClickThrough(_id), nameof(IsClickThrough));
-        SetProperty(ref _scale, settings.ScaleFor(_id), nameof(Scale));
+
+        var scale = settings.ScaleFor(_id);
+        if (scale.Equals(_scale))
+        {
+            return;
+        }
+
+        // The list is updated before the notification, so the box has the new size
+        // to select by the time it goes looking for it.
+        _scale = scale;
+        OfferCurrentScale();
+        OnPropertyChanged(nameof(Scale));
+    }
+
+    /// <summary>
+    /// Keeps the widget's current size in the dropdown when a grip drag has left it
+    /// between presets. At most one non-preset entry is ever in the list - the one
+    /// from a previous drag goes first, so abandoned sizes don't pile up.
+    /// </summary>
+    private void OfferCurrentScale()
+    {
+        for (var i = ScaleOptions.Count - 1; i >= 0; i--)
+        {
+            if (!LayoutGuard.ScalePresets.Contains(ScaleOptions[i]))
+            {
+                ScaleOptions.RemoveAt(i);
+            }
+        }
+
+        if (LayoutGuard.ScalePresets.Contains(_scale))
+        {
+            return;
+        }
+
+        var index = 0;
+        while (index < ScaleOptions.Count && ScaleOptions[index] < _scale)
+        {
+            index++;
+        }
+
+        ScaleOptions.Insert(index, _scale);
     }
 }
 

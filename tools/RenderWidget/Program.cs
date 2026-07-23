@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using IRacingOverlay.App.Controls;
 using IRacingOverlay.App.Services;
 using IRacingOverlay.App.ViewModels;
 using IRacingOverlay.Core.Fuel;
@@ -51,7 +52,7 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        if (!TryParseArgs(args, out var targets, out var outDir, out var colorBlind, out var error))
+        if (!TryParseArgs(args, out var targets, out var outDir, out var colorBlind, out var grips, out var error))
         {
             Console.Error.WriteLine(error);
             Console.Error.WriteLine($"Known targets: {string.Join(", ", AllTargets)}");
@@ -86,6 +87,15 @@ internal static class Program
 
         foreach (var (name, window) in windows)
         {
+            // Resize grips are invisible until their widget is hovered, and nothing
+            // hovers anything in a headless render - so --grips forces them on when
+            // the corner treatment itself is what's being reviewed. A local value,
+            // which outranks the style's resting Opacity setter.
+            if (grips && window.Content is DependencyObject content)
+            {
+                RevealResizeGrips(content);
+            }
+
             var path = Path.Combine(outDir, $"{name}.png");
             // The borderless widgets size themselves to their content, so they
             // render at their natural size. A window that declares a Width/Height
@@ -101,11 +111,17 @@ internal static class Program
     }
 
     private static bool TryParseArgs(
-        string[] args, out List<string> targets, out string outDir, out bool colorBlind, out string error)
+        string[] args,
+        out List<string> targets,
+        out string outDir,
+        out bool colorBlind,
+        out bool grips,
+        out string error)
     {
         targets = [];
         outDir = Path.Combine(Environment.CurrentDirectory, "out");
         colorBlind = false;
+        grips = false;
         error = string.Empty;
 
         for (var i = 0; i < args.Length; i++)
@@ -115,6 +131,12 @@ internal static class Program
             if (arg is "--colorblind" or "--colour-blind")
             {
                 colorBlind = true;
+                continue;
+            }
+
+            if (arg == "--grips")
+            {
+                grips = true;
                 continue;
             }
 
@@ -918,6 +940,20 @@ internal static class Program
         {
             DataContext = new SettingsViewModel(settings, widgets),
         };
+    }
+
+    /// <summary>Walks the logical tree and shows every resize grip it finds.</summary>
+    private static void RevealResizeGrips(DependencyObject root)
+    {
+        foreach (var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
+        {
+            if (child is WidgetResizeGrip grip)
+            {
+                grip.Opacity = 1;
+            }
+
+            RevealResizeGrips(child);
+        }
     }
 
     private static void RenderToPng(FrameworkElement content, string outPath, Size declared)
