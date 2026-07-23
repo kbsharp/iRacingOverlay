@@ -16,7 +16,7 @@ The full, class-grouped field table — the "big" widget, anchored top-left by
 default. Every car ordered by position within its class, with best/last lap
 times and gaps.
 
-**Layout:** 616px wide, borderless, always-on-top, draggable, right-click →
+**Layout:** 616px wide, borderless, always-on-top, draggable, resizable by its corner grip, right-click →
 Exit. Soft-cornered (`6px`), near-opaque with a top-lit panel material —
 styled after RaceLab/iOverlay/LMU standings. Default position top-left
 (`Left=24, Top=24`), then restored from
@@ -194,7 +194,7 @@ Deliberately **compact** — it complements the full standings rather than
 duplicating it.
 
 **Layout:** 470px wide, 24px zebra-striped rows, soft-cornered top-lit panel to
-match the standings, borderless, always-on-top, draggable, right-click →
+match the standings, borderless, always-on-top, draggable, resizable by its corner grip, right-click →
 Exit. Default position lower-left (`Left=24, Top=760`) so it sits at the
 bottom opposite the top-left standings, then restored from saved settings. No
 widget-name label — the session strip heads it.
@@ -537,7 +537,7 @@ whatever it does with disconnects at the margin) aren't modelled.
 A strategy calculator, not just a burn-rate readout — the numbers shown are
 the ones a driver acts on mid-race.
 
-**Layout:** 252px wide, same borderless/transparent/topmost/draggable
+**Layout:** 252px wide, same borderless/transparent/topmost/draggable/resizable
 behaviour as the relative. Default position on first launch (`Left=664, Top=24`,
 heading the right-hand column clear of the standings' right edge — it used to
 start at `Left=600`, ~40px over that edge, until the July 2026 defaults pass
@@ -890,7 +890,7 @@ radar is **chrome-free** — no panel, no border, no background, just marks floa
 over the track — because it lives in the driver's forward view where a box would
 occlude more than it explains. Its one piece of furniture is a dashed line level
 with the player's axles, to judge overlap against. Still borderless/topmost/
-draggable. **No header label** — a radar is self-evident. Fixed position on first
+draggable/resizable. **No header label** — a radar is self-evident. Fixed position on first
 launch (`Left=600, Top=470`, right column).
 
 **How it works — reconstructing positions iRacing won't give you.** iRacing's
@@ -1334,7 +1334,7 @@ stop the app was closing the terminal that launched it.
 - Context menu: a **checkbox per widget** (Standings, Relative, Fuel,
   Radar, Delta — the last unticked by default), **Dev Controls** (demo mode
   only), a **UI Scale** submenu
-  (100/125/150/175%), a **Refresh Rate** submenu (60/30/20/15/10Hz, 30 the
+  (`LayoutGuard.ScalePresets` — 80/90/100/125/150/175/200%), a **Refresh Rate** submenu (60/30/20/15/10Hz, 30 the
   default), **Settings...**, **Check for updates**, **Exit** — plus a
   **Restart to install update** item that stays hidden until an update has been
   downloaded (see Auto-update below). Double-click the icon = show the Relative.
@@ -1468,10 +1468,10 @@ makes these numbers choosable.
 
 | Section | Controls |
 |---|---|
-| **Widgets** | Per widget: on/off, a scale override (100/125/150/175%), and click-through. |
+| **Widgets** | Per widget: on/off, a scale override (the presets, plus whatever a corner drag has landed on), and click-through. |
 | **Units** | Fuel litres/gallons, temperature °C/°F, speed km/h / mph. |
 | **Tuning** | Fuel safety margin (0–5 laps), the setup reminder toggle + its flash (5–300 s), radar range (15–200 m), relative cars each side (1–8), standings cars per class (5–60), manufacturer badges and the relative's catch/defend trend column (both experimental, off by default). |
-| **General** | Start with Windows; only show widgets while iRacing is running; **Reset widget positions**. |
+| **General** | Start with Windows; only show widgets while iRacing is running; **Reset widget positions and sizes**. |
 
 - **An amber `EXPERIMENTAL` chip** marks a setting that's off by default because
   the feature behind it is incomplete rather than merely optional — currently the
@@ -1483,7 +1483,9 @@ makes these numbers choosable.
   that one gets deleted, as the safety chip was.
 - **Per-widget scale** overrides the shared tray scale for that widget only — a
   standings table and a radar rarely want the same size. Absent override = follow
-  the shared scale.
+  the shared scale. The dropdown is also where a size set by dragging a widget's
+  corner grip shows up (see *Drag-to-resize*), which is why the list is per widget
+  rather than one shared set of presets.
 - **Click-through** (`WindowInterop.SetClickThrough`, `WS_EX_TRANSPARENT`) makes a
   widget ignore the mouse so clicks reach the sim. It's **per widget, not global**,
   because a click-through widget can't be dragged — the settings window is the only
@@ -1541,6 +1543,62 @@ state.
   `UnitFormat`) is fully covered. It was reviewed by rendering it offscreen via
   `tools/RenderWidget settings`.
 
+### Drag-to-resize — `Controls/WidgetResizeGrip` + `Core.Settings.ScaleDrag`
+
+Every widget carries a resize grip at its bottom-right corner. Drag it and the
+widget scales; let go and the size is remembered like a position is.
+
+- **It scales, it doesn't reflow.** The grip drives the same per-widget scale the
+  settings window sets (`OverlaySettings.WidgetScales`), so a resized widget keeps
+  its designed proportions and column widths — only its size changes. Resizing is
+  not customization: the layout is the product, and this exists so one opinionated
+  layout fits any monitor.
+- **Hidden until hovered.** The grip rests at zero opacity and fades in (120 ms)
+  while the pointer is over its widget, brightening when you point at it and going
+  accent-coloured while you drag. Racing, the mouse is nowhere near these panels,
+  so a permanent handle on all six would be chrome nobody ever looks at. It sits
+  half in the shadow gutter outside the panel so it never covers a row.
+- **One scale from two axes.** `ScaleDrag.Resize` takes the uniform scale that fits
+  the drag best in the least-squares sense — of every scale available, the one
+  whose corner lands closest to the pointer. Dragging along the panel's own
+  diagonal tracks the pointer exactly; dragging sideways on a wide panel still
+  resizes, a little less than the pointer moved. The alternative (pick one axis as
+  master) makes half the drags do nothing.
+- **Measured from a fixed origin**, not accumulated frame by frame: the offset
+  since the drag began, against the scale the widget had then. That matters at the
+  ends of the band — drag past 200% and back, and an accumulating version would
+  have banked all that movement and would need it unwound before the widget
+  shrank again. The window's top-left is nailed down while it grows right and
+  down, so the pointer's offset *from the window* is a stable frame to measure in.
+  (Thumb's own `HorizontalChange` isn't usable for this: it's measured inside the
+  transform being changed, so its frame moves with the corner.)
+- **The band is 80–200%** (`LayoutGuard.MinScale`/`MaxScale`), and the drag lands
+  on whole percents. The floor is a legibility limit rather than a layout one: at
+  80% the smallest captions land under 9px, and overlay text is already on
+  greyscale AA rather than ClearType (`AllowsTransparency` disables it). The
+  presets offered in the tray and the settings window (`LayoutGuard.ScalePresets`,
+  80/90/100/125/150/175/200%) span the same band; a size dragged to in between is
+  offered back in that widget's dropdown, so the list never claims a size the
+  widget doesn't have.
+- **The grip swallows the mouse press**, so a widget never moves while being
+  resized (`Thumb` marks the event handled before the window's `DragMove` sees it).
+  A click-through widget has no grip in reach, same as it has no drag — the
+  settings window is the way back.
+- **The drag doesn't broadcast.** `WidgetResizeGrip` knows nothing about settings
+  or widget ids; it raises a bubbling `ScaleChanged`, and `App.ResizeWidget` — the
+  one place that knows which widget a window is — applies the transform and records
+  the scale *without* raising `SettingsService.Changed` until the drag ends. Same
+  reasoning as window dragging: re-running the whole settings pass on every mouse
+  move would repaint every brush and re-push units and tuning into every view model
+  to move one window.
+- **Reset covers sizes too.** A corner grip makes per-widget overrides easy to set
+  by accident, and a widget carrying one silently stops following the tray's UI
+  Scale — so *Reset widget positions and sizes* clears both. The shared scale is
+  left alone: that's a deliberate tray choice, not part of the layout.
+- The maths is unit-tested (`ScaleDragTests`); the grip control itself is UI glue,
+  and was stress-tested with a throwaway harness that drives a real mouse drag —
+  see [DEVELOPMENT.md](DEVELOPMENT.md#debugging).
+
 ### Layout persistence — `SettingsService` / `Core.Settings`
 
 The UI scale and every widget's window position are remembered between runs, so
@@ -1571,7 +1629,8 @@ corners.
   folder, so it **survives auto-updates** and is removed on uninstall.
 - Positions are captured on each window's `LocationChanged` and **debounced**
   (750 ms) so a drag doesn't hammer the disk; a final flush runs on exit and
-  before an update-restart. Scale is saved when picked from the tray.
+  before an update-restart. Scale is saved when picked from the tray, and on every
+  step of a corner-grip drag (debounced the same way — see *Drag-to-resize*).
 - On launch, `App.RestorePosition` reapplies each saved position **only if it's
   still on a connected display** (`LayoutGuard.IsOnScreen` against the virtual
   desktop), so a layout saved on a since-unplugged monitor falls back to the

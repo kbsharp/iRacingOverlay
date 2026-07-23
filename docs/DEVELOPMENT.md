@@ -124,6 +124,7 @@ of seconds, so it hasn't been worth adding.
   ```powershell
   .\scripts\render.ps1                  # every widget -> out\*.png (~40s)
   .\scripts\render.ps1 fuel relative    # just these two
+  .\scripts\render.ps1 -Grips fuel      # with the corner resize grip showing
   ```
 
   Targets: `standings`, `relative`, `relative-traffic`, `fuel`, `fuel-pit-exit`,
@@ -179,10 +180,30 @@ of seconds, so it hasn't been worth adding.
   that class clear ahead. Only the positions are staged; the forecaster, the
   sector mapping and the bindings are real.
 
+  `-Grips` forces the corner resize grips visible. They rest at zero opacity and
+  only fade in while their widget is hovered, and nothing hovers anything in a
+  headless render — so without the switch the corner treatment can't be reviewed
+  at all. It sets a local `Opacity`, which outranks the style's resting setter.
+  Note the PNG is cropped to the content box, so the few pixels of grip that hang
+  into the shadow gutter are cut off; in the running app the whole grip shows.
+
   **What a render still can't settle** — say so rather than claiming it looks
   right: the *graded* glow (a car fading out as it drifts away) needs real
   side-by-side geometry; whether left/right matches iRacing's live `Yaw` sign;
-  and anything about motion or how it reads at racing speed.
+  the resize grip's hover fade and whether it's easy to hit while the panel is
+  small; and anything about motion or how it reads at racing speed.
+
+  **Interactive behaviour** — a drag, a hover, a capture — can't be rendered or
+  unit-tested, but it *can* be driven. Drag-to-resize was verified with a
+  throwaway console harness in the scratchpad: a bare WPF window built like a
+  widget (transparent, `SizeToContent`, a fixed-size panel plus a
+  `WidgetResizeGrip`), a stand-in for the composition root's handler, and
+  `SetCursorPos`/`mouse_event` scripting a real drag over the grip while the
+  resulting scales are logged. That's what proved the pointer frame was stable,
+  that overshooting the band and coming back lands exactly where it started, and
+  that the grip swallows the press so the window never *moves* while resizing.
+  Same principle as the demo-source stress harness below: drive it, don't reason
+  about it.
 
   `RenderTargetBitmap` uses greyscale antialiasing exactly as the live
   `AllowsTransparency` windows do, so text weight comes out faithful — the whole
@@ -308,7 +329,11 @@ The pattern every widget so far follows (relative, fuel):
 5. **Window.** A borderless, transparent, topmost `Window` XAML file styled from
    the shared brushes/styles in `App.xaml` (see [FEATURES.md](FEATURES.md) for
    the current palette). Reuse the drag-to-move and right-click-to-exit pattern
-   from `RelativeWindow.xaml.cs` / `FuelWindow.xaml.cs`.
+   from `RelativeWindow.xaml.cs` / `FuelWindow.xaml.cs`, and drop a
+   `<controls:WidgetResizeGrip Margin="0,0,-6,-6" />` in as the last child of the
+   outer `Grid` so the widget can be resized like the rest. That one line is the
+   whole hook-up — the grip finds its own window, and the composition root already
+   listens for its event on every widget.
 6. **Register it.** Add a constant to `WidgetIds` (`Core/Settings`) and one
    `OverlayWidget` entry to the `_widgets` list in `App.xaml.cs`. That single
    entry is all the wiring there is: the composition root loops over the list for
