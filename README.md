@@ -126,18 +126,18 @@ Usage notes:
 
 - **Control the app from the system tray icon**, not the terminal: **tick or untick
   each widget** to show or hide it (the choice is remembered), set the **UI scale**
-  (100/125/150/175% — every widget together), open **Settings...**, open the dev control
+  (80–200% — every widget together), open **Settings...**, open the dev control
   panel (demo mode), or Exit. New tray icons are hidden by Windows behind the
   **`^`** overflow arrow the first time — click it to find the icon, and drag it out onto
   the taskbar to pin it permanently.
 - **Settings...** opens a normal window with everything that doesn't fit in a menu:
   per-widget scale and click-through, units (litres/gallons, °C/°F), the tuning
   numbers (fuel safety margin, setup flash duration, radar range, how many cars the
-  relative and standings show), start-with-Windows, and a **Reset widget positions**
-  button. There's no OK/Apply — changes apply as you make them.
+  relative and standings show), start-with-Windows, and a **Reset widget positions
+  and sizes** button. There's no OK/Apply — changes apply as you make them.
 - **Click-through** makes a widget ignore the mouse so clicks reach the sim. A
-  click-through widget can't be dragged, so switch it back off in Settings if you
-  need to move it.
+  click-through widget can't be dragged or resized, so switch it back off in
+  Settings if you need to move it.
 - Closing a widget window (Alt+F4, etc.) just hides it — it's not gone, use the tray icon
   to bring it back. The tray's **Exit** (or a widget's right-click **Exit**) is what actually
   quits the app.
@@ -147,8 +147,12 @@ Usage notes:
   player into the pits, cycle Practice/Qualify/Race (retriggers the setup-reminder flash),
   cycle the radar's spotter-fallback states — all live, no rebuild. See
   [docs/FEATURES.md](docs/FEATURES.md#dev-experience) for exact values.
-- Drag each widget anywhere with the left mouse button. **Positions and the UI scale
-  are remembered between runs** (saved to `%LocalAppData%\IRacingOverlay\settings.json`,
+- Drag each widget anywhere with the left mouse button. **Resize one by hovering it
+  and dragging the grip at its bottom-right corner** — it appears when the mouse is
+  over the widget and disappears again, so nothing sits on screen while you're
+  driving. Widgets scale rather than reflow, so a resized panel keeps its layout;
+  the settings window has the same sizes as a dropdown if you'd rather pick one.
+  **Positions, sizes and the UI scale are remembered between runs** (saved to `%LocalAppData%\IRacingOverlay\settings.json`,
   or `%LocalAppData%\IRacingOverlay.Dev\` for a source build, so development can't
   disturb a racing layout);
   the first launch uses sensible defaults — standings top-left, relative bottom-left, the
@@ -186,17 +190,19 @@ judgement behind each call. The short version:
   position projection** and the **push-or-save tradeoff** on the fuel widget, and
   the multiclass **traffic meeting-point forecast** on the relative —
   race-engineer calls no current overlay makes.
-- **Just landed:** a **colour-blind friendly palette** — one opt-in preset (no
-  mainstream overlay ships one) that moves the gain/loss pair off the green/red
-  axis and re-picks the fastest-lap, lap tints and radar glow onto values that
-  stay apart under red-green colour blindness, with the sim's own class/license
-  colours left alone; the design was validated against simulated colour-blind
-  renders and the separation is a tested invariant. Before it: the **track map**,
-  built from the shape the radar already learns — needs no track database; and a
-  **defaults pass** keeping the first-run layout to standings + relative + fuel.
-- **Next up**, reordered by the [July 2026 audit](docs/AUDIT-2026-07.md):
-  drag-to-resize and honest multi-stop fuel numbers — then the weather forecast
-  strip and per-session-type profiles.
+- **Just landed:** **drag-to-resize** — a corner grip on every widget, hidden
+  until you hover it, that scales the panel between 80% and 200% without
+  reflowing it. It closes the largest daily-feel gap against every competitor,
+  paid and free, and it isn't customization: it's making one opinionated layout
+  fit any monitor. Before it: a **colour-blind friendly palette** — one opt-in
+  preset (no mainstream overlay ships one) that moves the gain/loss pair off the
+  green/red axis and re-picks the fastest-lap, lap tints and radar glow onto
+  values that stay apart under red-green colour blindness, with the sim's own
+  class/license colours left alone; and the **track map**, built from the shape
+  the radar already learns — needs no track database.
+- **Next up**, reordered by the [July 2026 audit](docs/AUDIT-2026-07.md): honest
+  multi-stop fuel numbers — then the weather forecast strip and per-session-type
+  profiles.
 - **Waiting on research:** the manufacturer badge on the relative, and a bare
   speed readout is parked (the car's own dashboard already shows it).
 - **Parked or out, on purpose:** input trace and lap graphs wait until the

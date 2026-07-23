@@ -48,12 +48,9 @@ illegibility isn't.**
 ## Next up
 
 Reordered by the [July 2026 audit](AUDIT-2026-07.md) — first-impression and
-accessibility items first:
+accessibility items first. Drag-to-resize, which led this list, has shipped;
+tray-icon pinning stays carried over.
 
-- **Drag-to-resize** — promoted from "carried-over polish": it's the largest
-  daily-feel gap against every competitor, paid and free. Resize is not
-  customization; it's making one opinionated layout fit any monitor.
-  (Tray-icon pinning stays carried over.)
 - **Multi-stop honesty on the fuel widget** — "Add" assumes one more stop
   covers the race, so in a 2+-stop race it can name more litres than the tank
   holds. Cap it at capacity and say "+1 stop" when that's the truth.
@@ -165,6 +162,7 @@ Landed — the reasoning that survives is in [FEATURES.md](FEATURES.md):
 | **Track map** | The gap both competitors filled with a track database, filled instead by walking the shape the radar already learns: a heading plus a distance is a step, so a lap of steps *is* the outline. No database means no missing circuit and nothing stale after a resurface — and the first lap, which the widget spends saying how much it has learned rather than drawing half a track. Cars are class-coloured dots and nothing else; at map scale a field of numbered marks is mush. |
 | **Push-or-save tradeoff** | Both ways out priced in seconds. What saving costs is regressed from the driver's own laps, and the fit is refused more often than it's offered (sign checked, outliers dropped, no reading past the observed burn range). No verdict: two numbers in the same unit are the sentence. |
 | **Defaults pass** | The default layout is the first impression, so it's the three readouts the sim doesn't give you — standings + relative + fuel — with the radar self-hiding. The track map joined the delta as opt-in: least decision-dense, and unlike the radar it doesn't hide itself. Same pass moved the fuel widget clear of the standings' right edge (`600` → `664`), which it had overlapped by ~40px on first run. |
+| **Drag-to-resize** | The one place customization was the right answer, because it isn't customization — every competitor, paid and free, lets you size the thing, and a fixed 616px standings is a different widget on 1080p than on a 49" ultrawide. So: scale, don't reflow. The panel keeps its designed proportions and only its size changes, which keeps *the default is the product* intact while making the default fit. The grip is hidden until you hover the widget (racing, the mouse is nowhere near these panels), the band stops at 80% because that's where the smallest captions stop being readable rather than where the layout breaks, and the drag is measured from a fixed origin so running past the end of the band and coming back lands exactly where it should. |
 | **Colour-blind palette** | One preset, not per-deficiency modes — the audit found the meaning-hues carry a *second* channel almost everywhere (glyph, sign, label), so a colour-blind driver loses salience, rarely information; the exceptions were the gain/loss pair (near-identical luminance, they collapse together), the fastest-lap, the lap tints and the radar glow. The preset re-points those onto CVD-robust values (gain/loss to teal/orange, glow to a protan-bright orange-red) and leaves the sim's own class/license colours alone. The design calls were made against **simulated** renders, not by eye, and the guarantee is a **tested invariant** (`Core.Theme.ColorVision`): the new pairs must read apart under deutan *and* protan, and beat the pair they replace. First mover — no mainstream overlay ships one. |
 
 Built and then withdrawn — these two are the live guidance:
@@ -219,7 +217,8 @@ the strategy layer by voice and is free — the pit-exit row says how.
 | Input trace | ✅ | ✅ | ✅ | parked |
 | Lap-time graphs | ✅ (3 blocks) | ❌ | · | parked |
 | Gimmick blocks (heart rate, G-force, boost) | ✅ | ❌ | ❌ | non-goal |
-| Column customization | ✅ | ✅ (core pitch) | ✅ resize/snap + driver tagging | non-goal — but resize itself is next up |
+| Widget resize | ✅ | ✅ | ✅ drag + snapping | ✅ corner grip, scales without reflowing |
+| Column customization | ✅ | ✅ (core pitch) | ✅ resize/snap + driver tagging | non-goal — resize is not customization |
 | Colour-blind mode | ❌ | ❌ | ❌ | ✅ **(unique)** — one tested preset, first mover |
 | VR | ✅ (headline) | ✅ (Oculus) | · | non-goal |
 | Team fuel sharing | ✅ Pro | ✅ Pro | ❌ | non-goal — Garage 61 / iRacePlan own the endurance-team niche |
