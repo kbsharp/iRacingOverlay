@@ -186,14 +186,16 @@ judgement behind each call. The short version:
   position projection** and the **push-or-save tradeoff** on the fuel widget, and
   the multiclass **traffic meeting-point forecast** on the relative —
   race-engineer calls no current overlay makes.
-- **Just landed:** the **track map**, built from the shape the radar already
-  learns — the one thing both paid competitors ship that we didn't, and ours
-  needs no track database; and a **defaults pass** that keeps the first-run
-  layout to standings + relative + fuel (the track map joins the delta as
-  opt-in) and moves the fuel widget clear of the standings' edge.
-- **Next up**, reordered by the [July 2026 audit](docs/AUDIT-2026-07.md): a
-  **colour-blind friendly palette** (no mainstream overlay has one),
-  drag-to-resize, honest multi-stop fuel numbers — then the weather forecast
+- **Just landed:** a **colour-blind friendly palette** — one opt-in preset (no
+  mainstream overlay ships one) that moves the gain/loss pair off the green/red
+  axis and re-picks the fastest-lap, lap tints and radar glow onto values that
+  stay apart under red-green colour blindness, with the sim's own class/license
+  colours left alone; the design was validated against simulated colour-blind
+  renders and the separation is a tested invariant. Before it: the **track map**,
+  built from the shape the radar already learns — needs no track database; and a
+  **defaults pass** keeping the first-run layout to standings + relative + fuel.
+- **Next up**, reordered by the [July 2026 audit](docs/AUDIT-2026-07.md):
+  drag-to-resize and honest multi-stop fuel numbers — then the weather forecast
   strip and per-session-type profiles.
 - **Waiting on research:** the manufacturer badge on the relative, and a bare
   speed readout is parked (the car's own dashboard already shows it).

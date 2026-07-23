@@ -50,14 +50,6 @@ illegibility isn't.**
 Reordered by the [July 2026 audit](AUDIT-2026-07.md) — first-impression and
 accessibility items first:
 
-- **Colour-blind friendly palette** — one preset, not per-deficiency modes:
-  gain/loss moves off the green/red axis (near-identical luminance under
-  deutan/protan vision), fastest-lap purple and the lapped/lapping tints get
-  re-picked, the radar glow moves to a protan-bright hue. Sim-supplied class
-  and license colours stay — the license chip already carries its letter.
-  Every meaning-hue is single-sourced in `App.xaml`, so this is design work
-  plus a resource swap. Roughly 8% of a male-skewed user base is red-green
-  colour-blind, and no mainstream overlay ships this.
 - **Drag-to-resize** — promoted from "carried-over polish": it's the largest
   daily-feel gap against every competitor, paid and free. Resize is not
   customization; it's making one opinionated layout fit any monitor.
@@ -173,6 +165,7 @@ Landed — the reasoning that survives is in [FEATURES.md](FEATURES.md):
 | **Track map** | The gap both competitors filled with a track database, filled instead by walking the shape the radar already learns: a heading plus a distance is a step, so a lap of steps *is* the outline. No database means no missing circuit and nothing stale after a resurface — and the first lap, which the widget spends saying how much it has learned rather than drawing half a track. Cars are class-coloured dots and nothing else; at map scale a field of numbered marks is mush. |
 | **Push-or-save tradeoff** | Both ways out priced in seconds. What saving costs is regressed from the driver's own laps, and the fit is refused more often than it's offered (sign checked, outliers dropped, no reading past the observed burn range). No verdict: two numbers in the same unit are the sentence. |
 | **Defaults pass** | The default layout is the first impression, so it's the three readouts the sim doesn't give you — standings + relative + fuel — with the radar self-hiding. The track map joined the delta as opt-in: least decision-dense, and unlike the radar it doesn't hide itself. Same pass moved the fuel widget clear of the standings' right edge (`600` → `664`), which it had overlapped by ~40px on first run. |
+| **Colour-blind palette** | One preset, not per-deficiency modes — the audit found the meaning-hues carry a *second* channel almost everywhere (glyph, sign, label), so a colour-blind driver loses salience, rarely information; the exceptions were the gain/loss pair (near-identical luminance, they collapse together), the fastest-lap, the lap tints and the radar glow. The preset re-points those onto CVD-robust values (gain/loss to teal/orange, glow to a protan-bright orange-red) and leaves the sim's own class/license colours alone. The design calls were made against **simulated** renders, not by eye, and the guarantee is a **tested invariant** (`Core.Theme.ColorVision`): the new pairs must read apart under deutan *and* protan, and beat the pair they replace. First mover — no mainstream overlay ships one. |
 
 Built and then withdrawn — these two are the live guidance:
 
@@ -227,7 +220,7 @@ the strategy layer by voice and is free — the pit-exit row says how.
 | Lap-time graphs | ✅ (3 blocks) | ❌ | · | parked |
 | Gimmick blocks (heart rate, G-force, boost) | ✅ | ❌ | ❌ | non-goal |
 | Column customization | ✅ | ✅ (core pitch) | ✅ resize/snap + driver tagging | non-goal — but resize itself is next up |
-| Colour-blind mode | ❌ | ❌ | ❌ | ❌ → next up, first mover |
+| Colour-blind mode | ❌ | ❌ | ❌ | ✅ **(unique)** — one tested preset, first mover |
 | VR | ✅ (headline) | ✅ (Oculus) | · | non-goal |
 | Team fuel sharing | ✅ Pro | ✅ Pro | ❌ | non-goal — Garage 61 / iRacePlan own the endurance-team niche |
 | Streaming tools | ✅ | ✅ | ✅ OBS | non-goal |

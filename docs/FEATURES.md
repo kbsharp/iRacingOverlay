@@ -942,7 +942,9 @@ range. Nothing is ever clipped off the side, at any range setting.
   each. Opponents are deliberately *not* class-coloured here (they are in the
   standings and relative widgets): at a blind-spot glance "is that me or them"
   beats "what class is that", and a green-class opponent next to a green player
-  mark was genuinely ambiguous.
+  mark was genuinely ambiguous. (The colour-blind palette moves the danger glow
+  to a hot orange-red that stays bright under protanopia — see the
+  [colour-blind palette section](#colour-blind-palette-coretheme-servicespaletteservice).)
 
 **Proximity glow.** The thing you actually read at speed is a red glow off the
 door on the side a car is on, fading with how much it matters rather than blinking
@@ -1715,7 +1717,8 @@ lap status, "this is you").
   object over busy track scenery.
 - `Separator`, `RowHover`, `HeaderBand` — structural chrome.
 - `Accent` (azure blue), `Positive` (green), `Negative` (red), `Warning`
-  (amber) — status colours.
+  (amber) — status colours. `Positive`/`Negative` are the gain/loss pair; the
+  colour-blind palette re-points them (see below).
 - `PlayerHighlight` / `PlayerBorder` — the relative widget's "this is you"
   row wash and outline; warm amber, intentionally not `Accent`, so it doesn't
   compete with the license/class colours now on every row.
@@ -1733,6 +1736,15 @@ lap status, "this is you").
 - `LapAheadText` (red-ish) / `LapBehindText` (blue-ish) — relative row
   colouring.
 - `FastestLap` (purple) — the standings' session-fastest best lap.
+- `RadarPlayer` (green) and `DangerGlow` (red radial) — the radar's "this is
+  you" mark and proximity glow, centralised here (not inline in `RadarWindow`)
+  so the colour-blind palette can re-point them from one place.
+
+  These six — `Positive`, `Negative`, `FastestLap`, `LapAheadText`,
+  `LapBehindText`, `RadarPlayer`, plus `DangerGlow` — are the **meaning-hues**,
+  the colours that carry a signal by hue alone. Widgets bind them with
+  `{DynamicResource}` (not `Static`) so the colour-blind palette can swap them
+  live (see below).
 - `FontSmall`/`FontText`/`FontDisplay` — the three Segoe UI Variable **optical
   sizes**, and they are not interchangeable (see Typography below).
 - `Caption`, `Value` and `Timing` styles for the small-uppercase-label /
@@ -1743,6 +1755,42 @@ lap status, "this is you").
   style is `BasedOn` these, so size lives in one place.
 - `PlayerGlowColor` — the player-row glow hue as a bare `Color`, because
   `DropShadowEffect.Color` takes a `Color` and not a `Brush`.
+
+### Colour-blind palette (`Core.Theme`, `Services/PaletteService`)
+
+One opt-in preset — **not** per-deficiency modes — that re-points the
+meaning-hues onto values that stay apart under red-green colour vision
+deficiency (deuteranopia/protanopia, ~8% of a male-skewed user base). Off by
+default (`OverlaySettings.ColorBlindPalette`), toggled from the Settings
+window's Accessibility group **and** the tray menu, and applied **live** — no
+restart.
+
+The colours are defined and tested in `Core.Theme.MeaningPalette` (pure data,
+no WPF); `App/Services/PaletteService` maps each to its App.xaml resource key
+and swaps the brush. It has to be a swap, not an in-place recolour, because WPF
+freezes ResourceDictionary brushes read-only — which is why every consumer
+binds these keys with `{DynamicResource}`.
+
+| Signal | Default | Colour-blind | Why |
+| --- | --- | --- | --- |
+| Gain / loss (`Positive`/`Negative`) | green / red | **teal / orange** | The measured problem: green and red sit at near-identical luminance and collapse together under CVD. Blue↔orange is the axis red-green deficiency keeps intact; teal (not plain blue) stays clear of the accent/branding blue. |
+| Fastest lap (`FastestLap`) | violet | **saturated blue-violet** | Kept in iRacing's purple family but bluer, so it stays a clear cool highlight instead of desaturating toward grey when green-blind. |
+| Lap-ahead tint (`LapAheadText`) | red | **amber** | Off red; amber vs the (unchanged) blue lap-behind is clean under CVD. |
+| Radar glow (`DangerGlow`) | red | **hot orange-red** | Pure red is the worst danger hue for a protan (long-wavelength dimming); orange-red carries more green energy, so it stays bright and "hot" rather than dulling. |
+
+Left untouched on purpose: iRacing's own **class** (`CarClassColor`) and
+**license** colours — inventing replacements would cost the familiarity that
+made the app adopt them, and the license chip already carries its letter. The
+blue lap-behind tint and green radar player mark already survive CVD (and the
+player mark is spatially unambiguous, dead-centre), so they stay put.
+
+The guarantee is a **tested invariant**, not a claim: `Core.Theme.ColorVision`
+simulates deuteranopia/protanopia (documented sRGB matrices) and measures the
+separation between two colours as a dichromat would see them. The tests assert
+the colour-blind gain/loss and lap tints stay distinct under both deficiencies,
+and separate *better* than the pair they replace. Render both palettes with
+`.\scripts\render.ps1 -ColorBlind -OutDir out-cb` and run the PNGs through a CVD
+simulation to review a change rather than guess.
 
 ### Chips
 
@@ -1831,7 +1879,7 @@ on the content root (see the tray icon section).
 
 ## Test coverage
 
-694 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
+726 xUnit tests, all in `IRacingOverlay.Core.Tests` (the `App` and
 `Infrastructure` projects are intentionally not unit tested — see
 [DEVELOPMENT.md](DEVELOPMENT.md#testing-conventions)):
 
@@ -1879,15 +1927,17 @@ on the content root (see the tray icon section).
 | `Strategy/SaveCostTrackerTests.cs` | Learning seconds-per-litre from the player's laps: sample minimum, exchange rate recovered from spread, flat-burn and inverted fits rejected, slow outlier lap discarded, refuel/pit-touched/pit-started/skipped laps not recorded, rolling window, reset |
 | `Strategy/FuelSavePlannerTests.cs` | Pricing save vs stop: both sides in seconds, suppressed when the tank already reaches the finish or the cost isn't learned, priced without a pit loss, extrapolation limit at one observed range (inclusive), target above current burn, whole-lap rounding, zero pit loss treated as unknown |
 | `Formatting/FuelSaveFormatTests.cs` | Total cost precision (tenth under 10s, whole above), "vs 29s to pit" alternative and its absence, working line with unit + lap count, singular last lap, placeholders for no plan |
+| `Theme/ArgbTests.cs` | Colour hex parse (`#RRGGBB`/`#AARRGGBB`, optional `#`), 8-digit round-trip, malformed rejection |
+| `Theme/ColorVisionTests.cs` | Deutan/protan simulation: identity for none, greys preserved, alpha kept, luminance spanning black→white, distance metric, and the default gain/loss pair collapsing under both deficiencies |
+| `Theme/MeaningPaletteTests.cs` | Both variants define every signal; default matches the App.xaml hexes; colour-blind gain/loss and lap tints stay distinct under deutan+protan and beat the pair they replace; already-safe signals left unchanged; glow keeps three stops with a transparent edge |
 
 ## Not yet implemented
 
 Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
 [README](../README.md#roadmap)): the [July 2026 audit](AUDIT-2026-07.md)'s
-queue — a defaults pass (track map opt-in, first-run overlap fix), a
-colour-blind friendly palette, drag-to-resize, multi-stop fuel honesty — then
-a weather forecast strip, per-session-type settings profiles, and pinning the
-tray icon. A bare speed readout is parked
+queue — drag-to-resize, multi-stop fuel honesty — then a weather forecast
+strip, per-session-type settings profiles, and pinning the tray icon. (The
+defaults pass and the colour-blind friendly palette have since shipped.) A bare speed readout is parked
 (the car's own dashboard already shows speed). Extending the manufacturer badge
 to the relative — and a rejoin indicator / slow-car-ahead warning — is parked
 behind open research questions; the radar density pass,
