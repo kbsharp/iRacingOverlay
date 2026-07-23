@@ -45,7 +45,7 @@
                                     <Setter Property="Fill" Value="{StaticResource Warning}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                            <Setter Property="Fill" Value="{StaticResource Positive}" />
+                                            <Setter Property="Fill" Value="{DynamicResource Positive}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

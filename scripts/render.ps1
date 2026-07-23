@@ -8,6 +8,7 @@
     .\scripts\render.ps1                    # every widget -> out/
     .\scripts\render.ps1 fuel relative      # just these two
     .\scripts\render.ps1 -OutDir img fuel
+    .\scripts\render.ps1 -ColorBlind -OutDir out-cb   # colour-blind palette
 
 .NOTES
     tools/RenderWidget is deliberately NOT in IRacingOverlay.sln, so the solution
@@ -28,7 +29,11 @@ param(
     [Parameter(Position = 0, ValueFromRemainingArguments)]
     [string[]] $Targets,
 
-    [string] $OutDir = 'out'
+    [string] $OutDir = 'out',
+
+    # Render in the colour-blind-friendly palette instead of the default. Pair with
+    # -OutDir so the two palettes land in separate folders for comparison.
+    [switch] $ColorBlind
 )
 
 $ErrorActionPreference = 'Stop'
@@ -37,6 +42,9 @@ $ErrorActionPreference = 'Stop'
 Initialize-Dotnet
 
 $arguments = @('run', '--project', 'tools/RenderWidget', '--verbosity', 'quiet', '--', '--out', $OutDir)
+if ($ColorBlind) {
+    $arguments += '--colorblind'
+}
 if ($Targets) {
     $arguments += $Targets
 }

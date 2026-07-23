@@ -6,6 +6,7 @@ using IRacingOverlay.App.ViewModels;
 using IRacingOverlay.Core.Fuel;
 using IRacingOverlay.Core.Settings;
 using IRacingOverlay.Core.Telemetry;
+using IRacingOverlay.Core.Theme;
 using IRacingOverlay.Infrastructure.Telemetry;
 using Velopack;
 
@@ -295,6 +296,13 @@ public partial class App : System.Windows.Application
         // The telemetry source isn't a widget, but it's driven by the same
         // settings pass: retune the poll rate live (no-op if unchanged).
         _telemetrySource?.SetRefreshRateHz(settings.TelemetryRefreshHz);
+
+        // Repaint the meaning-hue brushes before touching the widgets. Every widget
+        // reaches these through {StaticResource}, so one write per brush recolours
+        // all of them at once - live, no restart.
+        PaletteService.Apply(
+            Resources,
+            settings.ColorBlindPalette ? PaletteVariant.ColorBlindFriendly : PaletteVariant.Default);
 
         foreach (var widget in _widgets)
         {

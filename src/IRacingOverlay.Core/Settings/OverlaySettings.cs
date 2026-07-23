@@ -99,6 +99,14 @@ public sealed record OverlaySettings
     /// <see cref="WidgetVisibility.ShouldShow"/>.</summary>
     public bool HideWhenSimClosed { get; init; } = true;
 
+    /// <summary>Whether the one colour-blind-friendly palette is on. Off by default.
+    /// It re-points every colour-only signal (gain/loss, fastest lap, the lap tints,
+    /// the radar glow) onto values that survive red-green colour vision deficiency,
+    /// leaving the sim-supplied class/license colours alone. One preset, not
+    /// per-deficiency modes - see <c>Core.Theme.MeaningPalette</c> and the App's
+    /// <c>PaletteService</c>. Applied live, so toggling it needs no restart.</summary>
+    public bool ColorBlindPalette { get; init; }
+
     /// <summary>Whether a widget shows: the user's explicit choice if they've made
     /// one, otherwise the widget's default — on for most, off for the opt-in ones
     /// in <see cref="DefaultOffWidgets"/>.</summary>

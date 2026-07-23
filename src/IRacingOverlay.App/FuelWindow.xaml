@@ -84,7 +84,7 @@
                             <Setter Property="Fill" Value="{StaticResource Warning}" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                    <Setter Property="Fill" Value="{StaticResource Positive}" />
+                                    <Setter Property="Fill" Value="{DynamicResource Positive}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -248,10 +248,10 @@
                                    Typography.NumeralAlignment="Tabular">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{StaticResource Positive}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource Positive}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding WillFinish}" Value="False">
-                                            <Setter Property="Foreground" Value="{StaticResource Negative}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource Negative}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
