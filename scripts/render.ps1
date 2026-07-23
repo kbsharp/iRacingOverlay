@@ -9,6 +9,7 @@
     .\scripts\render.ps1 fuel relative      # just these two
     .\scripts\render.ps1 -OutDir img fuel
     .\scripts\render.ps1 -ColorBlind -OutDir out-cb   # colour-blind palette
+    .\scripts\render.ps1 -Grips fuel                 # with the resize grip showing
 
 .NOTES
     tools/RenderWidget is deliberately NOT in IRacingOverlay.sln, so the solution
@@ -33,7 +34,11 @@ param(
 
     # Render in the colour-blind-friendly palette instead of the default. Pair with
     # -OutDir so the two palettes land in separate folders for comparison.
-    [switch] $ColorBlind
+    [switch] $ColorBlind,
+
+    # Force the corner resize grips visible. They only appear on hover, and nothing
+    # hovers anything in a headless render, so this is the only way to review them.
+    [switch] $Grips
 )
 
 $ErrorActionPreference = 'Stop'
@@ -44,6 +49,9 @@ Initialize-Dotnet
 $arguments = @('run', '--project', 'tools/RenderWidget', '--verbosity', 'quiet', '--', '--out', $OutDir)
 if ($ColorBlind) {
     $arguments += '--colorblind'
+}
+if ($Grips) {
+    $arguments += '--grips'
 }
 if ($Targets) {
     $arguments += $Targets

@@ -82,7 +82,14 @@ public sealed class SettingsService
 
     /// <summary>Overrides one widget's scale, or clears the override (null) so it
     /// follows the shared scale again.</summary>
-    public void SetWidgetScale(string widgetId, double? scale)
+    /// <param name="notify">
+    /// Whether to raise <see cref="Changed"/>. False while a corner grip is being
+    /// dragged: that fires on every mouse move, and the caller has already applied
+    /// the new scale to the one window it affects, so announcing each step would
+    /// re-run the whole settings pass at frame rate. The end of the drag notifies,
+    /// which is when any other surface (the settings window) needs to catch up.
+    /// </param>
+    public void SetWidgetScale(string widgetId, double? scale, bool notify = true)
     {
         var scales = new Dictionary<string, double>(_current.WidgetScales);
         if (scale is { } value)
@@ -94,7 +101,16 @@ public sealed class SettingsService
             scales.Remove(widgetId);
         }
 
-        Update(_current with { WidgetScales = scales });
+        var updated = _current with { WidgetScales = scales };
+
+        if (notify)
+        {
+            Update(updated);
+            return;
+        }
+
+        _current = updated;
+        ScheduleSave();
     }
 
     /// <summary>Makes a widget transparent to the mouse, or interactive again.</summary>
@@ -141,14 +157,24 @@ public sealed class SettingsService
     public void SetShowPaceTrend(bool showPaceTrend)
         => Update(_current with { ShowPaceTrend = showPaceTrend });
 
-    /// <summary>Forgets every saved window position, so the next launch puts each
-    /// widget back at its default corner. The recovery path for a layout that's
-    /// been dragged somewhere unusable - previously this meant deleting
-    /// settings.json by hand.</summary>
+    /// <summary>Forgets every saved window position <b>and</b> per-widget size, so
+    /// the next launch puts each widget back at its default corner at the shared UI
+    /// scale. The recovery path for a layout that's been dragged somewhere unusable
+    /// - previously this meant deleting settings.json by hand.
+    ///
+    /// Sizes go with positions because a corner grip makes per-widget overrides
+    /// easy to set by accident, and a widget carrying one silently stops following
+    /// the tray's UI Scale. This is the way back from that. The shared scale itself
+    /// is left alone: it's a deliberate choice made in the tray, not part of the
+    /// layout being reset.</summary>
     public void ResetLayout()
     {
         _windows.Clear();
-        Update(_current with { Windows = new Dictionary<string, WindowPosition>() });
+        Update(_current with
+        {
+            Windows = new Dictionary<string, WindowPosition>(),
+            WidgetScales = new Dictionary<string, double>(),
+        });
     }
 
     /// <summary>Flushes any pending change to disk immediately (e.g. on exit).</summary>

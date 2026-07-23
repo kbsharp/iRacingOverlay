@@ -415,7 +415,9 @@
                 <StackPanel>
                     <TextBlock Text="WIDGETS" Style="{StaticResource SectionHeading}" />
                     <TextBlock Style="{StaticResource Hint}"
-                               Text="Switch a widget off to hide it entirely. Click-through lets mouse clicks pass to the sim — a click-through widget can't be dragged, so come back here to turn it off again." />
+                               Text="Switch a widget off to hide it entirely. Click-through lets mouse clicks pass to the sim — a click-through widget can't be dragged or resized, so come back here to turn it off again." />
+                    <TextBlock Style="{StaticResource Hint}"
+                               Text="Scale sizes one widget on its own. You can also hover a widget and drag the grip at its bottom-right corner — any size that lands between the ones listed here shows up in its list." />
 
                     <Grid Margin="0,0,0,4">
                         <Grid.ColumnDefinitions>
@@ -648,12 +650,12 @@
                     <TextBlock Style="{StaticResource Hint}"
                                Text="Widgets stay hidden until the sim connects and disappear again when it closes. Switch off to position them with iRacing shut." />
 
-                    <Button Content="Reset widget positions"
+                    <Button Content="Reset widget positions and sizes"
                             Command="{Binding ResetLayoutCommand}"
                             Style="{StaticResource DevButton}"
                             HorizontalAlignment="Left" Padding="12,6" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
-                               Text="Forgets every saved position so each widget returns to its default corner on the next launch. The way back from a layout dragged somewhere unusable." />
+                               Text="Forgets every saved position and per-widget size, so each widget returns to its default corner at the shared UI scale. The way back from a layout dragged somewhere unusable." />
                 </StackPanel>
             </Border>
 

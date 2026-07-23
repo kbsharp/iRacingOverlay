@@ -1,6 +1,7 @@
 <Window x:Class="IRacingOverlay.App.DeltaWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:IRacingOverlay.App.Controls"
         Title="iRacing Overlay - Delta"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -185,5 +186,8 @@
                 VerticalAlignment="Top"
                 Background="{StaticResource PanelTopHighlight}"
                 IsHitTestVisible="False" />
+
+        <!-- Drag to scale this widget - see the WidgetResizeGrip style in App.xaml. -->
+        <controls:WidgetResizeGrip Margin="0,0,-6,-6" />
     </Grid>
 </Window>

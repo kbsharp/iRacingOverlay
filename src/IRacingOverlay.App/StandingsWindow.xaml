@@ -1,6 +1,7 @@
 <Window x:Class="IRacingOverlay.App.StandingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:IRacingOverlay.App.Controls"
         Title="iRacing Overlay - Standings"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -473,5 +474,10 @@
 
             </StackPanel>
         </Border>
+
+        <!-- Drag to scale this widget. Invisible until the pointer is over the
+             panel, and sitting half in the shadow gutter so it never covers a row -
+             see the WidgetResizeGrip style in App.xaml. -->
+        <controls:WidgetResizeGrip Margin="0,0,-6,-6" />
     </Grid>
 </Window>
