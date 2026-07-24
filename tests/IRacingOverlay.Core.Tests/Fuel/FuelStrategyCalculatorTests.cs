@@ -82,6 +82,66 @@ public class FuelStrategyCalculatorTests
     }
 
     [Fact]
+    public void Compute_WithoutCapacity_LeavesAddUncappedAndNoExtraStops()
+    {
+        // 5 L, 3 L/lap, 40 laps: needs 120 L + 1.5 L buffer -> add 116.5 L.
+        // Capacity unknown (0) so the figure isn't capped - old behaviour.
+        var strategy = FuelStrategyCalculator.Compute(
+            5, 3, 40, safetyMarginLaps: 0.5, tankCapacityLiters: 0);
+
+        Assert.Equal(116.5, strategy.FuelToAddLiters!.Value, 3);
+        Assert.Equal(0, strategy.AdditionalStops);
+    }
+
+    [Fact]
+    public void Compute_OneStopFits_DoesNotCapAddOrCountStops()
+    {
+        // Needs 25 L + 1.25 L buffer, has 20 L -> add 6.25 L, which fits in a
+        // 60 L tank (40 L of space), so nothing is capped.
+        var strategy = FuelStrategyCalculator.Compute(
+            20, 2.5, 10, safetyMarginLaps: 0.5, tankCapacityLiters: 60);
+
+        Assert.Equal(6.25, strategy.FuelToAddLiters!.Value, 3);
+        Assert.Equal(0, strategy.AdditionalStops);
+    }
+
+    [Fact]
+    public void Compute_TwoStopRace_CapsAddAtATankfulAndReportsOneMoreStop()
+    {
+        // 10 L, 3 L/lap, 30 laps: needs 90 L + 1.5 L buffer = 91.5 L, has 10 L, so
+        // the deficit is 81.5 L. That won't fit in a 65 L tank, so the next stop
+        // takes a full 65 L and one stop is still to come.
+        var strategy = FuelStrategyCalculator.Compute(
+            10, 3, 30, safetyMarginLaps: 0.5, tankCapacityLiters: 65);
+
+        Assert.Equal(65.0, strategy.FuelToAddLiters!.Value, 3);
+        Assert.Equal(1, strategy.AdditionalStops);
+    }
+
+    [Fact]
+    public void Compute_ThreeStopRace_CountsBothStopsAfterTheNext()
+    {
+        // 10 L, 3 L/lap, 50 laps: deficit is 150 + 1.5 - 10 = 141.5 L. Over three
+        // 50 L tankfuls (ceil(141.5 / 50) = 3), so two stops follow the next.
+        var strategy = FuelStrategyCalculator.Compute(
+            10, 3, 50, safetyMarginLaps: 0.5, tankCapacityLiters: 50);
+
+        Assert.Equal(50.0, strategy.FuelToAddLiters!.Value, 3);
+        Assert.Equal(2, strategy.AdditionalStops);
+    }
+
+    [Fact]
+    public void Compute_AddNeverExceedsATankful()
+    {
+        // Whatever the deficit, the capped add can't be more than one tankful.
+        var strategy = FuelStrategyCalculator.Compute(
+            12, 4, 100, safetyMarginLaps: 0.5, tankCapacityLiters: 65);
+
+        Assert.Equal(65.0, strategy.FuelToAddLiters!.Value, 3);
+        Assert.True(strategy.AdditionalStops >= 1);
+    }
+
+    [Fact]
     public void EstimateRaceLapsRemaining_LapLimitedRace_UsesSessionLaps()
     {
         var laps = FuelStrategyCalculator.EstimateRaceLapsRemaining(
