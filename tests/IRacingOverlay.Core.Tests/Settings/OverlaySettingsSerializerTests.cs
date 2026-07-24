@@ -100,10 +100,10 @@ public class OverlaySettingsSerializerTests
     {
         // The shape the app shipped with. It must still load, and every widget that
         // ships on must still be on - a silently disabled overlay after an update
-        // would be indistinguishable from a broken one. The delta bar and track map
-        // are the opt-in widgets, so they stay off for a legacy file just as for a
-        // fresh one.
-        var optIn = new[] { WidgetIds.Delta, WidgetIds.TrackMap };
+        // would be indistinguishable from a broken one. The delta bar, track map and
+        // weather nowcast are the opt-in widgets, so they stay off for a legacy file
+        // just as for a fresh one.
+        var optIn = new[] { WidgetIds.Delta, WidgetIds.TrackMap, WidgetIds.Weather };
         var json = """{ "scale": 1.25, "windows": { "FuelWindow": { "left": 80, "top": 140 } } }""";
 
         var settings = OverlaySettingsSerializer.Deserialize(json);

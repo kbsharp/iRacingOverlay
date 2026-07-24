@@ -41,12 +41,16 @@ public sealed record OverlaySettings
     /// black box; it earns a panel only for drivers who want it always up. The
     /// track map is opt-in as the least decision-dense panel — it's the shape of
     /// the field at a glance, not a call to make — and unlike the radar it doesn't
-    /// hide itself, so it earns its screen space only for drivers who want it. Both
-    /// stay out of the default layout (standings + relative + fuel, radar
+    /// hide itself, so it earns its screen space only for drivers who want it. The
+    /// weather nowcast is opt-in because it's relevant only in dynamic-weather
+    /// sessions with rain in play — most races are dry — and even when enabled it
+    /// self-hides until the track is actually wetting or drying, so a driver opts
+    /// in once and it stays out of the way until there's a crossover call to make.
+    /// All three stay out of the default layout (standings + relative + fuel, radar
     /// self-hiding) rather than crowding a first impression; each is one tray
     /// click away.</summary>
     private static readonly IReadOnlySet<string> DefaultOffWidgets =
-        new HashSet<string> { WidgetIds.Delta, WidgetIds.TrackMap };
+        new HashSet<string> { WidgetIds.Delta, WidgetIds.TrackMap, WidgetIds.Weather };
 
     /// <summary>Per-widget scale override. Absent key = use <see cref="Scale"/>.
     /// A standings table and a radar rarely want the same size.</summary>
