@@ -156,6 +156,7 @@ public class FuelSavePlannerTests
             FuelToFinishLiters: 50,
             MarginLaps: willFinish ? 1 : -1,
             FuelToAddLiters: 10,
+            AdditionalStops: 0,
             SaveTargetLitersPerLap: saveTarget,
             WillFinish: willFinish);
 

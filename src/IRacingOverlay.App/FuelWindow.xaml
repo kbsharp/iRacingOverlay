@@ -282,6 +282,14 @@
                                Typography.NumeralAlignment="Tabular"
                                Foreground="{StaticResource Accent}" />
                     <TextBlock Text="{Binding FuelUnitLabel}" Margin="3,0,0,1" VerticalAlignment="Bottom" Style="{StaticResource Caption}" />
+                    <!-- "+1 stop": the ADD figure is capped at a tankful, so once
+                         the race needs more than that this says the fill won't
+                         finish it. Empty for the single-stop case. -->
+                    <TextBlock Text="{Binding AddStopsText}"
+                               Margin="6,0,0,1"
+                               VerticalAlignment="Bottom"
+                               Style="{StaticResource Caption}"
+                               Foreground="{StaticResource TextSecondary}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">

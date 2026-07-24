@@ -40,6 +40,7 @@ public sealed class FuelViewModel : OverlayViewModelBase
     private string _marginLabel = string.Empty;
     private bool _willFinish = true;
     private string _addFuelText = TelemetryFormat.Placeholder;
+    private string _addStopsText = string.Empty;
     private string _saveTargetText = TelemetryFormat.Placeholder;
     private string _fuelUnitLabel = UnitFormat.FuelLabel(FuelUnit.Liters);
 
@@ -153,6 +154,14 @@ public sealed class FuelViewModel : OverlayViewModelBase
     {
         get => _addFuelText;
         private set => SetProperty(ref _addFuelText, value);
+    }
+
+    /// <summary>Stops still owed after the next one, e.g. "+1 stop"; empty when a
+    /// single stop covers the race. Keeps the capped "add" figure honest.</summary>
+    public string AddStopsText
+    {
+        get => _addStopsText;
+        private set => SetProperty(ref _addStopsText, value);
     }
 
     public string SaveTargetText
@@ -411,7 +420,8 @@ public sealed class FuelViewModel : OverlayViewModelBase
             snapshot.SessionTimeRemainSeconds,
             _lapTimeTracker.AverageLapTimeSeconds);
         var strategy = FuelStrategyCalculator.Compute(
-            fuel, estimate.AverageLitersPerLap, raceLaps, _safetyMarginLaps);
+            fuel, estimate.AverageLitersPerLap, raceLaps, _safetyMarginLaps,
+            _metadata?.TankCapacityLiters ?? 0);
 
         FuelLevelText = UnitFormat.Fuel(fuel, _fuelUnit);
         FuelLapsText = TelemetryFormat.Laps(estimate.EstimatedLapsRemaining);
@@ -425,6 +435,7 @@ public sealed class FuelViewModel : OverlayViewModelBase
         HasStrategy = strategy.FuelToFinishLiters is not null;
         ToFinishText = UnitFormat.Fuel(strategy.FuelToFinishLiters, _fuelUnit);
         AddFuelText = UnitFormat.Fuel(strategy.FuelToAddLiters, _fuelUnit);
+        AddStopsText = FuelStrategyFormat.AdditionalStops(strategy);
         SaveTargetText = UnitFormat.Fuel(strategy.SaveTargetLitersPerLap, _fuelUnit);
         WillFinish = strategy.WillFinish;
         MarginText = strategy.MarginLaps is { } margin ? SessionFormat.Delta(margin) : TelemetryFormat.Placeholder;

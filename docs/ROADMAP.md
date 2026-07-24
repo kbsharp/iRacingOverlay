@@ -48,12 +48,9 @@ illegibility isn't.**
 ## Next up
 
 Reordered by the [July 2026 audit](AUDIT-2026-07.md) — first-impression and
-accessibility items first. Drag-to-resize, which led this list, has shipped;
-tray-icon pinning stays carried over.
+accessibility items first. Drag-to-resize, which led this list, has shipped, as
+has multi-stop honesty on the fuel widget; tray-icon pinning stays carried over.
 
-- **Multi-stop honesty on the fuel widget** — "Add" assumes one more stop
-  covers the race, so in a 2+-stop race it can name more litres than the tank
-  holds. Cap it at capacity and say "+1 stop" when that's the truth.
 - **Weather forecast strip** *(mid-term)* — we show current temps and wetness;
   with dynamic weather the decision-shaped question is "what's it doing in 20
   minutes?", which is a tyre and pit call. irDashies shipping weather widgets
@@ -162,6 +159,7 @@ Landed — the reasoning that survives is in [FEATURES.md](FEATURES.md):
 | **Track map** | The gap both competitors filled with a track database, filled instead by walking the shape the radar already learns: a heading plus a distance is a step, so a lap of steps *is* the outline. No database means no missing circuit and nothing stale after a resurface — and the first lap, which the widget spends saying how much it has learned rather than drawing half a track. Cars are class-coloured dots and nothing else; at map scale a field of numbered marks is mush. |
 | **Push-or-save tradeoff** | Both ways out priced in seconds. What saving costs is regressed from the driver's own laps, and the fit is refused more often than it's offered (sign checked, outliers dropped, no reading past the observed burn range). No verdict: two numbers in the same unit are the sentence. |
 | **Defaults pass** | The default layout is the first impression, so it's the three readouts the sim doesn't give you — standings + relative + fuel — with the radar self-hiding. The track map joined the delta as opt-in: least decision-dense, and unlike the radar it doesn't hide itself. Same pass moved the fuel widget clear of the standings' right edge (`600` → `664`), which it had overlapped by ~40px on first run. |
+| **Multi-stop fuel honesty** | "Add" is what goes in at the next stop, and a stop takes at most a tankful — so it's capped at capacity and a `+1 stop` note says how many refuels still follow. Capacity, not the empty space right now: the fill lands at a future low-fuel stop. Naming 90 L into a 65 L tank was the bug; the count is `ceil(deficit / capacity) − 1`, and with no capacity from the SDK it degrades to the old uncapped figure. |
 | **Drag-to-resize** | The one place customization was the right answer, because it isn't customization — every competitor, paid and free, lets you size the thing, and a fixed 616px standings is a different widget on 1080p than on a 49" ultrawide. So: scale, don't reflow. The panel keeps its designed proportions and only its size changes, which keeps *the default is the product* intact while making the default fit. The grip is hidden until you hover the widget (racing, the mouse is nowhere near these panels), the band stops at 80% because that's where the smallest captions stop being readable rather than where the layout breaks, and the drag is measured from a fixed origin so running past the end of the band and coming back lands exactly where it should. |
 | **Colour-blind palette** | One preset, not per-deficiency modes — the audit found the meaning-hues carry a *second* channel almost everywhere (glyph, sign, label), so a colour-blind driver loses salience, rarely information; the exceptions were the gain/loss pair (near-identical luminance, they collapse together), the fastest-lap, the lap tints and the radar glow. The preset re-points those onto CVD-robust values (gain/loss to teal/orange, glow to a protan-bright orange-red) and leaves the sim's own class/license colours alone. The design calls were made against **simulated** renders, not by eye, and the guarantee is a **tested invariant** (`Core.Theme.ColorVision`): the new pairs must read apart under deutan *and* protan, and beat the pair they replace. First mover — no mainstream overlay ships one. |
 

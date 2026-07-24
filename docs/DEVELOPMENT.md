@@ -128,8 +128,8 @@ of seconds, so it hasn't been worth adding.
   ```
 
   Targets: `standings`, `relative`, `relative-traffic`, `fuel`, `fuel-pit-exit`,
-  `fuel-save`, `radar`, `radar-danger`, `radar-unresolved`, `delta`, `track-map`,
-  `track-map-learning`, `settings`.
+  `fuel-save`, `fuel-multistop`, `radar`, `radar-danger`, `radar-unresolved`,
+  `delta`, `track-map`, `track-map-learning`, `settings`.
   **Rendering everything is the default** and costs barely more than rendering
   one — all the view models are fed from a single demo session, and the slow part
   is wall-clock demo laps (the fuel burn average needs ~35 s of them), not the
@@ -165,6 +165,13 @@ of seconds, so it hasn't been worth adding.
   a tank that's short — plus three pit-road crossings for the other half of the
   comparison. Only the stint is staged; the trackers, planner and formatter are
   real.
+
+  `fuel-multistop` is the fuel widget's multi-stop honesty — the `ADD` figure
+  capped at a tankful with a `+1 stop` note beside it. The demo runs a short,
+  comfortable race that never needs a second stop, so the target stages one: a
+  warmed-up demo frame supplies the tank, a dozen clean laps down from a brim give
+  the calculator a burn rate, then the tank is dropped low against a 40-lap race.
+  Only the stint is staged; the strategy, formatter and bindings are real.
 
   `track-map-learning` is the track map's first lap, before there is a circuit to
   draw. Nothing is staged: it runs the demo for a few seconds and renders whatever

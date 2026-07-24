@@ -46,8 +46,9 @@ internal static class Program
     /// rather than a separate widget - see <see cref="RenderRadarDanger"/>.
     /// </summary>
     private static readonly string[] AllTargets =
-        ["standings", "relative", "relative-traffic", "fuel", "fuel-pit-exit", "fuel-save", "radar",
-         "radar-danger", "radar-unresolved", "delta", "track-map", "track-map-learning", "settings"];
+        ["standings", "relative", "relative-traffic", "fuel", "fuel-pit-exit", "fuel-save",
+         "fuel-multistop", "radar", "radar-danger", "radar-unresolved", "delta", "track-map",
+         "track-map-learning", "settings"];
 
     [STAThread]
     private static int Main(string[] args)
@@ -322,6 +323,11 @@ internal static class Program
         if (targets.Contains("fuel-save"))
         {
             results.Add(("fuel-save", RenderFuelSave()));
+        }
+
+        if (targets.Contains("fuel-multistop"))
+        {
+            results.Add(("fuel-multistop", RenderFuelMultiStop()));
         }
 
         if (targets.Contains("relative-traffic"))
@@ -634,6 +640,57 @@ internal static class Program
             Console.Error.WriteLine(
                 "Warning: fuel-save expected a priced tradeoff, got none - "
                 + "the staged stint taught the tracker nothing.");
+        }
+
+        return new IRacingOverlay.App.FuelWindow { DataContext = vm };
+    }
+
+    /// <summary>
+    /// Renders the fuel widget with the multi-stop "add" honesty showing: a long
+    /// lap-limited race where the fuel to finish outruns one tankful, so the "ADD"
+    /// figure is capped at a full tank and a "+1 stop" note says the fill won't
+    /// finish it.
+    ///
+    /// The demo runs a short, comfortable race that never needs a second stop, so
+    /// the scenario is staged: a warmed-up demo frame supplies the session and the
+    /// tank, a dozen clean laps down from a brim give the calculator a burn rate,
+    /// then the tank is dropped low against a 40-lap race. Everything downstream is
+    /// the real strategy, formatter and bindings.
+    /// </summary>
+    private static Window RenderFuelMultiStop()
+    {
+        var vm = new FuelViewModel(new FuelCalculator(), new LapTimeTracker(), "Demo");
+        vm.ApplySettings(new OverlaySettings());
+
+        if (CaptureDemoFrame(vm) is not { } frame)
+        {
+            Console.Error.WriteLine("Warning: fuel-multistop never received a demo frame.");
+            return new IRacingOverlay.App.FuelWindow { DataContext = vm };
+        }
+
+        // 40 laps at ~2.5 L needs ~100 L - far past the 65 L demo tank, so one more
+        // stop follows the next.
+        const int lapsRemaining = 40;
+        const double burn = 2.5;
+
+        // Give the calculator a clean burn rate first: a dozen laps down from a
+        // brim, each a fixed 2.5 L, which also lands the tank at a low 30 L.
+        var fuel = 60.0;
+        var time = 0.0;
+        var lap = 1;
+        for (; fuel > 30.0 + 1e-6; lap++)
+        {
+            vm.ApplyTelemetry(Racing(frame, lap, fuel, time, lapsRemaining));
+            time += 90;
+            fuel -= burn;
+        }
+
+        vm.ApplyTelemetry(Racing(frame, lap, 30.0, time, lapsRemaining));
+
+        if (vm.AddStopsText.Length == 0)
+        {
+            Console.Error.WriteLine(
+                "Warning: fuel-multistop expected a capped add with a stop still to come, got none.");
         }
 
         return new IRacingOverlay.App.FuelWindow { DataContext = vm };

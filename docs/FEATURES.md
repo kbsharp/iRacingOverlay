@@ -575,7 +575,11 @@ unchanged, only the space around them.
   (`CornerRadius="3"`) — it was the last rounded `8px` pill left over from the
   pre-flat theme.
 - **Add**: litres to add at the next stop to finish with a half-lap safety
-  buffer (0 when already enough).
+  buffer (0 when already enough). Capped at one tankful when capacity is known,
+  so it never names more litres than a stop can take — a `+1 stop` (or `+2
+  stops`) note beside it then says how many stops still follow the next. The cap
+  is a full tank, not the empty space right now, because the fill lands at a
+  future low-fuel stop, not on top of what's in the tank this instant.
 - **Save to**: the burn rate per lap that would still make it to the finish
   on current fuel without stopping — a save target when the driver is short.
   What driving to it *costs* is priced by the push-or-save strip below.
@@ -616,9 +620,14 @@ EstimateRaceLapsRemaining` for timed races.
 
 **`FuelStrategyCalculator`**:
 - `Compute(currentFuel, avgLitersPerLap, raceLapsRemaining, safetyMarginLaps
-  = 0.5)` — returns `FuelStrategy.Unknown` until both burn average and race
-  length are known (not just "some data" — a null in either input short-
-  circuits the whole result).
+  = 0.5, tankCapacityLiters = 0)` — returns `FuelStrategy.Unknown` until both
+  burn average and race length are known (not just "some data" — a null in
+  either input short-circuits the whole result).
+- When `tankCapacityLiters` is known and the fuel to add outruns one tankful,
+  `FuelToAddLiters` is capped at capacity and `AdditionalStops` counts the
+  refuels still owed after the next one (`ceil(deficit / capacity) − 1`). With
+  capacity 0 (SDK var absent, or a `dotnet run` without session info) the figure
+  is left uncapped and `AdditionalStops` stays 0 — the pre-cap behaviour.
 - `EstimateRaceLapsRemaining` prefers the sim's own lap count for lap-limited
   races (`SessionLapsRemainEx`, sentinel `32767` = unlimited/timed). For
   timed races it derives laps from time remaining ÷ average lap time,
@@ -628,8 +637,9 @@ EstimateRaceLapsRemaining` for timed races.
   unlimited, matching `SessionFormat.TimeRemaining`.
 
 **Known limitations:**
-- No fuel-per-stop split for multi-stop strategies — "Add" assumes one more
-  stop covers the rest of the race.
+- No per-stop split for multi-stop strategies — "Add" caps at a tankful and
+  says how many stops follow (`+1 stop`), but it doesn't yet plan the litres for
+  each individual stop across the run.
 - Safety margin defaults to 0.5 laps; configurable 0–5 in Settings.
 - Demo mode always simulates a short (~4 minute) timed race so the margin
   reads comfortably positive; the red "short" state is real code but isn't
@@ -869,7 +879,9 @@ exchange rate and the learned pit loss:
   linear at the extremes — the last tenth of a litre costs more than the first —
   which is why the planner refuses to read far past the observed range.
 - It assumes saving to the target *removes* the stop. It doesn't model a shorter
-  splash, and "Add" upstream still assumes one stop covers the rest of the race.
+  splash — saving trims a whole stop or nothing. (The "Add" figure upstream does
+  now cap at a tankful and flag `+1 stop` in a multi-stop race, but this strip
+  still prices a single remaining stop.)
 - Both halves are estimates of *typical* behaviour: the pit loss is what the field
   has been taking, not what your stop will take (see the pit-exit strip's
   limitations), and the save cost is your recent laps, not this one.
