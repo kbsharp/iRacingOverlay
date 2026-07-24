@@ -129,7 +129,7 @@ of seconds, so it hasn't been worth adding.
 
   Targets: `standings`, `relative`, `relative-traffic`, `fuel`, `fuel-pit-exit`,
   `fuel-save`, `fuel-multistop`, `radar`, `radar-danger`, `radar-unresolved`,
-  `delta`, `track-map`, `track-map-learning`, `settings`.
+  `delta`, `track-map`, `track-map-learning`, `weather`, `settings`.
   **Rendering everything is the default** and costs barely more than rendering
   one — all the view models are fed from a single demo session, and the slow part
   is wall-clock demo laps (the fuel burn average needs ~35 s of them), not the
@@ -186,6 +186,14 @@ of seconds, so it hasn't been worth adding.
   it places one faster-class car a measured ~1.6 laps back and moves the rest of
   that class clear ahead. Only the positions are staged; the forecaster, the
   sector mapping and the bindings are real.
+
+  `weather` is the weather nowcast strip mid-transition. The plain demo has flat
+  weather, and the nowcast self-hides unless the track is actively wetting or
+  drying, so this stages a real transition: a warmed demo frame replayed with the
+  clock advancing and the wetness stepping up (and the surface cooling) the way
+  rain arrives. Only the weather values are staged; the nowcaster, its
+  self-healing window and the bindings are real. Live, a dev can step wetness with
+  the dev panel's wetness control instead.
 
   `-Grips` forces the corner resize grips visible. They rest at zero opacity and
   only fade in while their widget is hovered, and nothing hovers anything in a
