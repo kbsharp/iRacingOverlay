@@ -1,6 +1,6 @@
 # iRacing Overlay
 
-A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
+A lightweight, always-on-top telemetry overlay for iRacing. Seven widgets so far:
 
 - **Standings**: the full, class-grouped field (top-left by default) — colour-tinted class
   banners with **Strength of Field**, then each car by class position with a
@@ -51,6 +51,13 @@ A lightweight, always-on-top telemetry overlay for iRacing. Five widgets so far:
   part the sim doesn't: it **holds the finished lap's number for five seconds at the
   line**, where the sim resets it to zero just as it becomes worth reading, and shows
   nothing at all in the pits or before you have a lap to compare against.
+- **Weather** (a nowcast, not a forecast): whether the track is **wetting or drying right
+  now** — "▲ WETTING, Moderately Wet, was Dry 3 min ago" — with current track/air temps and
+  a trend arrow, so the crossover to wets or back to slicks is a call you see coming. It's a
+  nowcast because no source publishes iRacing's forecast to anyone; this reports only what it
+  has measured (how wet the track is now versus up to five minutes ago), so every number is
+  checkable a lap later. Off by default, and even once enabled it self-hides until the track
+  is actually in transition — a dry, stable race never shows it.
 
 **Full docs:** [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, commands, debugging,
 and how to add a widget; [docs/FEATURES.md](docs/FEATURES.md) for exactly what's
@@ -190,19 +197,18 @@ judgement behind each call. The short version:
   position projection** and the **push-or-save tradeoff** on the fuel widget, and
   the multiclass **traffic meeting-point forecast** on the relative —
   race-engineer calls no current overlay makes.
-- **Just landed:** **drag-to-resize** — a corner grip on every widget, hidden
-  until you hover it, that scales the panel between 80% and 200% without
-  reflowing it. It closes the largest daily-feel gap against every competitor,
-  paid and free, and it isn't customization: it's making one opinionated layout
-  fit any monitor. Before it: a **colour-blind friendly palette** — one opt-in
-  preset (no mainstream overlay ships one) that moves the gain/loss pair off the
-  green/red axis and re-picks the fastest-lap, lap tints and radar glow onto
-  values that stay apart under red-green colour blindness, with the sim's own
-  class/license colours left alone; and the **track map**, built from the shape
-  the radar already learns — needs no track database.
-- **Next up**, reordered by the [July 2026 audit](docs/AUDIT-2026-07.md): honest
-  multi-stop fuel numbers — then the weather forecast strip and per-session-type
-  profiles.
+- **Just landed:** a **weather nowcast** — whether the track is wetting or drying
+  *right now*, against how wet it was a few minutes ago. A true forecast turned
+  out to be unbuildable (no source publishes iRacing's, checked four ways), so
+  rather than fake one it reports only what it's measured — an honest nowcast that
+  self-hides when the weather's flat. Before it: **drag-to-resize** (a corner grip
+  that scales any widget 80–200% without reflowing it — one opinionated layout,
+  any monitor), honest **multi-stop fuel** numbers, a **colour-blind friendly
+  palette** (one opt-in preset, no mainstream overlay ships one), and the **track
+  map** built from the shape the radar already learns — no track database.
+- **Next up**, from the [July 2026 audit](docs/AUDIT-2026-07.md): **per-session-type
+  profiles** (with subtractive show/hide toggles — the customization axis that
+  fits the product), pinning the tray icon, and a signed installer.
 - **Waiting on research:** the manufacturer badge on the relative, and a bare
   speed readout is parked (the car's own dashboard already shows it).
 - **Parked or out, on purpose:** input trace and lap graphs wait until the

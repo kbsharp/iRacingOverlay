@@ -107,6 +107,7 @@ public partial class App : System.Windows.Application
         var radarViewModel = new RadarViewModel(connectedLabel);
         var deltaViewModel = new DeltaViewModel(connectedLabel);
         var trackMapViewModel = new TrackMapViewModel(connectedLabel);
+        var weatherViewModel = new WeatherViewModel(connectedLabel);
 
         _telemetrySource = demoMode
             ? new SimulatedTelemetrySource()
@@ -129,6 +130,8 @@ public partial class App : System.Windows.Application
                 new DeltaWindow { DataContext = deltaViewModel }, deltaViewModel),
             new OverlayWidget(WidgetIds.TrackMap, "Track Map",
                 new TrackMapWindow { DataContext = trackMapViewModel }, trackMapViewModel),
+            new OverlayWidget(WidgetIds.Weather, "Weather",
+                new WeatherWindow { DataContext = weatherViewModel }, weatherViewModel),
         ]);
 
         if (_telemetrySource is IDemoControls demoControls)

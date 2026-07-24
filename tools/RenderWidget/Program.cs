@@ -48,7 +48,7 @@ internal static class Program
     private static readonly string[] AllTargets =
         ["standings", "relative", "relative-traffic", "fuel", "fuel-pit-exit", "fuel-save",
          "fuel-multistop", "radar", "radar-danger", "radar-unresolved", "delta", "track-map",
-         "track-map-learning", "settings"];
+         "track-map-learning", "weather", "settings"];
 
     [STAThread]
     private static int Main(string[] args)
@@ -335,7 +335,57 @@ internal static class Program
             results.Add(("relative-traffic", RenderRelativeTraffic()));
         }
 
+        if (targets.Contains("weather"))
+        {
+            results.Add(("weather", RenderWeather()));
+        }
+
         return results;
+    }
+
+    /// <summary>
+    /// Renders the weather nowcast strip mid-transition.
+    ///
+    /// The plain demo can't produce it, and correctly so: the nowcast self-hides
+    /// unless the track is actively wetting or drying, and the demo's weather is
+    /// flat unless a dev cycles it. So this stages a real transition the honest
+    /// way - a warmed demo frame supplies a believable session, then it's replayed
+    /// with the clock advancing and the wetness stepping up (and the surface
+    /// cooling) the way real rain arrives. Everything downstream - the nowcaster,
+    /// its self-healing window, the bindings - is the real thing.
+    /// </summary>
+    private static Window RenderWeather()
+    {
+        var vm = new WeatherViewModel("Demo");
+        vm.SetConnectionState(true);
+
+        if (CaptureDemoFrame() is not { } frame)
+        {
+            Console.Error.WriteLine("Warning: weather never received a demo frame.");
+            return new IRacingOverlay.App.WeatherWindow { DataContext = vm };
+        }
+
+        // Two minutes dry and warm, then rain arrives: the wetness steps up and the
+        // track cools. The dry frame at t=0 stays the window's reference, so the
+        // strip reads "WETTING - Moderately Wet, was Dry ~3 min ago".
+        double t = 0;
+        for (; t <= 120; t += 5)
+        {
+            vm.ApplyTelemetry(frame with { SessionTimeSeconds = t, Wetness = TrackWetness.Dry, TrackTempC = 34f });
+        }
+
+        for (; t <= 160; t += 5)
+        {
+            vm.ApplyTelemetry(frame with { SessionTimeSeconds = t, Wetness = TrackWetness.ModeratelyWet, TrackTempC = 30f });
+        }
+
+        if (!vm.ShouldShow)
+        {
+            Console.Error.WriteLine(
+                "Warning: weather expected a visible transition, got a hidden strip.");
+        }
+
+        return new IRacingOverlay.App.WeatherWindow { DataContext = vm };
     }
 
     /// <summary>
@@ -708,6 +758,26 @@ internal static class Program
             SessionTimeSeconds = time,
             SessionLapsRemain = lapsRemaining,
         };
+
+    /// <summary>Runs the demo just long enough to capture one telemetry frame, for
+    /// widgets that need a believable base snapshot but not the roster metadata.</summary>
+    private static TelemetrySnapshot? CaptureDemoFrame()
+    {
+        using var source = new SimulatedTelemetrySource();
+
+        TelemetrySnapshot? latest = null;
+        source.TelemetryReceived += (_, s) => latest = s;
+        source.Start();
+
+        var started = DateTime.UtcNow;
+        while (latest is null && DateTime.UtcNow - started < WarmupCap)
+        {
+            Thread.Sleep(50);
+        }
+
+        source.Stop();
+        return latest;
+    }
 
     /// <summary>Runs the demo just long enough to capture a frame and the session
     /// metadata (roster, classes, tank capacity), feeding both to the view model.</summary>

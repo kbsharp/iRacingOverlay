@@ -1180,6 +1180,79 @@ needs no learning.
   exercisable without the sim; it reports "not valid" on lap 1 and in the pits,
   as the sim does.
 
+### Weather nowcast — `WeatherWindow` / `WeatherViewModel` / `Core.Weather.WeatherNowcaster`
+
+Whether the track is **wetting or drying right now**, so the crossover to wets
+or back to slicks is a call you see coming rather than one you make on the lap
+it's already too late.
+
+**It's a nowcast, not a forecast — because a forecast can't be built.** No source
+publishes iRacing's weather forecast to third parties: not the SDK shared memory
+(telemetry vars + session YAML carry current conditions only), not the
+authenticated `/data` web API (even via the OAuth2 flow — it's session/results
+metadata), and iRacing's own line is that they don't publish it. The in-sim "View
+Forecast" panel reads generated data the sim keeps to itself. So rather than
+invent a forecast, this reports only what it has **measured**: how wet the track
+is now versus how wet it was up to five minutes ago. Every number is checkable a
+few minutes later — the honesty test the roadmap holds every readout to.
+
+**Ships off by default, and self-hides on top of that.** Its key sits in
+`OverlaySettings.DefaultOffWidgets` (with the delta bar's and track map's): weather
+matters only in dynamic-weather sessions with rain in play, and most races are
+dry. Opt in from the tray menu and it *still* shows nothing until the track is
+actually in transition — `ShouldShow` collapses the whole strip whenever the
+weather is flat, the way the radar hides when nobody's near. So a driver enables
+it once and it stays out of the way until there's a decision to make.
+
+**Layout:** a 196-wide panel in the shared material, on the delta/fuel 10px/6px
+rhythm. Header (`WEATHER` + connection dot/status), then the headline
+(`▲ WETTING` / `▼ DRYING`), the current wetness in full, the referent underneath,
+and a quiet temp footer. Default position `Left=600, Top=610`.
+
+**Fields:**
+
+| Field | Meaning |
+|---|---|
+| Headline | `WETTING` or `DRYING` with a direction arrow, in amber. Present only while a transition is underway (the strip is hidden otherwise). |
+| Wetness | The current level in full, e.g. `Moderately Wet` (`WeatherFormat.WetnessLabel`, the seven `TrackWetness` levels named unabbreviated). |
+| Referent | `was Dry 3 min ago` — the wetness at the window's start and how long ago, so the trend is checkable rather than asserted. |
+| `TRK` / `AIR` | Current track and air temperature (`UnitFormat.Temperature`, °C or °F per settings). A small `▲`/`▼` precedes them when the surface is warming or cooling past a 1.5° deadband. |
+
+**What `WeatherNowcaster` does** (pure, tested):
+- **Compares against a sliding window.** It keeps weather samples from the last
+  `LookbackSeconds` (300s / 5 min) and reads the current track against the oldest
+  one still in the window. A net rise of ≥1 wetness step reads `Wetting`, a fall
+  reads `Drying`, otherwise `Steady`.
+- **Self-heals.** Because the reference is the oldest *retained* sample, once a
+  change is older than the window the reference slides past it and the trend reads
+  `Steady` again — so a squall that blew through and settled stops flashing
+  "wetting" a few minutes later, on its own, rather than needing a timeout.
+- **Waits for enough history.** Below `MinObservationSeconds` (60s) of window the
+  trend is noise, so the strip stays hidden until there's something to say.
+- **Degrades gracefully.** `TrackWetness.Unknown` (older builds, dry-only content)
+  never fabricates a trend — the strip simply stays hidden — and a new session or
+  a rewound clock (a session restart) resets the history.
+- **Track-temp trend** rides along with its own 1.5° deadband, but it doesn't
+  decide visibility: the wetness transition is the decision, the temp is context.
+
+**Colour** uses one hue — amber — for both directions. The hue means "conditions
+changing, decide on tyres"; which way is carried by the word and the arrow, not
+by a second colour, keeping to the app's rule that each hue means one thing.
+
+**Known limitations:**
+- **Wetness and track temp only.** iRacing also exposes an instantaneous
+  precipitation rate, which leads wetness slightly; the first version leaves it
+  out because wetness is the signal the tyre decision actually hinges on, and
+  keeping the input to what the snapshot already carries avoids widening the
+  telemetry contract for a marginal lead-time gain.
+- **Not a forecast, by design and by data.** It can tell you the track is wetter
+  than it was; it cannot tell you it'll be wetter in twenty minutes, because that
+  data doesn't exist to anyone (see above). If iRacing ever publishes a forecast,
+  the roadmap has the note to promote this.
+- Demo mode has no live weather drift, so the widget self-hides in a plain demo;
+  the render harness stages a wetting transition (`weather` target), and a dev can
+  step wetness live with the dev panel's wetness control.
+
 ## Telemetry & session data (`Core.Telemetry`, `Core.Session`)
 
 **`TelemetrySnapshot`** — one frame, normalised to the overlay's units
@@ -2001,14 +2074,18 @@ on the content root (see the tray icon section).
 | `Theme/ArgbTests.cs` | Colour hex parse (`#RRGGBB`/`#AARRGGBB`, optional `#`), 8-digit round-trip, malformed rejection |
 | `Theme/ColorVisionTests.cs` | Deutan/protan simulation: identity for none, greys preserved, alpha kept, luminance spanning black→white, distance metric, and the default gain/loss pair collapsing under both deficiencies |
 | `Theme/MeaningPaletteTests.cs` | Both variants define every signal; default matches the App.xaml hexes; colour-blind gain/loss and lap tints stay distinct under deutan+protan and beat the pair they replace; already-safe signals left unchanged; glow keeps three stops with a transparent edge |
+| `Weather/WeatherNowcasterTests.cs` | Insufficient before the window fills, steady-dry hidden, wetting/drying detected with the right referent, a completed transition self-healing back to steady, Unknown wetness never trending, temp trend past/inside the deadband, observed span capped to the window, session-change and rewound-clock resets |
+| `Formatting/WeatherFormatTests.cs` | Every wetness level named in full, Unknown → placeholder, trend headline only for the active transitions, minutes-ago rounded with a floor of one |
 
 ## Not yet implemented
 
 Tracked in [ROADMAP.md](ROADMAP.md) (summarised in the
-[README](../README.md#roadmap)): the [July 2026 audit](AUDIT-2026-07.md)'s
-queue — drag-to-resize, multi-stop fuel honesty — then a weather forecast
-strip, per-session-type settings profiles, and pinning the tray icon. (The
-defaults pass and the colour-blind friendly palette have since shipped.) A bare speed readout is parked
+[README](../README.md#roadmap)): from the [July 2026 audit](AUDIT-2026-07.md)'s
+queue, per-session-type settings profiles (with subtractive content toggles),
+pinning the tray icon, and a signed installer remain. (Drag-to-resize,
+multi-stop fuel honesty, the defaults pass, the colour-blind friendly palette,
+and the weather **nowcast** — a forecast proved unbuildable, no source publishes
+one — have since shipped.) A bare speed readout is parked
 (the car's own dashboard already shows speed). Extending the manufacturer badge
 to the relative — and a rejoin indicator / slow-car-ahead warning — is parked
 behind open research questions; the radar density pass,

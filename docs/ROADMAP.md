@@ -51,10 +51,24 @@ Reordered by the [July 2026 audit](AUDIT-2026-07.md) — first-impression and
 accessibility items first. Drag-to-resize, which led this list, has shipped, as
 has multi-stop honesty on the fuel widget; tray-icon pinning stays carried over.
 
-- **Weather forecast strip** *(mid-term)* — we show current temps and wetness;
-  with dynamic weather the decision-shaped question is "what's it doing in 20
-  minutes?", which is a tyre and pit call. irDashies shipping weather widgets
-  confirms the demand; ours stays a forecast, not current-conditions wallpaper.
+- **Weather nowcast strip** *(forecast blocked on data Jul 2026; shipping a
+  nowcast instead)* — the decision-shaped question is "what's it doing in 20
+  minutes?", a tyre and pit call. A true **forecast can't be built**: no source
+  publishes one. Checked four ways — the SDK's shared memory (telemetry vars +
+  session YAML) carries current conditions only; the authenticated `/data` web
+  API, even via iRacing's new OAuth2 flow, publishes session/results metadata,
+  no forecast; iRacing's own line is "we don't publish that via the API/SDK";
+  and RaceLab, iOverlay and irDashies all confirm it by showing current weather,
+  never a forecast. The in-sim "View Forecast" panel reads generated data the
+  sim keeps to itself. So instead of faking a forecast we ship a **nowcast**: it
+  states the transition *already underway* — rain starting, track wetting or
+  drying, temp climbing or falling — in units the driver owns (wetness steps and
+  °C over the last few minutes), and it never names a future value it can't
+  check. The honesty guard is in the framing: it is labelled a nowcast, not a
+  forecast, and it reports only what it has observed. It earns its space on the
+  one call it changes — *rain is arriving, box for the crossover* — and self-
+  hides when conditions are flat. Promote to a real forecast only if iRacing
+  starts publishing one.
 - **Per-session-type profiles** *(mid-term)* — the practice layout genuinely
   isn't the race layout. Grow the settings-profile idea with a session-type
   dimension. This — not column pickers — is the customization axis that fits
@@ -210,7 +224,7 @@ the strategy layer by voice and is free — the pit-exit row says how.
 | Battle catch/defend forecast | ❌ | ❌ | ❌ | built **(unique)**, off by default — legibility |
 | Safety direction (CPI vs your baseline) | ❌ | ❌ | ❌ | built, then removed |
 | Rejoin indicator / slow-car-ahead | ❌ | ❌ | ✅ both | ❌ → needs research |
-| Weather widget | ✅ monitor | ❌ | ✅ (+ wind) | ❌ → forecast strip, mid-term |
+| Weather widget | ✅ monitor | ❌ | ✅ (+ wind) | ✅ nowcast — the transition underway, in wetness steps + °C; no forecast data exists (researched Jul 2026) |
 | Per-session profiles | auto layouts | ✅ | · | ❌ → mid-term |
 | Input trace | ✅ | ✅ | ✅ | parked |
 | Lap-time graphs | ✅ (3 blocks) | ❌ | · | parked |
